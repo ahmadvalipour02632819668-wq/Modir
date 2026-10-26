@@ -300,8 +300,86 @@ tr:hover td { background: var(--bg); }
 <body>
 <div id="app"></div>
 <div id="toast" class="toast"></div>
+async function viewAdminDatabase(el) {
+  let tables = [];
+  try {
+    const res = await T('app_admin_get_db_tables');
+    tables = res || [];
+  } catch (e) {
+    el.innerHTML = `<div class="empty">خطا در دریافت لیست جداول: ${esc(e.message)}</div>`;
+    return;
+  }
 
+  el.innerHTML = `
+    <h1>مدیریت دیتابیس</h1>
+    <p class="sub">مشاهده و ویرایش مستقیم اطلاعات</p>
+    
+    <div class="grid g3" style="margin-bottom:20px">
+      ${tables.map(t => `
+        <button class="card" data-table="${t.table_name}" style="cursor:pointer;border:1px solid var(--line);text-align:center;padding:16px">
+          <div style="font-size:24px;margin-bottom:8px">🗄️</div>
+          <b dir="ltr">${esc(t.table_name)}</b>
+        </button>
+      `).join('')}
+    </div>
+    
+    <div id="db-table-content"></div>
+  `;
+
+  $$('[data-table]', el).forEach(b => {
+    b.addEventListener('click', () => loadTableData(b.dataset.table, el));
+  });
+}
+
+async function loadTableData(tableName, el) {
+  const content = $('#db-table-content', el);
+  content.innerHTML = '<p class="sub">در حال بارگذاری دیتای جدول...</p>';
+
+  try {
+    const data = await T('app_admin_get_table_data', { p_table_name: tableName });
+    
+    if (!data || data.length === 0) {
+      content.innerHTML = `<div class="card"><h2>${esc(tableName)}</h2><p class="sub">این جدول خالی است.</p></div>`;
+      return;
+    }
+
+    const columns = Object.keys(data[0]);
+
+    content.innerHTML = `
+      <div class="card" style="padding:0;overflow:hidden">
+        <div style="padding:16px;border-bottom:1px solid var(--line);background:var(--bg)">
+          <h2 style="margin:0;direction:ltr">جدول: ${esc(tableName)}</h2>
+          <small class="sub">${fa(data.length)} رکورد (حداکثر 100 رکورد نمایش داده می‌شود)</small>
+        </div>
+        <div class="tbl-wrap">
+          <table>
+            <thead>
+              <tr>
+                ${columns.map(c => `<th dir="ltr">${esc(c)}</th>`).join('')}
+              </tr>
+            </thead>
+            <tbody>
+              ${data.map(row => `
+                <tr>
+                  ${columns.map(c => {
+                    let val = row[c];
+                    if (val === null) val = 'NULL';
+                    if (typeof val === 'object') val = JSON.stringify(val);
+                    return `<td dir="ltr" style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(val)}">${esc(val)}</td>`;
+                  }).join('')}
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `;
+  } catch (e) {
+    content.innerHTML = `<div class="card" style="color:var(--danger)">خطا: ${esc(e.message)}</div>`;
+  }
+}
 <script>
+
 /* ============================================================
    CORE, HELPERS & CONFIG
    ============================================================ */
@@ -717,7 +795,7 @@ function renderShell() {
   const building = currentBuilding();
   const isAdmin = S.me.is_superadmin;
   const nav = isAdmin ? [
-    ['sa_buildings', 'ساختمان‌ها', lineIco('building')], ['sa_requests', 'درخواست مدیران', lineIco('people')], ['sa_dash', 'داشبورد', lineIco('home')], ['sa_profile', 'پروفایل', lineIco('user')], ['sa_services', 'خدمات', lineIco('services')]
+    ['sa_buildings', 'ساختمان‌ها', lineIco('building')], ['admin_db', 'دیتابیس', ['sa_requests', 'درخواست مدیران', lineIco('people')], ['sa_dash', 'داشبورد', lineIco('home')], ['sa_profile', 'پروفایل', lineIco('user')], ['sa_services', 'خدمات', lineIco('services')]
   ] : isManager() ? [
     ['m_payments', 'تایید پرداخت', lineIco('money')], ['m_requests', 'درخواست‌ها', lineIco('msg')], ['m_dash', 'داشبورد', lineIco('home')], ['m_report', 'گزارش', lineIco('report')], ['m_services', 'خدمات', lineIco('services')]
   ] : [
