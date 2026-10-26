@@ -189,7 +189,7 @@ tr:hover td { background: var(--bg); }
 
 .bnav-diamond-wrap {
   position: absolute;
-  top: -32px;
+  top: -43px;
   width: 80px;
   height: 80px;
   margin-right: -40px;
@@ -201,9 +201,9 @@ tr:hover td { background: var(--bg); }
   align-items: center;
 }
 .bnav-diamond {
-  width: 56px;
-  height: 56px;
-  border-radius: 18px;
+  width: 60px;
+  height: 60px;
+  border-radius: 19px;
   background: var(--card);
   border: 1px solid var(--line);
   box-shadow: 0 10px 26px rgba(0,0,0,.15);
@@ -735,7 +735,7 @@ function renderShell() {
   $('#who-btn').addEventListener('click', e => { e.stopPropagation(); const pop = $('#who-pop'); pop.style.display = pop.style.display === 'none' ? 'block' : 'none'; });
   document.addEventListener('click', e => { const pop = $('#who-pop'); if (pop && !e.target.closest('#who-pop') && !e.target.closest('#who-btn')) pop.style.display = 'none'; });
   $('#go-profile').addEventListener('click', () => { $('#who-pop').style.display = 'none'; go('profile'); });
-  $$('.bnav-items button').forEach(b => b.addEventListener('click', () => go(b.dataset.v.replace(/^(sa_|m_|r_)/, ''))));
+  $$('.bnav-items button').forEach(b => b.addEventListener('click', () => go(b.dataset.v)));
   const startView = S.me.is_superadmin ? 'sa_dash' : isManager() ? 'm_dash' : 'r_dash';
   go(S.view && S.view !== 'dash' ? S.view : startView);
 }
@@ -780,7 +780,7 @@ function renderHeaderState() {
     ? `${esc(building?.building_name || 'مدیریت مجتمع‌های مسکونی')}<small>${S.me.is_superadmin ? 'ادمین اصلی' : (isManager() ? 'پنل مدیریت' : `واحد ${fa(currentMembership()?.unit_id ? '?' : '')}`)}</small>`
     : esc(titles[S.view] || '');
   const btns = $$('.bnav-items button');
-  const active = btns.find(b => b.dataset.v.replace(/^(sa_|m_|r_)/, '') === S.view) || btns.find(b => b.dataset.v.endsWith('_services')) || btns[2];
+  const active = btns.find(b => b.dataset.v === S.view) || btns.find(b => b.dataset.v.endsWith('_services') && (S.view === 'services')) || btns[2];
   btns.forEach(b => b.classList.toggle('on', b === active));
   const diaWrap = $('#bnav-dia-wrap'), notch = $('#bnav-notch'), wrap = $('.bnav-in');
   if (diaWrap && active && wrap) {
@@ -788,7 +788,7 @@ function renderHeaderState() {
     const centerOffset = (br.left - wr.left) + (br.width / 2);
     const rightPos = wr.width - centerOffset;
     diaWrap.style.right = rightPos + 'px';
-    if(notch) notch.style.right = (rightPos - 50) + 'px';
+    if(notch) notch.style.right = (rightPos - 100) + 'px';
     const svgMatch = active.innerHTML.match(/<svg[\s\S]*?<\/svg>/);
     if (svgMatch) $('#bnav-dia-icon').innerHTML = svgMatch[0];
   }
