@@ -48,15 +48,7 @@ a { color: var(--navy); text-decoration: none; font-weight: 700; }
 @keyframes pop { 0% { transform: scale(.6) rotate(45deg); opacity: 0; } 70% { transform: scale(1.08) rotate(45deg); } 100% { transform: scale(1) rotate(45deg); opacity: 1; } }
 @keyframes floaty { 0%,100% { transform: translate(0,0); } 50% { transform: translate(-10px, 8px); } }
 
-header.top { 
-  background: var(--navy); 
-  position: sticky; 
-  top: 0; 
-  z-index: 50; 
-  color: #fff; 
-  border-radius: 0 0 30px 30px; /* گوشه‌های گرد در پایین هدر */
-  box-shadow: 0 4px 20px rgba(0,0,0,0.15); /* سایه برای جدا شدن از پس‌زمینه */
-}
+header.top { background: var(--navy); position: sticky; top: 0; z-index: 50; color: #fff; border-radius: 0 0 30px 30px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); }
 .top-in { max-width: 1100px; margin: auto; display: flex; align-items: center; justify-content: space-between; padding: 16px 20px 30px; gap: 12px; position: relative; }
 .appbar-title { font-weight: 900; font-size: 17px; text-align: center; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .appbar-title small { display: block; font-weight: 500; font-size: 11.5px; color: #b9bde0; }
@@ -77,26 +69,12 @@ h3 { font-size: 14.5px; font-weight: 800; margin: 0 0 8px; color: var(--ink); }
 .card { background: var(--card); border: 1px solid var(--line); border-radius: var(--r); padding: 20px; box-shadow: var(--shadow); transition: transform .25s var(--ease), box-shadow .25s; }
 .grid { display: grid; gap: 16px; }
 .g2 { grid-template-columns: repeat(auto-fit, minmax(min(100%,320px),1fr)); }
-.g3 { grid-template-columns: repeat(auto-fit, minmax(min(100%,220px),1fr)); }
+.g3 { grid-template-columns: repeat(auto-fit, minmax(min(100%,120px),1fr)); }
 .sec-title { font-weight: 900; font-size: 16px; margin: 26px 4px 12px; display: flex; align-items: center; justify-content: space-between; color: var(--ink); }
 
 label.f { display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 700; color: var(--muted); }
-input, select, textarea { 
-  border: 2px solid #64748b; /* رنگ خاکستری تیره، کاملاً مشخص */
-  background: var(--card); 
-  color: var(--ink); 
-  border-radius: 14px; 
-  padding: 10px 14px; 
-  min-height: 48px; 
-  width: 100%; 
-  transition: border-color .2s, box-shadow .2s; 
-}
-input:focus, select:focus, textarea:focus { 
-  outline: none; 
-  border-color: var(--navy); 
-  box-shadow: 0 0 0 4px rgba(45,52,99,.15); 
-}
-input:focus, select:focus, textarea:focus { outline: none; border-color: var(--navy); box-shadow: 0 0 0 4px rgba(45,52,99,.1); }
+input, select, textarea { border: 2px solid #64748b; background: var(--card); color: var(--ink); border-radius: 14px; padding: 10px 14px; min-height: 48px; width: 100%; transition: border-color .2s, box-shadow .2s; }
+input:focus, select:focus, textarea:focus { outline: none; border-color: var(--navy); box-shadow: 0 0 0 4px rgba(45,52,99,.15); }
 select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%237a7f9a' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: left 14px center; padding-left: 34px; }
 
 .btn { border: 0; border-radius: 16px; padding: 12px 22px; min-height: 48px; cursor: pointer; font-weight: 900; font-size: 14px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; background: var(--navy); color: #fff; box-shadow: 0 6px 16px rgba(45,52,99,.25); transition: transform .2s var(--ease), box-shadow .2s, background .2s; position: relative; overflow: hidden; }
@@ -121,26 +99,8 @@ select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmln
 .toast.ok { background: var(--success); }
 
 .login { min-height: 100vh; display: flex; flex-direction: column; background: var(--navy); }
-.login .art { 
-  padding: 30px 24px 50px; /* ارتفاع هدر را کم کردیم تا فرم بالاتر بیاید */
-  color: #fff; 
-  text-align: center; 
-  position: relative; 
-  overflow: hidden; 
-}
-
-.login .form { 
-  flex: 1; 
-  background: var(--bg); 
-  border-radius: 32px 32px 0 0; 
-  margin-top: -60px; /* فرم را بیشتر به سمت بالا کشیدیم */
-  display: flex; 
-  justify-content: center; 
-  padding: 30px 20px 40px; 
-  animation: up .6s var(--ease) both; 
-  position: relative; 
-  z-index: 10; 
-}
+.login .art { padding: 30px 24px 50px; color: #fff; text-align: center; position: relative; overflow: hidden; }
+.login .form { flex: 1; background: var(--bg); border-radius: 32px 32px 0 0; margin-top: -60px; display: flex; justify-content: center; padding: 30px 20px 40px; animation: up .6s var(--ease) both; position: relative; z-index: 10; }
 .login .art::before, .login .art::after { content: ""; position: absolute; border-radius: 50%; background: rgba(255,255,255,.05); animation: floaty 7s ease-in-out infinite; }
 .login .art::before { width: 260px; height: 260px; left: -80px; top: -90px; }
 .login .art::after { width: 180px; height: 180px; right: -50px; bottom: -60px; animation-delay: -3s; }
@@ -148,28 +108,9 @@ select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmln
 .login .logo svg { transform: rotate(-45deg); }
 .login .art h1 { font-size: 22px; color: #fff; font-weight: 900; position: relative; }
 .login .art p { color: #b9bde0; margin: 0; position: relative; }
-.login .form { flex: 1; background: var(--bg); border-radius: 32px 32px 0 0; margin-top: -34px; display: flex; justify-content: center; padding: 30px 20px 40px; animation: up .6s var(--ease) both; position: relative; z-index: 10; }
 .login .form .card { width: 100%; max-width: 440px; }
-.tabs { 
-  display: flex; 
-  gap: 4px; 
-  background: var(--bg); 
-  padding: 4px; 
-  border-radius: 99px; 
-  margin-bottom: 20px; 
-  border: 2px solid #64748b; /* این خط را اضافه کنید */
-}
-.tabs button { 
-  flex: 1; 
-  border: 0; 
-  background: transparent; 
-  padding: 10px; 
-  border-radius: 99px; 
-  cursor: pointer; 
-  font-weight: 700; 
-  font-size: 13px; 
-  color: var(--muted); 
-}
+.tabs { display: flex; gap: 4px; background: var(--bg); padding: 4px; border-radius: 99px; margin-bottom: 20px; border: 2px solid #64748b; }
+.tabs button { flex: 1; border: 0; background: transparent; padding: 10px; border-radius: 99px; cursor: pointer; font-weight: 700; font-size: 13px; color: var(--muted); }
 .tabs button.on { background: var(--card); color: var(--ink); box-shadow: var(--shadow); }
 
 .modal-bg { position: fixed; inset: 0; background: rgba(25,28,60,.6); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; padding: 20px; z-index: 1000; animation: fadeIn .25s ease; }
@@ -185,7 +126,9 @@ tr:last-child td { border-bottom: 0; }
 tr:hover td { background: var(--bg); }
 .tbl-wrap { overflow: auto; max-height: 70vh; border-radius: var(--r); border: 1px solid var(--line); background: var(--card); box-shadow: var(--shadow); }
 
-/* Bottom nav */
+/* ============================================================
+   NEW BOTTOM NAV WITH NOTCH & ANIMATION
+   ============================================================ */
 .bnav { 
   position: fixed; 
   bottom: 0; 
@@ -244,7 +187,6 @@ tr:hover td { background: var(--bg); }
   transform: translateY(-8px); 
 }
 
-/* لوزی و بریدگی (Notch) */
 .bnav-diamond-wrap {
   position: absolute;
   top: -32px;
@@ -281,7 +223,6 @@ tr:hover td { background: var(--bg); }
   height: 26px;
 }
 
-/* افکت بریدگی پشت لوزی (شبیه‌سازی با سایه) */
 .bnav-notch {
   position: absolute;
   top: 10px;
@@ -292,12 +233,12 @@ tr:hover td { background: var(--bg); }
   z-index: 1;
   pointer-events: none;
 }
+
 .bank-card { position: relative; overflow: hidden; color: #fff; border-radius: 24px; padding: 22px; background: linear-gradient(135deg, var(--navy-2) 0%, var(--navy) 55%, var(--navy-3) 100%); box-shadow: 0 16px 34px rgba(45,52,99,.35); }
 .bank-card::before { content: ""; position: absolute; width: 300px; height: 300px; border-radius: 50%; left: -90px; top: -120px; background: radial-gradient(circle, rgba(255,255,255,.09) 0 45%, rgba(255,255,255,.05) 46% 70%, transparent 71%); }
 .bank-card > * { position: relative; z-index: 1; }
 .bank-card .bc-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-top: 10px; color: #dfe2f6; }
 .bank-card .bc-amt { font-size: 28px; font-weight: 900; line-height: 1.3; transition: filter .3s; font-feature-settings: 'tnum'; }
-.bank-card .bc-amt.blur { filter: blur(9px); }
 .bank-card .pill { border: 1.5px solid rgba(255,255,255,.85); color: #fff; background: transparent; border-radius: 14px; padding: 6px 16px; font-weight: 700; cursor: pointer; font-size: 13px; }
 .bank-card.peach { background: linear-gradient(135deg, var(--peach), var(--warning)); box-shadow: 0 16px 34px rgba(239,145,82,.35); }
 .bank-card.soft { background: linear-gradient(135deg, var(--navy-2), var(--navy-3)); }
@@ -776,113 +717,16 @@ function renderShell() {
       </div>
     </header>
     <main id="view"></main>
-/* Bottom nav */
-.bnav { 
-  position: fixed; 
-  bottom: 0; 
-  left: 0; 
-  right: 0; 
-  z-index: 50; 
-  height: 84px; 
-  pointer-events: none; 
-}
-.bnav-in { 
-  position: relative; 
-  max-width: 640px; 
-  margin: auto; 
-  height: 100%; 
-  pointer-events: auto; 
-}
-.bnav-bg { 
-  position: absolute; 
-  inset: auto 0 0 0; 
-  height: 74px; 
-  background: var(--card); 
-  border-top: 1px solid var(--line); 
-  border-radius: 26px 26px 0 0; 
-  box-shadow: 0 -8px 30px rgba(0,0,0,.08); 
-  z-index: 1;
-}
-.bnav-items { 
-  position: absolute; 
-  inset: auto 0 0 0; 
-  height: 74px; 
-  display: grid; 
-  grid-template-columns: repeat(5,1fr); 
-  z-index: 3;
-}
-.bnav-items button { 
-  background: none; 
-  border: 0; 
-  cursor: pointer; 
-  display: flex; 
-  flex-direction: column; 
-  align-items: center; 
-  justify-content: center; 
-  gap: 2px; 
-  color: var(--muted); 
-  font-size: 11.5px; 
-  font-weight: 700; 
-  transition: opacity .3s, transform .3s var(--ease); 
-  padding-bottom: 6px; 
-}
-.bnav-items button svg { 
-  width: 26px; 
-  height: 26px; 
-}
-.bnav-items button.on { 
-  opacity: 0; 
-  transform: translateY(-8px); 
-}
-
-/* لوزی و بریدگی (Notch) */
-.bnav-diamond-wrap {
-  position: absolute;
-  top: -32px;
-  width: 80px;
-  height: 80px;
-  margin-right: -40px;
-  z-index: 2;
-  transition: right 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
-  pointer-events: none;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-.bnav-diamond {
-  width: 56px;
-  height: 56px;
-  border-radius: 18px;
-  background: var(--card);
-  border: 1px solid var(--line);
-  box-shadow: 0 10px 26px rgba(0,0,0,.15);
-  display: grid;
-  place-items: center;
-  transform: rotate(45deg);
-  pointer-events: auto;
-}
-.bnav-diamond > span {
-  transform: rotate(-45deg);
-  display: grid;
-  place-items: center;
-  color: var(--navy);
-}
-.bnav-diamond svg {
-  width: 26px;
-  height: 26px;
-}
-
-/* افکت بریدگی پشت لوزی (شبیه‌سازی با سایه) */
-.bnav-notch {
-  position: absolute;
-  top: 10px;
-  left: -10px;
-  width: 100px;
-  height: 100px;
-  background: radial-gradient(circle at 50% 50%, var(--card) 35%, transparent 36%);
-  z-index: 1;
-  pointer-events: none;
-}`;
+    <nav class="bnav">
+      <div class="bnav-in">
+        <div class="bnav-bg"></div>
+        <div class="bnav-notch" id="bnav-notch"></div>
+        <div class="bnav-diamond-wrap" id="bnav-dia-wrap">
+          <div class="bnav-diamond"><span id="bnav-dia-icon"></span></div>
+        </div>
+        <div class="bnav-items">${nav.map(([k, l, i]) => `<button data-v="${k}">${i}<span>${l}</span></button>`).join('')}</div>
+      </div>
+    </nav>`;
   bindThemeSwatches();
   $('#top-logout').addEventListener('click', () => doLogout());
   $('#lo').addEventListener('click', () => doLogout());
@@ -906,20 +750,11 @@ async function go(v) {
   S.view = v;
   const el = $('#view'); if (!el) return;
   el.innerHTML = `<p class="sub">در حال بارگذاری...</p>`;
-  
-  renderHeaderState(); // موقعیت اولیه
+  renderHeaderState();
   const rid = ++S.renderId;
-  
   try { 
     await VIEWS[v](el); 
-    
-    // این خطوط برای رفع مشکل لوزی اضافه شدند:
-    // با استفاده از requestAnimationFrame مطمئن می‌شویم DOM حتماً رندر شده است
-    requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-            if(rid === S.renderId) renderHeaderState();
-        });
-    });
+    requestAnimationFrame(() => { requestAnimationFrame(() => { if(rid === S.renderId) renderHeaderState(); }); });
   } catch (e) {
     if (rid !== S.renderId) return;
     if (e.message === 'NETWORK_ERROR') {
@@ -939,36 +774,24 @@ function renderHeaderState() {
     m_dash: 'داشبورد مدیریت', m_payments: 'تایید پرداخت‌ها', m_requests: 'درخواست‌ها', m_report: 'گزارش ماهانه', m_services: 'خدمات', m_units: 'واحدها و ساکنین', m_expenses: 'هزینه‌ها', m_rates: 'تنظیمات مالی', m_requests_pending: 'تایید ثبت‌نام‌ها', m_transfer: 'انتقال مدیریت',
     r_dash: 'خانه', r_pay: 'پرداخت', r_charges: 'صورتحساب', r_requests: 'درخواست‌ها', r_services: 'خدمات', profile: 'پروفایل', services: 'خدمات'
   };
-  
   t.innerHTML = S.view === 'm_dash' || S.view === 'r_dash' || S.view === 'sa_dash'
     ? `${esc(building?.building_name || 'مدیریت مجتمع‌های مسکونی')}<small>${S.me.is_superadmin ? 'ادمین اصلی' : (isManager() ? 'پنل مدیریت' : `واحد ${fa(currentMembership()?.unit_id ? '?' : '')}`)}</small>`
     : esc(titles[S.view] || '');
-
   const btns = $$('.bnav-items button');
   const active = btns.find(b => b.dataset.v.replace(/^(sa_|m_|r_)/, '') === S.view) || btns.find(b => b.dataset.v.endsWith('_services')) || btns[2];
-  
   btns.forEach(b => b.classList.toggle('on', b === active));
-  
   const diaWrap = $('#bnav-dia-wrap'), notch = $('#bnav-notch'), wrap = $('.bnav-in');
   if (diaWrap && active && wrap) {
-    const wr = wrap.getBoundingClientRect();
-    const br = active.getBoundingClientRect();
-    
-    // محاسبه دقیق مرکز دکمه
+    const wr = wrap.getBoundingClientRect(), br = active.getBoundingClientRect();
     const centerOffset = (br.left - wr.left) + (br.width / 2);
     const rightPos = wr.width - centerOffset;
-    
-    // انتقال لوزی
     diaWrap.style.right = rightPos + 'px';
-    
-    // انتقال بریدگی پشت لوزی
     if(notch) notch.style.right = (rightPos - 50) + 'px';
-    
-    // تغییر آیکون
     const svgMatch = active.innerHTML.match(/<svg[\s\S]*?<\/svg>/);
     if (svgMatch) $('#bnav-dia-icon').innerHTML = svgMatch[0];
   }
 }
+
 /* ============================================================
    VIEWS: ADMIN
    ============================================================ */
@@ -1059,8 +882,8 @@ async function viewManagerDash(el) {
       <div class="bank-card peach"><b style="font-size:15px">مطالبات معوق</b><div class="bc-row"><span>تومان</span></div><div class="bc-amt" style="margin-top:4px">${fmt(totalDebt)}</div></div>
     </div>
     <div class="sec-title" style="margin-top:20px">دسترسی سریع</div>
-    <div class="grid g3" style="grid-template-columns:repeat(auto-fit,minmax(min(100%,120px),1fr)); margin-bottom:24px;">
-      ${[['m_payments', 'تایید پرداخت', '💸'], ['m_expenses', 'هزینه‌ها', '🧾'], ['m_units', 'واحدها', '👥'], ['m_requests_pending', 'ثبت‌نام‌ها', '📝']].map(([k, l, ic]) => `<button class="card" data-go="${k}" style="cursor:pointer;display:flex;flex-direction:column;align-items:center;padding:16px;gap:8px;border:0;text-align:center"><div style="font-size:28px">${ic}</div><b style="font-size:12.5px">${l}</b></button>`).join('')}
+    <div class="grid" style="grid-template-columns:repeat(4, 1fr); gap:8px; margin-bottom:24px;">
+      ${[['m_payments', 'تایید پرداخت', '💸'], ['m_expenses', 'هزینه‌ها', '🧾'], ['m_units', 'واحدها', '👥'], ['m_requests_pending', 'ثبت‌نام‌ها', '📝']].map(([k, l, ic]) => `<button class="card" data-go="${k}" style="cursor:pointer;display:flex;flex-direction:column;align-items:center;padding:12px 4px;gap:8px;border:0;text-align:center"><div style="font-size:24px">${ic}</div><b style="font-size:11px;white-space:nowrap">${l}</b></button>`).join('')}
     </div>
     <div class="grid g2">
       <div class="card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><h2 style="margin:0">پرداخت‌های در انتظار</h2><button class="btn lt sm" id="go-pay">مشاهده</button></div><div style="font-size:36px;font-weight:900;color:var(--warning)">${fa(fund?.pending_payments_count || 0)}</div><div class="sub" style="margin:6px 0 0">مبلغ: ${fmt(fund?.pending_payments_amount || 0)} تومان</div></div>
@@ -1235,8 +1058,8 @@ async function viewResidentDash(el) {
     <h1>سلام ${esc(m.full_name || '')} 👋</h1><p class="sub">${esc(m.building_name)} · واحد ${fa(summary?.unit_no || '')} · ${RESIDENT_TYPES[summary?.resident_type] || ''}</p>
     <div class="bank-card" style="margin-bottom:24px"><b>وضعیت حساب شما</b><div class="bc-row"><span>مانده قابل پرداخت (تومان)</span></div><div class="bc-row" style="margin-top:4px"><span class="bc-amt" style="color:${debt > 0 ? '#ffb3b3' : credit > 0 ? '#b3f5c4' : '#fff'}">${debt > 0 ? fmt(debt) : credit > 0 ? 'بستانکار ' + fmt(credit) : 'تسویه'}</span></div><div class="bc-row" style="margin-top:14px"><span>پرداخت‌های در انتظار: ${fmt(pending)} تومان</span>${debt > 0 ? `<button class="pill" id="go-pay">💸 پرداخت بدهی</button>` : ''}</div></div>
     <div class="sec-title" style="margin-top:0">دسترسی سریع</div>
-    <div class="grid g3" style="grid-template-columns:repeat(auto-fit,minmax(min(100%,120px),1fr)); margin-bottom:24px;">
-      ${[['r_pay', 'پرداخت', '💸'], ['r_charges', 'صورتحساب', '📄'], ['r_requests', 'درخواست‌ها', '💬'], ['profile', 'پروفایل', '👤']].map(([k, l, ic]) => `<button class="card" data-go="${k}" style="cursor:pointer;display:flex;flex-direction:column;align-items:center;padding:16px;gap:8px;border:0;text-align:center"><div style="font-size:28px">${ic}</div><b style="font-size:12.5px">${l}</b></button>`).join('')}
+    <div class="grid" style="grid-template-columns:repeat(4, 1fr); gap:8px; margin-bottom:24px;">
+      ${[['r_pay', 'پرداخت', '💸'], ['r_charges', 'صورتحساب', '📄'], ['r_requests', 'درخواست‌ها', '💬'], ['profile', 'پروفایل', '👤']].map(([k, l, ic]) => `<button class="card" data-go="${k}" style="cursor:pointer;display:flex;flex-direction:column;align-items:center;padding:12px 4px;gap:8px;border:0;text-align:center"><div style="font-size:24px">${ic}</div><b style="font-size:11px;white-space:nowrap">${l}</b></button>`).join('')}
     </div>
     ${summary?.charges?.length ? `<div class="sec-title">آخرین صورتحساب‌ها</div><div class="grid">${summary.charges.slice(0, 5).map(c => `<div class="card"><div style="display:flex;justify-content:space-between;gap:8px;margin-bottom:6px"><b>${esc(c.description)}</b><b>${fmt(c.amount)} تومان</b></div><div class="sub" style="margin:0">تاریخ: ${esc(c.item_date)} · ${c.item_type === 'expense' ? 'هزینه' : 'بدهی اولیه'}</div></div>`).join('')}</div>` : ''}`;
   $$('[data-go]', el).forEach(b => b.addEventListener('click', () => go(b.dataset.go)));
