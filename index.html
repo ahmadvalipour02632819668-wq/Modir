@@ -261,26 +261,20 @@ function modal(html) {
 /* ============================================================
    STATE & THEME
    ============================================================ */
-   // تنظیمات پیش‌فرض منو برای هر نقش
 const DEFAULT_NAV = {
   superadmin: ['sa_buildings', 'admin_db', 'sa_dash', 'sa_requests', 'sa_profile'],
   manager: ['m_payments', 'm_requests', 'm_dash', 'm_report', 'm_services'],
   resident: ['r_pay', 'r_requests', 'r_dash', 'r_charges', 'r_services']
 };
-
-// گرفتن منوی ذخیره شده یا استفاده از پیش‌فرض
 function getSavedNav(role) {
   const saved = localStorage.getItem('bm_nav_' + role);
-  if (saved) {
-    try { return JSON.parse(saved); } catch(e) {}
-  }
+  if (saved) { try { return JSON.parse(saved); } catch(e) {} }
   return DEFAULT_NAV[role];
 }
-
-// ذخیره منوی جدید
 function saveNav(role, keys) {
   localStorage.setItem('bm_nav_' + role, JSON.stringify(keys));
 }
+
 const S = { token: null, me: null, view: 'dash', view_ctx: {}, renderId: 0 };
 function persistSession() {
   window.__BM_TOKEN__ = S.token;
@@ -632,14 +626,19 @@ LINE_ICONS.services = ICONS.services;
 LINE_ICONS.db = ICONS.db;
 const lineIco = k => LINE_ICONS[k] || ICONS[k] || ICONS.services;
 
+// انتقال VIEWS به اینجا برای جلوگیری از خطای ReferenceError
+const VIEWS = {
+  sa_dash: viewSuperAdminDash, sa_buildings: viewSuperAdminBuildings, sa_requests: viewSuperAdminRequests, sa_profile: viewProfile, sa_services: viewServices,
+  admin_db: viewAdminDatabase, m_dash: viewManagerDash, m_payments: viewManagerPayments, m_requests: viewManagerRequests, m_report: viewManagerReport, m_services: viewServices, m_units: viewManagerUnits, m_expenses: viewManagerExpenses, m_rates: viewManagerRates, m_requests_pending: viewManagerPendingSignups, m_transfer: viewManagerTransfer,
+  r_dash: viewResidentDash, r_pay: viewResidentPay, r_charges: viewResidentCharges, r_requests: viewResidentRequests, r_services: viewServices,
+  profile: viewProfile, services: viewServices
+};
+
 function renderShell() {
   const building = currentBuilding();
   const isAdmin = S.me.is_superadmin;
-  
-  // تشخیص نقش
   const roleKey = isAdmin ? 'superadmin' : (isManager() ? 'manager' : 'resident');
   
-  // تعریف تمام دکمه‌های ممکن
   const ALL_BUTTONS = {
     superadmin: {
       'sa_buildings': { label: 'ساختمان‌ها', icon: lineIco('building') },
@@ -669,7 +668,6 @@ function renderShell() {
     }
   };
 
-  // گرفتن لیست دکمه‌های فعال
   const activeNavKeys = getSavedNav(roleKey);
   const nav = activeNavKeys.map(key => [key, ALL_BUTTONS[roleKey][key]?.label || '', ALL_BUTTONS[roleKey][key]?.icon || '']);
 
@@ -705,12 +703,7 @@ function renderShell() {
   bindThemeSwatches();
   $('#top-logout').addEventListener('click', () => doLogout());
   $('#lo').addEventListener('click', () => doLogout());
-  
-  $('#edit-nav-btn').addEventListener('click', () => { 
-    $('#who-pop').style.display = 'none'; 
-    showNavSettingsModal(roleKey, ALL_BUTTONS[roleKey]); 
-  });
-
+  $('#edit-nav-btn').addEventListener('click', () => { $('#who-pop').style.display = 'none'; showNavSettingsModal(roleKey, ALL_BUTTONS[roleKey]); });
   $('#who-btn').addEventListener('click', e => { e.stopPropagation(); const pop = $('#who-pop'); pop.style.display = pop.style.display === 'none' ? 'block' : 'none'; });
   document.addEventListener('click', e => { const pop = $('#who-pop'); if (pop && !e.target.closest('#who-pop') && !e.target.closest('#who-btn')) pop.style.display = 'none'; });
   $('#go-profile').addEventListener('click', () => { $('#who-pop').style.display = 'none'; go('profile'); });
@@ -758,6 +751,7 @@ function showNavSettingsModal(roleKey, allButtons) {
     renderShell();
   });
 }
+
 async function go(v) {
   if (!VIEWS[v]) v = S.me?.is_superadmin ? 'sa_dash' : isManager() ? 'm_dash' : 'r_dash';
   S.view = v;
@@ -827,7 +821,7 @@ async function viewAdminDatabase(el) {
     <p class="sub">مشاهده اطلاعات جداول (حداکثر ۱۰۰ رکورد)</p>
     
     <div class="grid g3" style="margin-bottom:20px">
-      ${tables.map(t => `
+      ${tables.filter(t => !['users', 'logs', 'requests', 'payments', 'debts', 'transactions'].includes(t.table_name)).map(t => `
         <button class="card" data-table="${t.table_name}" style="cursor:pointer;border:1px solid var(--line);text-align:center;padding:16px">
           <div style="font-size:24px;margin-bottom:8px">🗄️</div>
           <b dir="ltr">${esc(t.table_name)}</b>
