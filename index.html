@@ -261,6 +261,26 @@ function modal(html) {
 /* ============================================================
    STATE & THEME
    ============================================================ */
+   // تنظیمات پیش‌فرض منو برای هر نقش
+const DEFAULT_NAV = {
+  superadmin: ['sa_buildings', 'admin_db', 'sa_dash', 'sa_requests', 'sa_profile'],
+  manager: ['m_payments', 'm_requests', 'm_dash', 'm_report', 'm_services'],
+  resident: ['r_pay', 'r_requests', 'r_dash', 'r_charges', 'r_services']
+};
+
+// گرفتن منوی ذخیره شده یا استفاده از پیش‌فرض
+function getSavedNav(role) {
+  const saved = localStorage.getItem('bm_nav_' + role);
+  if (saved) {
+    try { return JSON.parse(saved); } catch(e) {}
+  }
+  return DEFAULT_NAV[role];
+}
+
+// ذخیره منوی جدید
+function saveNav(role, keys) {
+  localStorage.setItem('bm_nav_' + role, JSON.stringify(keys));
+}
 const S = { token: null, me: null, view: 'dash', view_ctx: {}, renderId: 0 };
 function persistSession() {
   window.__BM_TOKEN__ = S.token;
