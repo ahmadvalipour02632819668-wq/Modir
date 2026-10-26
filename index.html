@@ -865,23 +865,75 @@ async function viewSuperAdminRequests(el) {
 async function viewSuperAdminBuildings(el) {
   const buildings = (await T('app_admin_list_buildings')).buildings;
   el.innerHTML = `
-    <h1>ساختمان‌ها</h1><p class="sub">مدیریت و تعلیق ساختمان‌ها</p>
+    <h1>ساختمان‌ها</h1><p class="sub">مدیریت، تعلیق و حذف ساختمان‌ها</p>
     <div class="grid g2">
       ${buildings.map(b => `
         <div class="card">
-          <div style="display:flex;justify-content:space-between;gap:8px;margin-bottom:10px;flex-wrap:wrap"><h2 style="margin:0">${esc(b.building_name)}</h2><span class="chip ${b.building_status === 'active' ? 'ok' : 'no'}">${b.building_status === 'active' ? 'فعال' : 'تعلیق'}</span></div>
-          <div style="font-size:13px;color:var(--muted);line-height:1.9">تعداد واحد: ${fa(b.unit_count)}<br>مدیر: <b>${esc(b.manager_name || '—')}</b>${b.manager_username ? `<br>نام کاربری مدیر: <b dir="ltr">${esc(b.manager_username)}</b>` : ''}${b.suspension_reason ? `<br><span style="color:var(--danger)">علت تعلیق: ${esc(b.suspension_reason)}</span>` : ''}</div>
+          <div style="display:flex;justify-content:space-between;gap:8px;margin-bottom:10px;flex-wrap:wrap">
+            <h2 style="margin:0">${esc(b.building_name)}</h2>
+            <span class="chip ${b.building_status === 'active' ? 'ok' : 'no'}">${b.building_status === 'active' ? 'فعال' : 'تعلیق'}</span>
+          </div>
+          <div style="font-size:13px;color:var(--muted);line-height:1.9">
+            تعداد واحد: ${fa(b.unit_count)}<br>
+            مدیر: <b>${esc(b.manager_name || '—')}</b>
+            ${b.manager_username ? `<br>نام کاربری مدیر: <b dir="ltr">${esc(b.manager_username)}</b>` : ''}
+            ${b.suspension_reason ? `<br><span style="color:var(--danger)">علت تعلیق: ${esc(b.suspension_reason)}</span>` : ''}
+          </div>
           <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
             ${b.building_status === 'active' ? `<button class="btn rd sm" data-suspend="${b.building_id}">تعلیق</button>` : `<button class="btn sm" data-activate="${b.building_id}">فعال‌سازی</button>`}
             ${b.manager_username ? `<button class="btn lt sm" data-reset="${b.building_id}">ریست رمز مدیر</button>` : ''}
+            <!-- دکمه حذف کامل ساختمان -->
+            <button class="btn rd sm" data-delete="${b.building_id}" data-name="${esc(b.building_name)}">حذف کامل ساختمان</button>
           </div>
-        </div>`).join('') || `<div class="empty"><div class="ico">🏢</div><p>ساختمانی وجود ندارد</p></div>`}
+        </div>
+      `).join('') || `<div class="empty"><div class="ico">🏢</div><p>ساختمانی وجود ندارد</p></div>`}
     </div>`;
-  $$('[data-suspend]', el).forEach(b => b.addEventListener('click', () => { const reason = prompt('علت تعلیق:'); if (!reason) return; T('app_admin_set_building_status', { p_building_id: b.dataset.suspend, p_new_status: 'suspended', p_reason: reason }).then(() => { toastOk('تعلیق شد'); go('sa_buildings'); }).catch(showErr); }));
-  $$('[data-activate]', el).forEach(b => b.addEventListener('click', () => { T('app_admin_set_building_status', { p_building_id: b.dataset.activate, p_new_status: 'active' }).then(() => { toastOk('فعال شد'); go('sa_buildings'); }).catch(showErr); }));
-  $$('[data-reset]', el).forEach(b => b.addEventListener('click', () => { if (!confirm('رمز مدیر به 1234 بازنشانی شود؟')) return; T('app_admin_reset_manager_password', { p_building_id: b.dataset.reset }).then(() => toastOk('رمز بازنشانی شد (1234)')).catch(showErr); }));
-}
 
+  // رویداد تعلیق
+  $$('[data-suspend]', el).forEach(b => b.addEventListener('click', () => {
+    const reason = prompt('علت تعلیق:');
+    if (!reason) return;
+    T('app_admin_set_building_status', { p_building_id: b.dataset.suspend, p_new_status: 'suspended', p_reason: reason })
+      .then(() => { toastOk('تعلیق شد'); go('sa_buildings'); })
+      .catch(showErr);
+  }));
+
+  // رویداد فعال‌سازی
+  $$('[data-activate]', el).forEach(b => b.addEventListener('click', () => {
+    T('app_admin_set_building_status', { p_building_id: b.dataset.activate, p_new_status: 'active' })
+      .then(() => { toastOk('فعال شد'); go('sa_buildings'); })
+      .catch(showErr);
+  }));
+
+  // رویداد ریست رمز
+  $$('[data-reset]', el).forEach(b => b.addEventListener('click', () => {
+    if (!confirm('رمز مدیر به 1234 بازنشانی شود؟')) return;
+    T('app_admin_reset_manager_password', { p_building_id: b.dataset.reset })
+      .then(() => toastOk('رمز بازنشانی شد (1234)'))
+      .catch(showErr);
+  }));
+
+  // رویداد حذف کامل ساختمان
+  $$('[data-delete]', el).forEach(b => b.addEventListener('click', () => {
+    const bName = b.dataset.name;
+    const confirm1 = confirm(`⚠️ هشدار بسیار مهم!\n\nآیا از حذف کامل ساختمان «${bName}» مطمئن هستید؟\n\nبا این کار تمام اطلاعات (ساکنین، تراکنش‌ها، هزینه‌ها، صورتحساب‌ها و...) برای همیشه پاک می‌شود و قابل بازگشت نیست!`);
+    if (!confirm1) return;
+
+    const confirm2 = prompt(`برای تایید نهایی، نام ساختمان (${bName}) را دقیقاً تایپ کنید:`);
+    if (confirm2 !== bName) {
+      if (confirm2 !== null) toastErr('نام ساختمان اشتباه وارد شد. عملیات لغو شد.');
+      return;
+    }
+
+    // ارسال درخواست به دیتابیس
+    T('app_admin_delete_building', { p_building_id: b.dataset.delete })
+      .then(() => { 
+        toastOk('ساختمان با موفقیت حذف شد'); 
+        go('sa_buildings'); 
+      })
+      .catch(showErr);
+  }));
+}
 /* ============================================================
    VIEWS: MANAGER
    ============================================================ */
