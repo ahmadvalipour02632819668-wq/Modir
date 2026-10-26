@@ -4,38 +4,22 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#2d3463">
+<meta name="referrer" content="no-referrer">
+<!-- SEC-FIX: CSP برای جلوگیری از XSS -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://gjuptvtddrtdydssgnih.supabase.co https://*.supabase.co; object-src 'none'; base-uri 'self';">
 <title>مدیریت مجتمع‌های مسکونی</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%232d3463'/><path d='M18 82V38L50 12l32 26v44z' fill='white'/><rect x='40' y='60' width='20' height='22' fill='%23f7ae74'/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;700;900&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.8/dist/umd/supabase.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <style>
-/* ============================================================
-   THEME VARIABLES & GLOBAL STYLES
-   ============================================================ */
-:root {
-  --navy: #2d3463; --navy-2: #3b4380; --navy-3: #232850;
-  --peach: #f7ae74; --peach-2: #fbd2ae;
-  --primary: #2d3463; --accent: #f7ae74;
-  --success: #16a34a; --warning: #f08a3c; --danger: #e5484d;
-  --bg: #f1f1f4; --card: #ffffff; --line: #e6e7ee;
-  --ink: #23264a; --muted: #7a7f9a;
-  --r: 20px;
-  --shadow: 0 6px 18px rgba(45,52,99,.07);
-  --shadow-lg: 0 14px 34px rgba(45,52,99,.16);
-  --ease: cubic-bezier(.22,1,.36,1);
-}
-[data-theme="emerald"] { --navy:#0f4c3a;--navy-2:#16654e;--navy-3:#0a3327;--peach:#eab308;--peach-2:#fef08a;--primary:#0f4c3a;--accent:#eab308;--bg:#f0fdf4;--card:#fff;--line:#dcfce7;--ink:#0d281e;--muted:#64748b;--shadow:0 6px 18px rgba(15,76,58,.08);--shadow-lg:0 14px 34px rgba(15,76,58,.18); }
-[data-theme="dark"] { --navy:#1e293b;--navy-2:#334155;--navy-3:#0f172a;--peach:#818cf8;--peach-2:#c7d2fe;--primary:#3b82f6;--accent:#818cf8;--bg:#0f172a;--card:#1e293b;--line:#334155;--ink:#f8fafc;--muted:#94a3b8;--shadow:0 6px 18px rgba(0,0,0,.3);--shadow-lg:0 14px 34px rgba(0,0,0,.5); }
-[data-theme="ocean"] { --navy:#0284c7;--navy-2:#0369a1;--navy-3:#075985;--peach:#f97316;--peach-2:#ffedd5;--primary:#0284c7;--accent:#f97316;--bg:#f0f9ff;--card:#fff;--line:#e0f2fe;--ink:#0f172a;--muted:#64748b;--shadow:0 6px 18px rgba(2,132,199,.1);--shadow-lg:0 14px 34px rgba(2,132,199,.2); }
-[data-theme="rose"] { --navy:#9f1239;--navy-2:#be123c;--navy-3:#881337;--peach:#fbbf24;--peach-2:#fef3c7;--primary:#9f1239;--accent:#fbbf24;--bg:#fff1f2;--card:#fff;--line:#ffe4e6;--ink:#1f0a10;--muted:#9f8a90;--shadow:0 6px 18px rgba(159,18,57,.1);--shadow-lg:0 14px 34px rgba(159,18,57,.2); }
-[data-theme="violet"] { --navy:#6d28d9;--navy-2:#7c3aed;--navy-3:#5b21b6;--peach:#f59e0b;--peach-2:#fef3c7;--primary:#6d28d9;--accent:#f59e0b;--bg:#faf5ff;--card:#fff;--line:#ede9fe;--ink:#1e1b4b;--muted:#7c7a9a;--shadow:0 6px 18px rgba(109,40,217,.1);--shadow-lg:0 14px 34px rgba(109,40,217,.2); }
-[data-theme="teal"] { --navy:#0d5c5c;--navy-2:#0f6f6f;--navy-3:#0a4040;--peach:#f59e0b;--peach-2:#fef3c7;--primary:#0d5c5c;--accent:#f59e0b;--bg:#f0fdfa;--card:#fff;--line:#ccfbf1;--ink:#0f172a;--muted:#64748b;--shadow:0 6px 18px rgba(13,92,92,.1);--shadow-lg:0 14px 34px rgba(13,92,92,.2); }
-[data-theme="sand"] { --navy:#78350f;--navy-2:#92400e;--navy-3:#451a03;--peach:#059669;--peach-2:#d1fae5;--primary:#78350f;--accent:#059669;--bg:#fffbeb;--card:#fff;--line:#fde68a;--ink:#1c1917;--muted:#78716c;--shadow:0 6px 18px rgba(120,53,15,.1);--shadow-lg:0 14px 34px rgba(120,53,15,.2); }
-[data-theme="slate"] { --navy:#0f172a;--navy-2:#1e293b;--navy-3:#020617;--peach:#f59e0b;--peach-2:#fef3c7;--primary:#334155;--accent:#f59e0b;--bg:#f8fafc;--card:#fff;--line:#e2e8f0;--ink:#0f172a;--muted:#64748b;--shadow:0 6px 18px rgba(15,23,42,.08);--shadow-lg:0 14px 34px rgba(15,23,42,.18); }
-[data-theme="forest"] { --navy:#14532d;--navy-2:#166534;--navy-3:#052e16;--peach:#facc15;--peach-2:#fef9c3;--primary:#14532d;--accent:#facc15;--bg:#f0fdf4;--card:#fff;--line:#dcfce7;--ink:#0f172a;--muted:#64748b;--shadow:0 6px 18px rgba(20,83,45,.1);--shadow-lg:0 14px 34px rgba(20,83,45,.2); }
-[data-theme="midnight"] { --navy:#0f172a;--navy-2:#1e293b;--navy-3:#020617;--peach:#38bdf8;--peach-2:#bae6fd;--primary:#1e40af;--accent:#38bdf8;--bg:#0b1120;--card:#111b2e;--line:#1e293b;--ink:#e2e8f0;--muted:#94a3b8;--shadow:0 6px 18px rgba(0,0,0,.4);--shadow-lg:0 14px 34px rgba(0,0,0,.6); }
+:root{--navy:#2d3463;--navy-2:#3b4380;--navy-3:#232850;--peach:#f7ae74;--peach-2:#fbd2ae;--primary:#2d3463;--accent:#f7ae74;--success:#16a34a;--warning:#f08a3c;--danger:#e5484d;--bg:#f1f1f4;--card:#fff;--line:#e6e7ee;--ink:#23264a;--muted:#7a7f9a;--r:20px;--shadow:0 6px 18px rgba(45,52,99,.07);--shadow-lg:0 14px 34px rgba(45,52,99,.16);--ease:cubic-bezier(.22,1,.36,1)}
+[data-theme="emerald"]{--navy:#0f4c3a;--navy-2:#16654e;--navy-3:#0a3327;--peach:#eab308;--peach-2:#fef08a;--primary:#0f4c3a;--accent:#eab308;--bg:#f0fdf4;--card:#fff;--line:#dcfce7;--ink:#0d281e;--muted:#64748b}
+[data-theme="dark"]{--navy:#1e293b;--navy-2:#334155;--navy-3:#0f172a;--peach:#818cf8;--peach-2:#c7d2fe;--primary:#3b82f6;--accent:#818cf8;--bg:#0f172a;--card:#1e293b;--line:#334155;--ink:#f8fafc;--muted:#94a3b8}
+[data-theme="ocean"]{--navy:#0284c7;--navy-2:#0369a1;--navy-3:#075985;--peach:#f97316;--peach-2:#ffedd5;--primary:#0284c7;--accent:#f97316;--bg:#f0f9ff;--card:#fff;--line:#e0f2fe;--ink:#0f172a;--muted:#64748b}
+[data-theme="rose"]{--navy:#9f1239;--navy-2:#be123c;--navy-3:#881337;--peach:#fbbf24;--peach-2:#fef3c7;--primary:#9f1239;--accent:#fbbf24;--bg:#fff1f2;--card:#fff;--line:#ffe4e6;--ink:#1f0a10;--muted:#9f8a90}
+[data-theme="violet"]{--navy:#6d28d9;--navy-2:#7c3aed;--navy-3:#5b21b6;--peach:#f59e0b;--peach-2:#fef3c7;--primary:#6d28d9;--accent:#f59e0b;--bg:#faf5ff;--card:#fff;--line:#ede9fe;--ink:#1e1b4b;--muted:#7c7a9a}
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html, body { margin: 0; background: var(--navy); color: var(--ink); font-family: Vazirmatn, sans-serif; font-size: 14px; line-height: 1.75; overflow-x: hidden; width: 100%; }
@@ -185,7 +169,6 @@ tr:hover td { background: var(--bg); }
 .dp-month-year { font-weight: 900; font-size: 16px; }
 .dp-weekdays { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; font-size: 12px; font-weight: 700; color: var(--muted); margin-bottom: 8px; }
 
-/* استایل‌های مخصوص چاپ و گرفتن عکس */
 @media print {
   body * { visibility: hidden; }
   #printable-area, #printable-area * { visibility: visible; }
@@ -200,11 +183,19 @@ tr:hover td { background: var(--bg); }
 
 <script>
 /* ============================================================
-   CORE, HELPERS & CONFIG
+   SEC-FIX: CORE, HELPERS & CONFIG
    ============================================================ */
 const SUPABASE_URL = 'https://gjuptvtddrtdydssgnih.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_0xCSGon56t3inyZt3rSkSg_mFf7bwH9';
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: false } });
+
+let _token = sessionStorage.getItem('bm_token') || null;
+function getToken() { return _token; }
+function setToken(t, me) {
+  _token = t;
+  if (t) { sessionStorage.setItem('bm_token', t); sessionStorage.setItem('bm_me', JSON.stringify(me)); }
+  else { sessionStorage.removeItem('bm_token'); sessionStorage.removeItem('bm_me'); }
+}
 
 async function rpc(fn, args = {}) {
   try {
@@ -213,7 +204,7 @@ async function rpc(fn, args = {}) {
     return data;
   } catch (e) { throw new Error(e.message); }
 }
-const T = (fn, args = {}) => rpc(fn, { p_token: window.__BM_TOKEN__ || null, ...args });
+const T = (fn, args = {}) => rpc(fn, { p_token: getToken(), ...args });
 const P = (fn, args = {}) => rpc(fn, args);
 
 const $ = (s, el = document) => el.querySelector(s);
@@ -226,6 +217,13 @@ const toNum = v => {
   const str = String(v).replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d)).replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[,\u066C\u066B\s]/g, '').replace(/[^\d.-]/g, '');
   return Number(str) || 0;
 };
+
+// SEC-FIX: Strong password check
+function isStrongPwd(p) {
+  return typeof p === 'string' && p.length >= 8 && p.length <= 64 && /[0-9]/.test(p) && /[A-Za-z\u0600-\u06FF]/.test(p) && !/\s/.test(p);
+}
+const PWD_HINT = 'رمز باید حداقل ۸ کاراکتر، شامل حرف و عدد، بدون فاصله باشد.';
+
 function jalaliToday() {
   try {
     const p = new Intl.DateTimeFormat('en-US-u-ca-persian-nu-latn', { year:'numeric', month:'numeric', day:'numeric' }).formatToParts(new Date());
@@ -258,8 +256,12 @@ function modal(html) {
   return bg;
 }
 
+// SEC-FIX: Safe confirm/prompt
+function confirmDlg(msg) { return new Promise(res => { const m = modal(`<h2>تأیید</h2><p>${esc(msg)}</p><div style="display:flex;gap:10px;margin-top:14px"><button class="btn" data-ok style="flex:1">تأیید</button><button class="btn lt" data-no style="flex:1">انصراف</button></div>`); $('[data-ok]', m).onclick = () => { m.remove(); res(true); }; $('[data-no]', m).onclick = () => { m.remove(); res(false); }; }); }
+function promptDlg(msg, ph = '') { return new Promise(res => { const m = modal(`<h2>${esc(msg)}</h2><label class="f" style="margin:12px 0">توضیح<input data-in placeholder="${esc(ph)}"></label><div style="display:flex;gap:10px"><button class="btn" data-ok style="flex:1">ثبت</button><button class="btn lt" data-no style="flex:1">انصراف</button></div>`); $('[data-ok]', m).onclick = () => { const v = $('[data-in]', m).value; m.remove(); res(v); }; $('[data-no]', m).onclick = () => { m.remove(); res(null); }; }); }
+
 /* ============================================================
-   STATE & THEME
+   SEC-FIX: STATE & THEME
    ============================================================ */
 const DEFAULT_NAV = {
   superadmin: ['sa_buildings', 'admin_db', 'sa_dash', 'sa_requests', 'sa_profile'],
@@ -275,17 +277,10 @@ function saveNav(role, keys) {
   localStorage.setItem('bm_nav_' + role, JSON.stringify(keys));
 }
 
-const S = { token: null, me: null, view: 'dash', view_ctx: {}, renderId: 0 };
-function persistSession() {
-  window.__BM_TOKEN__ = S.token;
-  if (S.token) { sessionStorage.setItem('bm_token', S.token); sessionStorage.setItem('bm_me', JSON.stringify(S.me)); } 
-  else { sessionStorage.removeItem('bm_token'); sessionStorage.removeItem('bm_me'); }
-}
-function loadSession() {
-  S.token = sessionStorage.getItem('bm_token');
-  window.__BM_TOKEN__ = S.token;
-  try { S.me = JSON.parse(sessionStorage.getItem('bm_me') || 'null'); } catch { S.me = null; }
-}
+const S = { token: getToken(), me: null, view: 'dash', view_ctx: {}, renderId: 0 };
+try { S.me = JSON.parse(sessionStorage.getItem('bm_me') || 'null'); } catch { S.me = null; }
+
+function persistSession() { setToken(S.token, S.me); }
 function activeMemberships() { return (S.me?.memberships || []).filter(m => m.membership_status === 'active'); }
 function currentMembership() {
   const ms = activeMemberships();
@@ -441,7 +436,7 @@ function renderLoginForm() {
     <h2>ورود به سامانه</h2><p class="sub">نام کاربری و رمز عبور خود را وارد کنید.</p>
     <form id="lg" class="grid" style="gap:14px">
       <label class="f">نام کاربری<input id="lg-user" dir="ltr" autocomplete="username" required></label>
-      <label class="f">رمز عبور<input id="lg-pass" type="password" dir="ltr" autocomplete="current-password" inputmode="numeric" required></label>
+      <label class="f">رمز عبور<input id="lg-pass" type="password" dir="ltr" autocomplete="current-password" required></label>
       <button class="btn" type="submit" id="lg-btn">ورود</button>
       <p id="lg-err" style="color:var(--danger);margin:0;min-height:24px"></p>
       <a href="#" id="forgot" style="text-align:center;font-size:13px;color:var(--muted)">فراموشی رمز عبور</a>
@@ -469,10 +464,10 @@ function renderMustChangePassword() {
   <div class="login">
     <div class="art" style="padding:48px 24px 60px"><div class="logo"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#2d3463" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div><h1>تغییر رمز عبور</h1><p>برای ادامه باید رمز خود را تغییر دهید</p></div>
     <div class="form"><div class="card">
-      <h2>رمز جدید</h2><p class="sub">رمز باید ۴ تا ۸ رقم و فقط عدد باشد.</p>
+      <h2>رمز جدید</h2><p class="sub">${PWD_HINT}</p>
       <form id="cpf" class="grid" style="gap:14px">
-        <label class="f">رمز جدید<input id="cp-new" type="password" inputmode="numeric" dir="ltr" required maxlength="8"></label>
-        <label class="f">تکرار رمز<input id="cp-new2" type="password" inputmode="numeric" dir="ltr" required maxlength="8"></label>
+        <label class="f">رمز جدید<input id="cp-new" type="password" dir="ltr" required maxlength="64" autocomplete="new-password"></label>
+        <label class="f">تکرار رمز<input id="cp-new2" type="password" dir="ltr" required maxlength="64" autocomplete="new-password"></label>
         <button class="btn" type="submit" id="cp-btn">تغییر رمز و ادامه</button>
         <p id="cp-err" style="color:var(--danger);margin:0;min-height:24px"></p>
       </form>
@@ -482,7 +477,7 @@ function renderMustChangePassword() {
   $('#cp-logout').addEventListener('click', () => doLogout(true));
   $('#cpf').addEventListener('submit', async e => {
     e.preventDefault(); const np = $('#cp-new').value, np2 = $('#cp-new2').value;
-    if (!/^[0-9]{4,8}$/.test(np)) { $('#cp-err').textContent = 'رمز باید ۴ تا ۸ رقم باشد'; return; }
+    if (!isStrongPwd(np)) { $('#cp-err').textContent = PWD_HINT; return; }
     if (np !== np2) { $('#cp-err').textContent = 'تکرار رمز یکسان نیست'; return; }
     const btn = $('#cp-btn'), old = btn.textContent; btn.disabled = true; btn.textContent = 'در حال ذخیره...';
     try { await T('app_change_password', { p_new_password: np }); S.me.must_change_password = false; persistSession(); toastOk('رمز تغییر کرد'); await afterLogin(); }
@@ -503,7 +498,7 @@ function renderSuspended(reason) {
   $('#sus-logout').addEventListener('click', () => doLogout(true));
 }
 async function doLogout(silent = false) {
-  if (!silent && !confirm('آیا قصد خروج از حساب را دارید؟')) return;
+  if (!silent && !await confirmDlg('آیا قصد خروج از حساب را دارید؟')) return;
   const token = S.token; S.token = null; S.me = null; S.view = 'dash'; S.view_ctx = {}; persistSession();
   if (token && !silent) { try { await P('app_logout', { p_token: token }); } catch {} }
   renderLogin();
@@ -513,7 +508,7 @@ function forgotPasswordFlow() {
   $('#fp-body', m).innerHTML = `
     <form id="fp1" class="grid" style="gap:14px">
       <label class="f">نام کاربری<input id="fp-user" dir="ltr" required></label>
-      <label class="f">رمز فعلی<input id="fp-pass" type="password" dir="ltr" inputmode="numeric" required></label>
+      <label class="f">رمز فعلی<input id="fp-pass" type="password" dir="ltr" required></label>
       <button class="btn" type="submit">بررسی وضعیت</button>
       <p id="fp-err" style="color:var(--danger);margin:0;min-height:22px"></p>
     </form>`;
@@ -532,7 +527,7 @@ async function renderRegisterForm() {
   let buildings = [];
   try { buildings = await P('app_public_buildings'); } catch {}
   $('#auth-body').innerHTML = `
-    <h2>ثبت‌نام</h2><p class="sub">نوع ثبت‌نام خود را انتخاب کنید.</p>
+    <h2>ثبت‌نام</h2><p class="sub">${PWD_HINT}</p>
     <div class="grid" style="gap:10px" id="role-list">
       <button type="button" class="btn lt" data-role="building_manager" style="justify-content:flex-start;padding:14px 18px"><span style="font-size:22px;margin-left:10px">🏢</span><span style="text-align:right;line-height:1.4"><b style="display:block">مدیر ساختمان</b><small style="color:var(--muted);font-weight:400">ایجاد ساختمان جدید</small></span></button>
       <button type="button" class="btn lt" data-role="owner_resident" style="justify-content:flex-start;padding:14px 18px"><span style="font-size:22px;margin-left:10px">🏠</span><span style="text-align:right;line-height:1.4"><b style="display:block">مالک ساکن</b><small style="color:var(--muted);font-weight:400">در ملک خود سکونت دارم</small></span></button>
@@ -549,7 +544,7 @@ function renderRegisterFormFields(role, buildings) {
     <h2>ثبت‌نام ${isManager ? 'مدیر ساختمان' : RESIDENT_TYPES[role]}</h2><p class="sub">${isManager ? 'اطلاعات ساختمان و مدیر را وارد کنید.' : 'اطلاعات خود و واحد را وارد کنید.'}</p>
     <form id="rf" class="grid" style="gap:14px">
       <label class="f">نام کاربری (انگلیسی)<input id="rg-user" dir="ltr" required pattern="[A-Za-z][A-Za-z0-9_]{2,29}"></label>
-      <label class="f">رمز عبور (۴ تا ۸ رقم)<input id="rg-pass" type="password" inputmode="numeric" dir="ltr" required minlength="4" maxlength="8" pattern="[0-9]{4,8}"></label>
+      <label class="f">رمز عبور<input id="rg-pass" type="password" dir="ltr" required maxlength="64" autocomplete="new-password"><small style="font-weight:400">${PWD_HINT}</small></label>
       <label class="f">نام و نام خانوادگی<input id="rg-name" required></label>
       <label class="f">شماره موبایل<input id="rg-phone" dir="ltr" inputmode="tel"></label>
       <label class="f">ایمیل<input id="rg-email" type="email" dir="ltr"></label>
@@ -580,9 +575,11 @@ function renderRegisterFormFields(role, buildings) {
   }
   $('#rf').addEventListener('submit', async e => {
     e.preventDefault(); $('#rg-err').textContent = '';
+    const pwd = $('#rg-pass').value;
+    if (!isStrongPwd(pwd)) { $('#rg-err').textContent = PWD_HINT; return; }
     const btn = $('#rg-btn'), old = btn.textContent; btn.disabled = true; btn.textContent = 'در حال ارسال...';
     try {
-      const args = { p_username: $('#rg-user').value.trim(), p_password: $('#rg-pass').value, p_full_name: $('#rg-name').value.trim(), p_phone: $('#rg-phone').value.trim(), p_email: $('#rg-email').value.trim(), p_requested_role: role };
+      const args = { p_username: $('#rg-user').value.trim(), p_password: pwd, p_full_name: $('#rg-name').value.trim(), p_phone: $('#rg-phone').value.trim(), p_email: $('#rg-email').value.trim(), p_requested_role: role };
       if (isManager) {
         args.p_new_building_name = $('#rg-bname').value.trim(); args.p_new_building_unit_count = +$('#rg-ucount').value;
         if ($('#rg-resident').value === 'yes') { args.p_unit_no = +$('#rg-unit').value; args.p_area = +$('#rg-area').value; args.p_resident_count = +$('#rg-res-count').value; }
@@ -626,7 +623,6 @@ LINE_ICONS.services = ICONS.services;
 LINE_ICONS.db = ICONS.db;
 const lineIco = k => LINE_ICONS[k] || ICONS[k] || ICONS.services;
 
-// انتقال VIEWS به اینجا برای جلوگیری از خطای ReferenceError
 const VIEWS = {
   sa_dash: viewSuperAdminDash, sa_buildings: viewSuperAdminBuildings, sa_requests: viewSuperAdminRequests, sa_profile: viewProfile, sa_services: viewServices,
   admin_db: viewAdminDatabase, m_dash: viewManagerDash, m_payments: viewManagerPayments, m_requests: viewManagerRequests, m_report: viewManagerReport, m_services: viewServices, m_units: viewManagerUnits, m_expenses: viewManagerExpenses, m_rates: viewManagerRates, m_requests_pending: viewManagerPendingSignups, m_transfer: viewManagerTransfer,
@@ -703,7 +699,12 @@ function renderShell() {
   bindThemeSwatches();
   $('#top-logout').addEventListener('click', () => doLogout());
   $('#lo').addEventListener('click', () => doLogout());
-  $('#edit-nav-btn').addEventListener('click', () => { $('#who-pop').style.display = 'none'; showNavSettingsModal(roleKey, ALL_BUTTONS[roleKey]); });
+  
+  $('#edit-nav-btn').addEventListener('click', () => { 
+    $('#who-pop').style.display = 'none'; 
+    showNavSettingsModal(roleKey, ALL_BUTTONS[roleKey]); 
+  });
+
   $('#who-btn').addEventListener('click', e => { e.stopPropagation(); const pop = $('#who-pop'); pop.style.display = pop.style.display === 'none' ? 'block' : 'none'; });
   document.addEventListener('click', e => { const pop = $('#who-pop'); if (pop && !e.target.closest('#who-pop') && !e.target.closest('#who-btn')) pop.style.display = 'none'; });
   $('#go-profile').addEventListener('click', () => { $('#who-pop').style.display = 'none'; go('profile'); });
@@ -804,8 +805,9 @@ window.addEventListener('resize', () => {
 });
 
 /* ============================================================
-   VIEWS: DATABASE (NEW)
+   SEC-FIX: VIEWS: DATABASE
    ============================================================ */
+const SENS_COLS = ['password', 'pass_hash', 'password_hash', 'token', 'secret'];
 async function viewAdminDatabase(el) {
   let tables = [];
   try {
@@ -818,7 +820,7 @@ async function viewAdminDatabase(el) {
 
   el.innerHTML = `
     <h1>مدیریت دیتابیس</h1>
-    <p class="sub">مشاهده اطلاعات جداول (حداکثر ۱۰۰ رکورد)</p>
+    <p class="sub">مشاهده اطلاعات جداول (حداکثر ۱۰۰ رکورد). ستون‌های حساس مخفی هستند.</p>
     
     <div class="grid g3" style="margin-bottom:20px">
       ${tables.filter(t => !['users', 'logs', 'requests', 'payments', 'debts', 'transactions'].includes(t.table_name)).map(t => `
@@ -849,7 +851,7 @@ async function loadTableData(tableName, el) {
       return;
     }
 
-    const columns = Object.keys(data[0]);
+    const columns = Object.keys(data[0]).filter(c => !SENS_COLS.some(s => c.toLowerCase().includes(s)));
 
     content.innerHTML = `
       <div class="card" style="padding:0;overflow:hidden">
@@ -919,11 +921,11 @@ async function viewSuperAdminRequests(el) {
         </div>`).join('') || `<div class="empty"><div class="ico">📭</div><p>درخواستی وجود ندارد</p></div>`}
     </div>`;
   $$('[data-approve]', el).forEach(b => b.addEventListener('click', async () => {
-    if (!confirm('تایید این درخواست؟')) return;
+    if (!await confirmDlg('تایید این درخواست؟')) return;
     try { await T('app_admin_review_manager_request', { p_request_id: b.dataset.approve, p_approve: true }); toastOk('تایید شد'); go('sa_requests'); } catch (err) { showErr(err); }
   }));
-  $$('[data-reject]', el).forEach(b => b.addEventListener('click', () => {
-    const note = prompt('دلیل رد (اختیاری):'); if (note === null) return;
+  $$('[data-reject]', el).forEach(b => b.addEventListener('click', async () => {
+    const note = await promptDlg('دلیل رد (اختیاری):'); if (note === null) return;
     T('app_admin_review_manager_request', { p_request_id: b.dataset.reject, p_approve: false, p_review_note: note || null }).then(() => { toastOk('رد شد'); go('sa_requests'); }).catch(showErr);
   }));
 }
@@ -953,15 +955,34 @@ async function viewSuperAdminBuildings(el) {
       `).join('') || `<div class="empty"><div class="ico">🏢</div><p>ساختمانی وجود ندارد</p></div>`}
     </div>`;
 
-  $$('[data-suspend]', el).forEach(b => b.addEventListener('click', () => { const reason = prompt('علت تعلیق:'); if (!reason) return; T('app_admin_set_building_status', { p_building_id: b.dataset.suspend, p_new_status: 'suspended', p_reason: reason }).then(() => { toastOk('تعلیق شد'); go('sa_buildings'); }).catch(showErr); }));
-  $$('[data-activate]', el).forEach(b => b.addEventListener('click', () => { T('app_admin_set_building_status', { p_building_id: b.dataset.activate, p_new_status: 'active' }).then(() => { toastOk('فعال شد'); go('sa_buildings'); }).catch(showErr); }));
-  $$('[data-reset]', el).forEach(b => b.addEventListener('click', () => { if (!confirm('رمز مدیر به 1234 بازنشانی شود؟')) return; T('app_admin_reset_manager_password', { p_building_id: b.dataset.reset }).then(() => toastOk('رمز بازنشانی شد (1234)')).catch(showErr); }));
+  $$('[data-suspend]', el).forEach(b => b.addEventListener('click', async () => { 
+    const reason = await promptDlg('علت تعلیق:'); if (!reason) return; 
+    T('app_admin_set_building_status', { p_building_id: b.dataset.suspend, p_new_status: 'suspended', p_reason: reason }).then(() => { toastOk('تعلیق شد'); go('sa_buildings'); }).catch(showErr); 
+  }));
   
-  $$('[data-delete]', el).forEach(b => b.addEventListener('click', () => {
+  $$('[data-activate]', el).forEach(b => b.addEventListener('click', () => { 
+    T('app_admin_set_building_status', { p_building_id: b.dataset.activate, p_new_status: 'active' }).then(() => { toastOk('فعال شد'); go('sa_buildings'); }).catch(showErr); 
+  }));
+  
+  // SEC-FIX: استفاده از رمز تصادفی به جای 1234
+  $$('[data-reset]', el).forEach(b => b.addEventListener('click', async () => { 
+    if (!await confirmDlg('رمز مدیر ریست و رمز موقت صادر شود؟')) return; 
+    try {
+      const r = await T('app_admin_reset_manager_password', { p_building_id: b.dataset.reset });
+      if (r?.temp_password) {
+        modal(`<h2>رمز موقت صادر شد</h2><div class="card" style="background:#e3f6ea;text-align:center"><div class="sub">فقط یک‌بار نمایش داده می‌شود:</div><div dir="ltr" style="font-size:28px;font-weight:900;letter-spacing:3px">${esc(r.temp_password)}</div></div><button class="btn" style="width:100%;margin-top:12px" onclick="document.querySelector('.modal-bg').remove()">متوجه شدم</button>`);
+      } else {
+        toastOk('رمز بازنشانی شد');
+      }
+    } catch (e) { showErr(e); }
+  }));
+  
+  // SEC-FIX: باگ escape در نام
+  $$('[data-delete]', el).forEach(b => b.addEventListener('click', async () => {
     const bName = b.dataset.name;
-    if (!confirm(`⚠️ هشدار!\n\nآیا از حذف کامل ساختمان «${bName}» مطمئن هستید؟\nتمام اطلاعات برای همیشه پاک می‌شود!`)) return;
-    const confirm2 = prompt(`برای تایید نهایی، نام ساختمان را تایپ کنید:`);
-    if (confirm2 !== bName) { if (confirm2 !== null) toastErr('نام اشتباه است.'); return; }
+    if (!await confirmDlg(`آیا از حذف کامل ساختمان «${bName}» مطمئن هستید؟`)) return;
+    const confirm2 = await promptDlg(`برای تایید نهایی، نام ساختمان را دقیقاً تایپ کنید:`);
+    if (confirm2 !== bName) { if (confirm2 !== null) toastErr('نام اشتباه است. عملیات لغو شد.'); return; }
     T('app_admin_delete_building', { p_building_id: b.dataset.delete }).then(() => { toastOk('ساختمان حذف شد'); go('sa_buildings'); }).catch(showErr);
   }));
 }
@@ -1020,7 +1041,10 @@ async function viewManagerPayments(el) {
     ${list.length ? `<div class="grid g2">${list.map(p => `<div class="card"><div style="display:flex;justify-content:space-between;gap:8px;margin-bottom:8px"><b>${esc(p.full_name)}</b><span class="chip pd">در انتظار</span></div><div class="sub" style="margin:0 0 10px">واحد ${fa(p.unit_no)} · ${RESIDENT_TYPES[p.resident_type] || ''}</div><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><span>مبلغ: <b>${fmt(p.amount)}</b> تومان</span><small class="sub">${p.payment_date}</small></div>${p.description ? `<div class="sub" style="margin:0 0 12px">${esc(p.description)}</div>` : ''}<div style="display:flex;gap:8px"><button class="btn sm" data-approve="${p.payment_id}">تایید</button><button class="btn rd sm" data-reject="${p.payment_id}">رد</button></div></div>`).join('')}</div>` : `<div class="empty"><div class="ico">✅</div><p>پرداختی در انتظار تایید نیست</p></div>`}
     ${details?.payments?.length ? `<div class="sec-title" style="margin-top:26px">سابقه این ماه</div><div class="tbl-wrap"><table><thead><tr><th>واحد</th><th>مبلغ</th><th>وضعیت</th><th>تاریخ</th></tr></thead><tbody>${details.payments.map(p => `<tr><td>${p.membership_id ? p.membership_id.slice(0,6) : '—'}</td><td>${fmt(p.amount)}</td><td>${p.status === 'approved' ? '<span class="chip ok">تایید</span>' : p.status === 'pending' ? '<span class="chip pd">در انتظار</span>' : p.status === 'rejected' ? '<span class="chip no">رد</span>' : '<span class="chip ex">' + esc(p.status) + '</span>'}</td><td>${p.payment_date}</td></tr>`).join('')}</tbody></table></div>` : ''}`;
   $$('[data-approve]', el).forEach(b => b.addEventListener('click', () => approvePaymentModal(b.dataset.approve)));
-  $$('[data-reject]', el).forEach(b => b.addEventListener('click', () => { const note = prompt('دلیل رد (اختیاری):'); if (note === null) return; T('app_manager_review_payment', { p_payment_id: b.dataset.reject, p_approve: false, p_review_note: note || null }).then(() => { toastOk('رد شد'); go('m_payments'); }).catch(showErr); }));
+  $$('[data-reject]', el).forEach(b => b.addEventListener('click', async () => { 
+    const note = await promptDlg('دلیل رد (اختیاری):'); if (note === null) return; 
+    T('app_manager_review_payment', { p_payment_id: b.dataset.reject, p_approve: false, p_review_note: note || null }).then(() => { toastOk('رد شد'); go('m_payments'); }).catch(showErr); 
+  }));
 }
 function approvePaymentModal(paymentId) {
   const m = modal(`<h2>تایید پرداخت</h2><p class="sub">مبلغ پرداخت را بررسی کنید و سپس تایید نمایید.</p><label class="f" style="margin-bottom:14px">یادداشت (اختیاری)<input id="ap-note" placeholder="مثلاً: فیش بانکی بررسی شد"></label><div style="display:flex;gap:10px"><button class="btn" id="ap-go" style="flex:1">تایید و ثبت</button><button class="btn lt" id="ap-cancel">انصراف</button></div>`);
@@ -1045,8 +1069,8 @@ async function viewManagerPendingSignups(el) {
   const r = await T('app_manager_list_resident_requests');
   const list = r || [];
   el.innerHTML = `<h1>تایید ثبت‌نام‌ها</h1><p class="sub">${fa(list.length)} درخواست در انتظار بررسی</p>${list.length ? `<div class="grid g2">${list.map(r => `<div class="card"><div style="display:flex;justify-content:space-between;gap:8px;margin-bottom:10px;flex-wrap:wrap"><b>${esc(r.full_name)}</b><span class="chip pd">${RESIDENT_TYPES[r.requested_role] || r.requested_role}</span></div><div class="sub" style="margin:0 0 10px;line-height:1.9">نام کاربری: <b dir="ltr">${esc(r.username)}</b><br>واحد: ${fa(r.unit_no)} · متراژ: ${fa(r.area)}${r.resident_count ? ` · ساکنین: ${fa(r.resident_count)}` : ''}<br>موبایل: ${esc(r.phone || '—')} · ایمیل: ${esc(r.email || '—')}</div><div style="display:flex;gap:8px"><button class="btn sm" data-ok="${r.id}">تایید</button><button class="btn rd sm" data-no="${r.id}">رد</button></div></div>`).join('')}</div>` : `<div class="empty"><div class="ico">📭</div><p>درخواستی وجود ندارد</p></div>`}`;
-  $$('[data-ok]', el).forEach(b => b.addEventListener('click', async () => { if (!confirm('تایید این ثبت‌نام؟')) return; try { await T('app_manager_review_resident_request', { p_request_id: b.dataset.ok, p_approve: true }); toastOk('تایید شد'); go('m_requests_pending'); } catch (err) { showErr(err); } }));
-  $$('[data-no]', el).forEach(b => b.addEventListener('click', () => { const note = prompt('دلیل رد (اختیاری):'); if (note === null) return; T('app_manager_review_resident_request', { p_request_id: b.dataset.no, p_approve: false, p_review_note: note || null }).then(() => { toastOk('رد شد'); go('m_requests_pending'); }).catch(showErr); }));
+  $$('[data-ok]', el).forEach(b => b.addEventListener('click', async () => { if (!await confirmDlg('تایید این ثبت‌نام؟')) return; try { await T('app_manager_review_resident_request', { p_request_id: b.dataset.ok, p_approve: true }); toastOk('تایید شد'); go('m_requests_pending'); } catch (err) { showErr(err); } }));
+  $$('[data-no]', el).forEach(b => b.addEventListener('click', async () => { const note = await promptDlg('دلیل رد (اختیاری):'); if (note === null) return; T('app_manager_review_resident_request', { p_request_id: b.dataset.no, p_approve: false, p_review_note: note || null }).then(() => { toastOk('رد شد'); go('m_requests_pending'); }).catch(showErr); }));
 }
 async function viewManagerUnits(el) {
   const m = currentMembership(); if (!m) return;
@@ -1055,7 +1079,7 @@ async function viewManagerUnits(el) {
   const byUnit = {}; members.forEach(x => { if (!byUnit[x.unit_no]) byUnit[x.unit_no] = []; byUnit[x.unit_no].push(x); });
   el.innerHTML = `<h1>واحدها و ساکنین</h1><p class="sub">${fa(Object.keys(byUnit).length)} واحد ثبت‌شده</p><div class="grid g2">${Object.entries(byUnit).sort((a, b) => b[0] - a[0]).map(([unit, arr]) => `<div class="card"><h2 style="margin:0 0 12px">واحد ${fa(unit)}</h2>${arr.map(x => `<div style="padding:10px 0;border-bottom:1px dashed var(--line)"><div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap"><b>${esc(x.full_name)}</b><span class="chip ${x.membership_status === 'active' ? 'ok' : 'ex'}">${x.membership_status === 'active' ? 'فعال' : x.membership_status}</span></div><div class="sub" style="margin:4px 0">${RESIDENT_TYPES[x.resident_type] || ''} · <span dir="ltr">${esc(x.username)}</span></div><div class="sub" style="margin:4px 0">${esc(x.phone || 'بدون موبایل')}</div><div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap"><button class="btn lt sm" data-edit="${x.membership_id}">ویرایش</button>${x.membership_status === 'active' ? `<button class="btn rd sm" data-end="${x.membership_id}">پایان عضویت</button>` : ''}</div></div>`).join('')}</div>`).join('') || `<div class="empty"><div class="ico">🏢</div><p>ساکنی ثبت نشده</p></div>`}</div>`;
   $$('[data-edit]', el).forEach(b => b.addEventListener('click', () => { const mem = members.find(x => x.membership_id === b.dataset.edit); if (mem) editMemberModal(mem, m.building_id); }));
-  $$('[data-end]', el).forEach(b => b.addEventListener('click', () => { if (!confirm('پایان عضویت این ساکن؟ (تاریخچه مالی حفظ می‌شود)')) return; T('app_manager_end_member_membership', { p_building_id: m.building_id, p_membership_id: b.dataset.end }).then(() => { toastOk('عضویت پایان یافت'); go('m_units'); }).catch(showErr); }));
+  $$('[data-end]', el).forEach(b => b.addEventListener('click', async () => { if (!await confirmDlg('پایان عضویت این ساکن؟ (تاریخچه مالی حفظ می‌شود)')) return; T('app_manager_end_member_membership', { p_building_id: m.building_id, p_membership_id: b.dataset.end }).then(() => { toastOk('عضویت پایان یافت'); go('m_units'); }).catch(showErr); }));
 }
 function editMemberModal(mem, bid) {
   const m = modal(`<h2>ویرایش ساکن</h2><p class="sub">${esc(mem.full_name)} · واحد ${fa(mem.unit_no)}</p><form id="em" class="grid" style="gap:14px"><label class="f">نام و نام خانوادگی<input id="em-name" value="${esc(mem.full_name)}" required></label><label class="f">شماره موبایل<input id="em-phone" dir="ltr" value="${esc(mem.phone || '')}"></label><label class="f">ایمیل<input id="em-email" type="email" dir="ltr" value="${esc(mem.email || '')}"></label><button class="btn" type="submit">ذخیره</button></form>`);
@@ -1071,7 +1095,7 @@ async function viewManagerExpenses(el) {
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px"><div><h1 style="margin:0">هزینه‌ها</h1><p class="sub" style="margin:0">مدیریت هزینه‌های ساختمان</p></div><button class="btn" id="new-exp">+ ثبت هزینه جدید</button></div>
     ${expenses.length ? `<div class="grid g2">${expenses.map(e => `<div class="card"><div style="display:flex;justify-content:space-between;gap:8px;margin-bottom:8px"><b>${esc(e.description)}</b><span class="chip ${e.expense_status === 'active' ? 'ok' : 'no'}">${e.expense_status === 'active' ? 'فعال' : 'برگشت‌خورده'}</span></div><div class="sub" style="margin:0 0 8px">مبلغ: <b>${fmt(e.amount)}</b> تومان · ${e.expense_date}</div><div class="sub" style="margin:0 0 10px">روش تسهیم: ${allocationLabel(e.allocation_method)}</div>${e.expense_status === 'active' ? `<button class="btn rd sm" data-reverse="${e.id}">برگشت هزینه</button>` : ''}</div>`).join('')}</div>` : `<div class="empty"><div class="ico">💰</div><p>هزینه‌ای در این ماه ثبت نشده</p></div>`}`;
   $('#new-exp', el).addEventListener('click', () => newExpenseModal(bid, members));
-  $$('[data-reverse]', el).forEach(b => b.addEventListener('click', () => { const reason = prompt('دلیل برگشت هزینه:'); if (!reason || reason.length < 3) { toastErr('دلیل باید حداقل ۳ کاراکتر باشد'); return; } T('app_manager_reverse_expense', { p_building_id: bid, p_expense_id: b.dataset.reverse, p_reason: reason }).then(() => { toastOk('برگشت خورد'); go('m_expenses'); }).catch(showErr); }));
+  $$('[data-reverse]', el).forEach(b => b.addEventListener('click', async () => { const reason = await promptDlg('دلیل برگشت هزینه:'); if (!reason || reason.length < 3) { toastErr('دلیل باید حداقل ۳ کاراکتر باشد'); return; } T('app_manager_reverse_expense', { p_building_id: bid, p_expense_id: b.dataset.reverse, p_reason: reason }).then(() => { toastOk('برگشت خورد'); go('m_expenses'); }).catch(showErr); }));
 }
 function newExpenseModal(bid, members) {
   const m = modal(`
@@ -1100,7 +1124,7 @@ function newExpenseModal(bid, members) {
     if (method === 'none') { wrap.style.display = 'none'; return; }
     wrap.style.display = '';
     listEl.innerHTML = members.map(x => `<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px dashed var(--line)"><input type="checkbox" class="alloc-check" data-mid="${x.membership_id}" checked style="width:18px;height:18px;accent-color:var(--navy)"><span style="flex:1;font-size:13px">${esc(x.full_name)} <small style="color:var(--muted)">(واحد ${fa(x.unit_no)})</small></span>${method === 'manual' ? `<input type="text" class="alloc-amount" inputmode="numeric" placeholder="مبلغ" style="width:120px;min-height:36px;padding:4px 8px">` : ''}</div>`).join('');
-    attachNumericInputIn(listEl, '.alloc-amount');
+    $$('.alloc-amount', listEl).forEach(inp => inp.addEventListener('input', e => { const n = toNum(e.target.value); e.target.value = n ? fmt(n) : ''; }));
   };
   methodSel.addEventListener('change', buildAllocList); buildAllocList();
   $('#nef', m).addEventListener('submit', async e => {
@@ -1128,7 +1152,8 @@ async function viewManagerRates(el) {
   let settings = null;
   try { const fund = await T('app_manager_get_fund_summary', { p_building_id: bid }); settings = { accounting_start_date: fund.accounting_start_date, opening_balance: fund.opening_balance }; } catch (e) {}
   el.innerHTML = `<h1>تنظیمات مالی</h1><p class="sub">تاریخ شروع حسابداری و موجودی اولیه صندوق</p><form id="sf" class="card grid" style="gap:14px;max-width:640px"><label class="f">تاریخ شروع حسابداری<input id="s-start" class="date-picker-input" readonly placeholder="انتخاب تاریخ" required></label><label class="f">موجودی اولیه صندوق (تومان)<input id="s-open" inputmode="numeric" value="${fmt(settings?.opening_balance || 0)}" required></label><button class="btn" type="submit">ذخیره تنظیمات</button></form><div class="card" style="margin-top:20px;background:#fef3c7;color:#92400e"><b>⚠️ توجه:</b> تغییر تاریخ شروع حسابداری فقط روی تراکنش‌های بعد از آن تاریخ اعمال می‌شود.</div>`;
-  attachNumericInputIn(el, '#s-open'); bindDatePickers(el);
+  $$('#s-open', el).forEach(inp => inp.addEventListener('input', e => { const n = toNum(e.target.value); e.target.value = n ? fmt(n) : ''; }));
+  bindDatePickers(el);
   if (settings?.accounting_start_date) { $('#s-start', el).value = settings.accounting_start_date; $('#s-start', el).dataset.gregorian = settings.accounting_start_date; bindDatePickers(el); }
   $('#sf', el).addEventListener('submit', async e => { e.preventDefault(); try { await T('app_manager_set_finance_settings', { p_building_id: bid, p_accounting_start_date: $('#s-start', el).dataset.gregorian || $('#s-start', el).value, p_opening_balance: toNum($('#s-open', el).value) }); toastOk('ذخیره شد'); go('m_rates'); } catch (err) { showErr(err); } });
 }
@@ -1138,7 +1163,7 @@ async function viewManagerTransfer(el) {
   const r = await T('app_manager_list_building_members', { p_building_id: bid });
   const residents = (r.members || []).filter(x => x.access_role === 'resident' && x.membership_status === 'active' && x.unit_no);
   el.innerHTML = `<h1>انتقال مدیریت</h1><p class="sub">انتقال نقش مدیر به یکی از ساکنین ساختمان</p><div class="card" style="background:#fef3c7;color:#92400e;margin-bottom:20px"><b>⚠️ توجه:</b> بعد از انتقال مدیریت، دسترسی شما به عنوان مدیر سلب می‌شود و به عنوان ساکن عادی ادامه می‌دهید.</div>${residents.length ? `<div class="grid g2">${residents.map(x => `<div class="card"><b>${esc(x.full_name)}</b><div class="sub" style="margin:6px 0">واحد ${fa(x.unit_no)} · ${RESIDENT_TYPES[x.resident_type] || ''}</div><div class="sub" style="margin:0 0 12px" dir="ltr">${esc(x.username)}</div><button class="btn sm" data-transfer="${x.membership_id}">انتقال مدیریت به این ساکن</button></div>`).join('')}</div>` : `<div class="empty"><div class="ico">👥</div><p>ساکن فعالی برای انتقال مدیریت وجود ندارد</p></div>`}`;
-  $$('[data-transfer]', el).forEach(b => b.addEventListener('click', async () => { if (!confirm('آیا مطمئنید؟')) return; toastErr('RPC انتقال مدیریت هنوز پیاده‌سازی نشده'); }));
+  $$('[data-transfer]', el).forEach(b => b.addEventListener('click', async () => { if (!await confirmDlg('آیا مطمئنید؟')) return; toastErr('این قابلیت هنوز پیاده‌سازی نشده'); }));
 }
 async function viewManagerReport(el) {
   const m = currentMembership(); if (!m) return;
@@ -1165,28 +1190,16 @@ async function viewManagerReport(el) {
     body.innerHTML = '<p class="sub no-print">در حال بارگذاری...</p>';
     
     try {
-      // 1. دریافت اطلاعات پایه
       const g = jalaliToGregorian(y, mo, 1);
       const r = await T('app_manager_get_monthly_report', { p_building_id: bid, p_year: g.getFullYear(), p_month: g.getMonth() + 1 });
       const membersRes = await T('app_manager_list_building_members', { p_building_id: bid });
       const members = membersRes.members || [];
       const balances = await T('app_manager_get_member_balances', { p_building_id: bid }).catch(()=>null);
 
-      // 2. پیدا کردن هزینه‌های ثبت‌شده در این ماه (برای ساختن ستون‌ها)
       const monthExpenses = r.expenses || [];
-      
-      // دسته‌بندی هزینه‌ها: ما فقط هزینه‌هایی را نشان می‌دهیم که در این ماه ثبت شده‌اند
       const activeCategories = [];
-      const catMap = {
-        charge: 'شارژ ماهیانه',
-        water: 'قبض آب',
-        gas: 'قبض گاز',
-        electric: 'قبض برق',
-        repair: 'بازسازی',
-        parking: 'اجاره پارکینگ'
-      };
+      const catMap = { charge: 'شارژ ماهیانه', water: 'قبض آب', gas: 'قبض گاز', electric: 'قبض برق', repair: 'بازسازی', parking: 'اجاره پارکینگ' };
       
-      // استخراج دسته‌های یکتا از توضیحات هزینه‌ها (چون دیتابیس نام دسته را ذخیره نمی‌کند، از نام گذاری شما استفاده می‌کنیم)
       monthExpenses.forEach(e => {
           let cat = 'other';
           if (e.description.includes('شارژ')) cat = 'charge';
@@ -1199,47 +1212,24 @@ async function viewManagerReport(el) {
           if (!activeCategories.includes(cat) && cat !== 'other') activeCategories.push(cat);
       });
 
-      // اگر هیچ هزینه‌ای ثبت نشده بود، حداقل ستون بدهی کل را نشان می‌دهیم
-      if (activeCategories.length === 0) {
-          // فقط ستون‌های اصلی
-      }
-
-      // 3. ساخت هدر جدول به صورت پویا
       let headerCols = `<th style="background-color:#D9E1F2; border:1px solid #333; padding:8px; color:#000; font-size:20px; font-weight:bold;">واحد</th>`;
-      
-      activeCategories.forEach(cat => {
-          headerCols += `<th style="background-color:#D9E1F2; border:1px solid #333; padding:8px; color:#000; font-size:20px; font-weight:bold;">${catMap[cat]}</th>`;
-      });
-      
+      activeCategories.forEach(cat => { headerCols += `<th style="background-color:#D9E1F2; border:1px solid #333; padding:8px; color:#000; font-size:20px; font-weight:bold;">${catMap[cat]}</th>`; });
       headerCols += `<th style="background-color:#D9E1F2; border:1px solid #333; padding:8px; color:#000; font-size:20px; font-weight:bold;">جمع مبلغ<br>قابل پرداخت</th>`;
 
-      // 4. ساخت ردیف‌های جدول
       let tableRows = '';
-      
       members.filter(x => x.access_role === 'resident' && x.membership_status === 'active').forEach(mem => {
           const unitNo = mem.unit_no || '—';
           const rType = RESIDENT_TYPES[mem.resident_type] || '';
           const memBalance = balances?.members?.find(x => x.membership_id === mem.membership_id);
           const remaining = memBalance?.outstanding_debt || 0;
           
-          // رنگ‌بندی
-          let rowBg = '#ffffff'; 
-          let textColor = '#000000';
+          let rowBg = '#ffffff'; let textColor = '#000000';
           if (remaining <= 0) { rowBg = '#00B050'; textColor = '#ffffff'; }
           else if (remaining > 0) { rowBg = '#FFC000'; textColor = '#000000'; }
 
-          let rowHtml = `
-            <tr style="background-color:${rowBg}; color:${textColor};">
-              <td style="border:1px solid #333; padding:10px; text-align:center; font-size:20px; font-weight:bold;">
-                واحد ${fa(unitNo)}<br>
-                <span style="font-size:13px; font-weight:normal; opacity:0.8;">${esc(rType)}</span>
-              </td>`;
+          let rowHtml = `<tr style="background-color:${rowBg}; color:${textColor};"><td style="border:1px solid #333; padding:10px; text-align:center; font-size:20px; font-weight:bold;">واحد ${fa(unitNo)}<br><span style="font-size:13px; font-weight:normal; opacity:0.8;">${esc(rType)}</span></td>`;
 
-          // محاسبه سهم هر واحد از هر دسته (تقریبی بر اساس میانگین)
           activeCategories.forEach(cat => {
-              // ما در دیتابیس تفکیک دقیق بدهی هر واحد به هر دسته را نداریم، 
-              // اما برای نمایش در جدول، مجموع هزینه آن دسته را تقسیم بر تعداد واحدها می‌کنیم
-              // (این فقط یک نمایش تقریبی است تا جدول خالی نباشد)
               const catExpenses = monthExpenses.filter(e => {
                   if (cat === 'charge' && e.description.includes('شارژ')) return true;
                   if (cat === 'water' && e.description.includes('آب')) return true;
@@ -1252,40 +1242,23 @@ async function viewManagerReport(el) {
               const totalCatAmount = catExpenses.reduce((sum, e) => sum + e.amount, 0);
               const memberCount = members.filter(x => x.access_role === 'resident' && x.membership_status === 'active').length || 1;
               const perUnit = totalCatAmount / memberCount;
-              
               rowHtml += `<td style="border:1px solid #333; padding:10px; text-align:center; font-size:24px; font-weight:bold;">${perUnit > 0 ? fmt(perUnit) : '—'}</td>`;
           });
 
-          // ستون جمع نهایی
-          rowHtml += `<td style="border:1px solid #333; padding:10px; text-align:center; font-size:24px; font-weight:bold;">
-                ${remaining <= 0 ? 'تسویه' : fmt(remaining)}
-              </td>
-            </tr>`;
-          
+          rowHtml += `<td style="border:1px solid #333; padding:10px; text-align:center; font-size:24px; font-weight:bold;">${remaining <= 0 ? 'تسویه' : fmt(remaining)}</td></tr>`;
           tableRows += rowHtml;
       });
 
-      if (!tableRows) {
-        tableRows = `<tr><td colspan="${activeCategories.length + 2}" style="text-align:center; padding:20px; font-size:20px; font-weight:bold;">اطلاعاتی برای این دوره وجود ندارد.</td></tr>`;
-      }
+      if (!tableRows) tableRows = `<tr><td colspan="${activeCategories.length + 2}" style="text-align:center; padding:20px; font-size:20px; font-weight:bold;">اطلاعاتی برای این دوره وجود ندارد.</td></tr>`;
 
-      // رندر نهایی
       body.innerHTML = `
         <div id="printable-area" style="border-radius:8px; overflow-x:auto; border:1px solid #333; background:#fff; width:100%; box-sizing:border-box; padding: 4px;">
           <table style="width:100%; border-collapse:collapse; font-size:14px; text-align:center; direction:rtl; border:2px solid #000;">
             <thead>
-              <tr>
-                <th colspan="${activeCategories.length + 2}" style="background-color:#7A9CBE; color:white; padding:12px; font-size:24px; font-weight:bold; border:1px solid #333;">
-                  گزارش ${MONTHS[mo-1]} ماه - ${fa(y)}/${String(mo).padStart(2, '0')}
-                </th>
-              </tr>
-              <tr>
-                ${headerCols}
-              </tr>
+              <tr><th colspan="${activeCategories.length + 2}" style="background-color:#7A9CBE; color:white; padding:12px; font-size:24px; font-weight:bold; border:1px solid #333;">گزارش ${MONTHS[mo-1]} ماه - ${fa(y)}/${String(mo).padStart(2, '0')}</th></tr>
+              <tr>${headerCols}</tr>
             </thead>
-            <tbody>
-              ${tableRows}
-            </tbody>
+            <tbody>${tableRows}</tbody>
           </table>
         </div>
         <div class="no-print" style="margin-top:16px; display:flex; justify-content:space-around; text-align:center; flex-wrap:wrap; gap:10px; background: var(--card); padding: 16px; border-radius: 16px;">
@@ -1295,10 +1268,7 @@ async function viewManagerReport(el) {
         </div>
       `;
 
-      // دکمه چاپ
       $('#pr-btn', el).addEventListener('click', () => window.print());
-
-      // دکمه گرفتن عکس
       $('#img-btn', el).addEventListener('click', async () => {
         try {
           toastOk('در حال آماده‌سازی عکس...');
@@ -1311,9 +1281,7 @@ async function viewManagerReport(el) {
         } catch (err) { showErr(new Error('خطا در گرفتن عکس: ' + err.message)); }
       });
 
-    } catch (err) { 
-      body.innerHTML = `<div class="card" style="color:var(--danger)">خطا در دریافت گزارش: ${esc(err.message)}</div>`; 
-    }
+    } catch (err) { body.innerHTML = `<div class="card" style="color:var(--danger)">خطا در دریافت گزارش: ${esc(err.message)}</div>`; }
   };
 
   $('#rp-year', el).addEventListener('change', loadReport);
@@ -1353,7 +1321,8 @@ async function viewResidentPay(el) {
   const charges = s.charges || [];
   el.innerHTML = `<h1>پرداخت</h1><p class="sub">${esc(m.building_name)} · واحد ${fa(s.unit_no)}</p>${charges.length ? `<form id="pay-form" class="card"><h2>انتخاب اقلام پرداختی</h2><p class="sub">تیک بزنید و مبلغ هر آیتم را بررسی کنید.</p><div id="pay-list" style="margin:16px 0">${charges.map(c => `<div class="debt-row" data-item-id="${c.id}" data-item-type="${c.item_type}"><input type="checkbox" class="pay-check" checked><span style="flex:1;font-weight:700">${esc(c.description)}</span><input type="text" class="pay-amount" inputmode="numeric" value="${fmt(c.amount)}"><span style="font-size:11px;color:var(--muted)">تومان</span></div>`).join('')}</div><div class="card" style="background:var(--bg);margin-bottom:14px;display:flex;justify-content:space-between;padding:14px 18px"><b>جمع انتخاب‌شده:</b><b id="pay-total" style="color:var(--navy)">0 تومان</b></div><div class="grid g2" style="gap:14px"><label class="f">تاریخ پرداخت<input id="pay-date" class="date-picker-input" readonly placeholder="انتخاب تاریخ" required></label><label class="f">توضیحات (اختیاری)<input id="pay-note" placeholder="مثلاً: فیش بانکی"></label></div><button class="btn" type="submit" style="margin-top:14px;width:100%">ثبت پرداخت</button></form>` : `<div class="empty"><div class="ico">✅</div><p>بدهی برای پرداخت وجود ندارد</p></div>`}`;
   if (!charges.length) return;
-  attachNumericInputIn(el, '.pay-amount'); bindDatePickers(el);
+  $$('.pay-amount', el).forEach(inp => inp.addEventListener('input', e => { const n = toNum(e.target.value); e.target.value = n ? fmt(n) : ''; }));
+  bindDatePickers(el);
   const updateTotal = () => { let total = 0; $$('.debt-row', el).forEach(row => { if ($('.pay-check', row).checked) total += toNum($('.pay-amount', row).value); }); $('#pay-total', el).textContent = fmt(total) + ' تومان'; };
   $$('.pay-check, .pay-amount', el).forEach(x => x.addEventListener('input', updateTotal)); updateTotal();
   $('#pay-form', el).addEventListener('submit', async e => {
@@ -1387,11 +1356,11 @@ function viewServices(el) {
 }
 async function viewProfile(el) {
   const m = currentMembership();
-  el.innerHTML = `<h1>پروفایل</h1><p class="sub">اطلاعات حساب شما</p><div class="card" style="margin-bottom:20px"><h2>اطلاعات حساب</h2><div class="grid g2" style="margin-top:12px"><div><small class="sub">نام کاربری</small><div style="font-weight:800;direction:ltr;text-align:right">${esc(S.me.username)}</div></div><div><small class="sub">نقش</small><div style="font-weight:800">${S.me.is_superadmin ? 'ادمین اصلی' : (m?.access_role === 'manager' ? 'مدیر ساختمان' : (m?.resident_type ? (m.resident_type === 'owner_resident' ? 'مالک ساکن' : m.resident_type === 'tenant' ? 'مستاجر' : 'مالک') : '—'))}</div></div>${m ? `<div><small class="sub">ساختمان</small><div style="font-weight:800">${esc(m.building_name)}</div></div>` : ''}</div></div><form id="pf-pass" class="card grid" style="gap:14px;max-width:640px;margin-top:20px"><h2>تغییر رمز عبور</h2><label class="f">رمز جدید (۴ تا ۸ رقم)<input id="p-new" type="password" inputmode="numeric" dir="ltr" maxlength="8"></label><label class="f">تکرار رمز<input id="p-new2" type="password" inputmode="numeric" dir="ltr" maxlength="8"></label><button class="btn lt" type="submit">تغییر رمز</button></form><div class="card" style="margin-top:20px"><h2>تم رنگی</h2>${themeSwatchesHTML()}</div>`;
+  el.innerHTML = `<h1>پروفایل</h1><p class="sub">اطلاعات حساب شما</p><div class="card" style="margin-bottom:20px"><h2>اطلاعات حساب</h2><div class="grid g2" style="margin-top:12px"><div><small class="sub">نام کاربری</small><div style="font-weight:800;direction:ltr;text-align:right">${esc(S.me.username)}</div></div><div><small class="sub">نقش</small><div style="font-weight:800">${S.me.is_superadmin ? 'ادمین اصلی' : (m?.access_role === 'manager' ? 'مدیر ساختمان' : (m?.resident_type ? (m.resident_type === 'owner_resident' ? 'مالک ساکن' : m.resident_type === 'tenant' ? 'مستاجر' : 'مالک') : '—'))}</div></div>${m ? `<div><small class="sub">ساختمان</small><div style="font-weight:800">${esc(m.building_name)}</div></div>` : ''}</div></div><form id="pf-pass" class="card grid" style="gap:14px;max-width:640px;margin-top:20px"><h2>تغییر رمز عبور</h2><p class="sub">${PWD_HINT}</p><label class="f">رمز جدید<input id="p-new" type="password" dir="ltr" maxlength="64" autocomplete="new-password"></label><label class="f">تکرار رمز<input id="p-new2" type="password" dir="ltr" maxlength="64"></label><button class="btn lt" type="submit">تغییر رمز</button></form><div class="card" style="margin-top:20px"><h2>تم رنگی</h2>${themeSwatchesHTML()}</div>`;
   bindThemeSwatches(el);
   $('#pf-pass').addEventListener('submit', async e => {
     e.preventDefault(); const np = $('#p-new').value, np2 = $('#p-new2').value;
-    if (!/^[0-9]{4,8}$/.test(np)) { toastErr('رمز باید ۴ تا ۸ رقم باشد'); return; }
+    if (!isStrongPwd(np)) { toastErr(PWD_HINT); return; }
     if (np !== np2) { toastErr('تکرار رمز یکسان نیست'); return; }
     try { await T('app_change_password', { p_new_password: np }); S.me.must_change_password = false; persistSession(); toastOk('رمز تغییر کرد'); } catch (err) { showErr(err); }
   });
@@ -1400,7 +1369,6 @@ async function viewProfile(el) {
 /* ============================================================
    INIT
    ============================================================ */
-loadSession();
 if (S.token) { afterLogin(); } else { renderLogin(); }
 
 window.addEventListener('popstate', () => {
