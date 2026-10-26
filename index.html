@@ -130,118 +130,21 @@ tr:hover td { background: var(--bg); }
 /* ============================================================
    NEW BOTTOM NAV WITH NOTCH & ANIMATION
    ============================================================ */
-.bnav { 
-  position: fixed; 
-  bottom: 0; 
-  left: 0; 
-  right: 0; 
-  z-index: 50; 
-  height: 84px; 
-  pointer-events: none; 
-}
-.bnav-in { 
-  position: relative; 
-  max-width: 640px; 
-  margin: auto; 
-  height: 100%; 
-  pointer-events: auto; 
-}
-.bnav-bg { 
-  position: absolute; 
-  inset: auto 0 0 0; 
-  height: 74px; 
-  background: var(--card); 
-  border-top: 1px solid var(--line); 
-  border-radius: 26px 26px 0 0; 
-  box-shadow: 0 -8px 30px rgba(0,0,0,.08); 
-  z-index: 1;
-}
-.bnav-items { 
-  position: absolute; 
-  inset: auto 0 0 0; 
-  height: 74px; 
-  display: grid; 
-  grid-template-columns: repeat(5,1fr); 
-  z-index: 3;
-}
-.bnav-items button { 
-  background: none; 
-  border: 0; 
-  cursor: pointer; 
-  display: flex; 
-  flex-direction: column; 
-  align-items: center; 
-  justify-content: center; 
-  gap: 2px; 
-  color: var(--muted); 
-  font-size: 11.5px; 
-  font-weight: 700; 
-  transition: opacity .3s, transform .3s var(--ease); 
-  padding-bottom: 6px; 
-}
-.bnav-items button svg { 
-  width: 26px; 
-  height: 26px; 
-}
-.bnav-items button.on { 
-  opacity: 1; 
-  transform: none; 
-  color: var(--navy);
-  z-index: 5;
-}
-/* Keep the active tab label visible; only its icon sits behind the floating diamond. */
-.bnav-items button.on svg {
-  opacity: 0;
-}
+.bnav { position: fixed; bottom: 0; left: 0; right: 0; z-index: 50; height: 84px; pointer-events: none; }
+.bnav-in { position: relative; max-width: 640px; margin: auto; height: 100%; pointer-events: auto; }
+.bnav-bg { position: absolute; inset: auto 0 0 0; height: 74px; background: var(--card); border-top: 1px solid var(--line); border-radius: 26px 26px 0 0; box-shadow: 0 -8px 30px rgba(0,0,0,.08); z-index: 1; }
+.bnav-items { position: absolute; inset: auto 0 0 0; height: 74px; display: grid; grid-template-columns: repeat(5,1fr); z-index: 3; }
+.bnav-items button { background: none; border: 0; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: var(--muted); font-size: 11.5px; font-weight: 700; transition: opacity .3s, transform .3s var(--ease); padding-bottom: 6px; }
+.bnav-items button svg { width: 26px; height: 26px; }
+.bnav-items button.on { opacity: 1; transform: none; color: var(--navy); z-index: 5; }
+.bnav-items button.on svg { opacity: 0; }
 
-.bnav-diamond-wrap {
-  position: absolute;
-  top: -43px;
-  width: 80px;
-  height: 80px;
-  margin-right: -40px;
-  z-index: 4;
-  transition: right 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
-  pointer-events: none;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-.bnav-diamond {
-  width: 60px;
-  height: 60px;
-  border-radius: 19px;
-  background: var(--card);
-  border: 1px solid var(--line);
-  box-shadow: 0 10px 26px rgba(0,0,0,.15);
-  display: grid;
-  place-items: center;
-  transform: rotate(45deg);
-  pointer-events: none;
-}
-.bnav-diamond > span {
-  transform: rotate(-45deg);
-  display: grid;
-  place-items: center;
-  color: var(--navy);
-}
-.bnav-diamond svg {
-  width: 26px;
-  height: 26px;
-}
+.bnav-diamond-wrap { position: absolute; top: -43px; width: 80px; height: 80px; margin-right: -40px; z-index: 4; transition: right 0.45s cubic-bezier(0.34, 1.56, 0.64, 1); pointer-events: none; display: flex; justify-content: center; align-items: center; }
+.bnav-diamond { width: 60px; height: 60px; border-radius: 19px; background: var(--card); border: 1px solid var(--line); box-shadow: 0 10px 26px rgba(0,0,0,.15); display: grid; place-items: center; transform: rotate(45deg); pointer-events: none; }
+.bnav-diamond > span { transform: rotate(-45deg); display: grid; place-items: center; color: var(--navy); }
+.bnav-diamond svg { width: 26px; height: 26px; }
 
-.bnav-notch {
-  position: absolute;
-  top: 10px;
-  width: 100px;
-  height: 44px;
-  background: var(--bg);
-  border-radius: 0 0 50% 50%;
-  box-shadow: 0 8px 12px rgba(0,0,0,.045);
-  z-index: 2;
-  pointer-events: none;
-  transition: right 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
+.bnav-notch { position: absolute; top: 10px; width: 100px; height: 44px; background: var(--bg); border-radius: 0 0 50% 50%; box-shadow: 0 8px 12px rgba(0,0,0,.045); z-index: 2; pointer-events: none; transition: right 0.45s cubic-bezier(0.34, 1.56, 0.64, 1); }
 
 .bank-card { position: relative; overflow: hidden; color: #fff; border-radius: 24px; padding: 22px; background: linear-gradient(135deg, var(--navy-2) 0%, var(--navy) 55%, var(--navy-3) 100%); box-shadow: 0 16px 34px rgba(45,52,99,.35); }
 .bank-card::before { content: ""; position: absolute; width: 300px; height: 300px; border-radius: 50%; left: -90px; top: -120px; background: radial-gradient(circle, rgba(255,255,255,.09) 0 45%, rgba(255,255,255,.05) 46% 70%, transparent 71%); }
@@ -281,18 +184,12 @@ tr:hover td { background: var(--bg); }
 .dp-nav:hover { background: var(--line); }
 .dp-month-year { font-weight: 900; font-size: 16px; }
 .dp-weekdays { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; font-size: 12px; font-weight: 700; color: var(--muted); margin-bottom: 8px; }
+
 /* استایل‌های مخصوص چاپ و گرفتن عکس */
 @media print {
   body * { visibility: hidden; }
   #printable-area, #printable-area * { visibility: visible; }
-  #printable-area { 
-    position: absolute; 
-    left: 0; 
-    top: 0; 
-    width: 100% !important; 
-    padding: 0 !important; 
-    margin: 0 !important; 
-  }
+  #printable-area { position: absolute; left: 0; top: 0; width: 100% !important; padding: 0 !important; margin: 0 !important; }
   .no-print { display: none !important; }
 }
 </style>
@@ -300,88 +197,8 @@ tr:hover td { background: var(--bg); }
 <body>
 <div id="app"></div>
 <div id="toast" class="toast"></div>
-}
-   
-async function viewAdminDatabase(el) {
-  let tables = [];
-  try {
-    const res = await T('app_admin_get_db_tables');
-    tables = res || [];
-  } catch (e) {
-    el.innerHTML = `<div class="empty">خطا در دریافت لیست جداول: ${esc(e.message)}</div>`;
-    return;
-  }
 
-  el.innerHTML = `
-    <h1>مدیریت دیتابیس</h1>
-    <p class="sub">مشاهده اطلاعات جداول</p>
-    
-    <div class="grid g3" style="margin-bottom:20px">
-      ${tables.map(t => `
-        <button class="card" data-table="${t.table_name}" style="cursor:pointer;border:1px solid var(--line);text-align:center;padding:16px">
-          <div style="font-size:24px;margin-bottom:8px">🗄️</div>
-          <b dir="ltr">${esc(t.table_name)}</b>
-        </button>
-      `).join('')}
-    </div>
-    
-    <div id="db-table-content"></div>
-  `;
-
-  $$('[data-table]', el).forEach(b => {
-    b.addEventListener('click', () => loadTableData(b.dataset.table, el));
-  });
-}
-
-async function loadTableData(tableName, el) {
-  const content = $('#db-table-content', el);
-  content.innerHTML = '<p class="sub">در حال بارگذاری دیتای جدول...</p>';
-
-  try {
-    const data = await T('app_admin_get_table_data', { p_table_name: tableName });
-    
-    if (!data || data.length === 0) {
-      content.innerHTML = `<div class="card"><h2>${esc(tableName)}</h2><p class="sub">این جدول خالی است.</p></div>`;
-      return;
-    }
-
-    const columns = Object.keys(data[0]);
-
-    content.innerHTML = `
-      <div class="card" style="padding:0;overflow:hidden">
-        <div style="padding:16px;border-bottom:1px solid var(--line);background:var(--bg)">
-          <h2 style="margin:0;direction:ltr">جدول: ${esc(tableName)}</h2>
-          <small class="sub">${fa(data.length)} رکورد (حداکثر 100 رکورد نمایش داده می‌شود)</small>
-        </div>
-        <div class="tbl-wrap">
-          <table>
-            <thead>
-              <tr>
-                ${columns.map(c => `<th dir="ltr">${esc(c)}</th>`).join('')}
-              </tr>
-            </thead>
-            <tbody>
-              ${data.map(row => `
-                <tr>
-                  ${columns.map(c => {
-                    let val = row[c];
-                    if (val === null) val = 'NULL';
-                    if (typeof val === 'object') val = JSON.stringify(val);
-                    return `<td dir="ltr" style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(val)}">${esc(val)}</td>`;
-                  }).join('')}
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    `;
-  } catch (e) {
-    content.innerHTML = `<div class="card" style="color:var(--danger)">خطا: ${esc(e.message)}</div>`;
-  }
-}
 <script>
-
 /* ============================================================
    CORE, HELPERS & CONFIG
    ============================================================ */
@@ -780,7 +597,8 @@ const ICONS = {
   user: `<svg viewBox="0 0 48 48"><circle cx="24" cy="17" r="8" fill="var(--navy)"/><path d="M9 41a15 15 0 0 1 30 0z" fill="var(--peach)"/></svg>`,
   logout: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>`,
   building: `<svg viewBox="0 0 48 48"><rect x="8" y="8" width="20" height="34" rx="3" fill="var(--navy)"/><rect x="24" y="18" width="16" height="24" rx="3" fill="var(--peach)"/><g fill="#fff"><rect x="12" y="13" width="4" height="4" rx="1"/><rect x="19" y="13" width="4" height="4" rx="1"/><rect x="12" y="21" width="4" height="4" rx="1"/><rect x="19" y="21" width="4" height="4" rx="1"/></g></svg>`,
-  settings: `<svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="16" fill="var(--navy)"/><circle cx="24" cy="24" r="6" fill="var(--peach)"/><g stroke="var(--navy)" stroke-width="5" stroke-linecap="round"><path d="M24 4v4M24 40v4M4 24h4M40 24h4"/></g></svg>`
+  settings: `<svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="16" fill="var(--navy)"/><circle cx="24" cy="24" r="6" fill="var(--peach)"/><g stroke="var(--navy)" stroke-width="5" stroke-linecap="round"><path d="M24 4v4M24 40v4M4 24h4M40 24h4"/></g></svg>`,
+  db: `<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="24" cy="12" rx="14" ry="6"/><path d="M10 12v20c0 3.3 6.3 6 14 6s14-2.7 14-6V12"/><path d="M10 22c0 3.3 6.3 6 14 6s14-2.7 14-6"/></svg>`
 };
 const LINE_ICONS = {
   home: `<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"><path d="M9 22 24 9l15 13v16a3 3 0 0 1-3 3H12a3 3 0 0 1-3-3z"/><path d="M20 41V29h8v12"/></svg>`,
@@ -791,18 +609,26 @@ const LINE_ICONS = {
   services: null
 };
 LINE_ICONS.services = ICONS.services;
+LINE_ICONS.db = ICONS.db;
 const lineIco = k => LINE_ICONS[k] || ICONS[k] || ICONS.services;
 
 function renderShell() {
   const building = currentBuilding();
   const isAdmin = S.me.is_superadmin;
+  
+  // رفع باگ آرایه منوی ادمین
   const nav = isAdmin ? [
-    ['sa_buildings', 'ساختمان‌ها', lineIco('building')], ['admin_db', 'دیتابیس', ['sa_requests', 'درخواست مدیران', lineIco('people')], ['sa_dash', 'داشبورد', lineIco('home')], ['sa_profile', 'پروفایل', lineIco('user')], ['sa_services', 'خدمات', lineIco('services')]
+    ['sa_buildings', 'ساختمان‌ها', lineIco('building')], 
+    ['admin_db', 'دیتابیس', lineIco('db')], 
+    ['sa_dash', 'داشبورد', lineIco('home')], 
+    ['sa_requests', 'درخواست‌ها', lineIco('people')], 
+    ['sa_profile', 'پروفایل', lineIco('user')]
   ] : isManager() ? [
     ['m_payments', 'تایید پرداخت', lineIco('money')], ['m_requests', 'درخواست‌ها', lineIco('msg')], ['m_dash', 'داشبورد', lineIco('home')], ['m_report', 'گزارش', lineIco('report')], ['m_services', 'خدمات', lineIco('services')]
   ] : [
     ['r_pay', 'پرداخت', lineIco('money')], ['r_requests', 'درخواست‌ها', lineIco('msg')], ['r_dash', 'داشبورد', lineIco('home')], ['r_charges', 'صورتحساب', lineIco('report')], ['r_services', 'خدمات', lineIco('services')]
   ];
+
   $('#app').innerHTML = `
     <header class="top">
       <div class="top-in">
@@ -895,10 +721,91 @@ function renderHeaderState() {
   }
 }
 
-// Keep the floating tab indicator centered after device rotation or resizing.
 window.addEventListener('resize', () => {
   if ($('#app') && $('.bnav')) requestAnimationFrame(renderHeaderState);
 });
+
+/* ============================================================
+   VIEWS: DATABASE (NEW)
+   ============================================================ */
+async function viewAdminDatabase(el) {
+  let tables = [];
+  try {
+    const res = await T('app_admin_get_db_tables');
+    tables = res || [];
+  } catch (e) {
+    el.innerHTML = `<div class="empty">خطا در دریافت لیست جداول: ${esc(e.message)}</div>`;
+    return;
+  }
+
+  el.innerHTML = `
+    <h1>مدیریت دیتابیس</h1>
+    <p class="sub">مشاهده اطلاعات جداول (حداکثر ۱۰۰ رکورد)</p>
+    
+    <div class="grid g3" style="margin-bottom:20px">
+      ${tables.map(t => `
+        <button class="card" data-table="${t.table_name}" style="cursor:pointer;border:1px solid var(--line);text-align:center;padding:16px">
+          <div style="font-size:24px;margin-bottom:8px">🗄️</div>
+          <b dir="ltr">${esc(t.table_name)}</b>
+        </button>
+      `).join('')}
+    </div>
+    
+    <div id="db-table-content"></div>
+  `;
+
+  $$('[data-table]', el).forEach(b => {
+    b.addEventListener('click', () => loadTableData(b.dataset.table, el));
+  });
+}
+
+async function loadTableData(tableName, el) {
+  const content = $('#db-table-content', el);
+  content.innerHTML = '<p class="sub">در حال بارگذاری دیتای جدول...</p>';
+
+  try {
+    const data = await T('app_admin_get_table_data', { p_table_name: tableName });
+    
+    if (!data || data.length === 0) {
+      content.innerHTML = `<div class="card"><h2 dir="ltr">${esc(tableName)}</h2><p class="sub">این جدول خالی است.</p></div>`;
+      return;
+    }
+
+    const columns = Object.keys(data[0]);
+
+    content.innerHTML = `
+      <div class="card" style="padding:0;overflow:hidden">
+        <div style="padding:16px;border-bottom:1px solid var(--line);background:var(--bg)">
+          <h2 style="margin:0;direction:ltr">جدول: ${esc(tableName)}</h2>
+          <small class="sub">${fa(data.length)} رکورد نمایش داده شده</small>
+        </div>
+        <div class="tbl-wrap">
+          <table>
+            <thead>
+              <tr>
+                ${columns.map(c => `<th dir="ltr">${esc(c)}</th>`).join('')}
+              </tr>
+            </thead>
+            <tbody>
+              ${data.map(row => `
+                <tr>
+                  ${columns.map(c => {
+                    let val = row[c];
+                    if (val === null) val = 'NULL';
+                    if (typeof val === 'object') val = JSON.stringify(val);
+                    return `<td dir="ltr" style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(val)}">${esc(val)}</td>`;
+                  }).join('')}
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `;
+  } catch (e) {
+    content.innerHTML = `<div class="card" style="color:var(--danger)">خطا: ${esc(e.message)}</div>`;
+  }
+}
 
 /* ============================================================
    VIEWS: ADMIN
@@ -962,58 +869,25 @@ async function viewSuperAdminBuildings(el) {
           <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
             ${b.building_status === 'active' ? `<button class="btn rd sm" data-suspend="${b.building_id}">تعلیق</button>` : `<button class="btn sm" data-activate="${b.building_id}">فعال‌سازی</button>`}
             ${b.manager_username ? `<button class="btn lt sm" data-reset="${b.building_id}">ریست رمز مدیر</button>` : ''}
-            <!-- دکمه حذف کامل ساختمان -->
             <button class="btn rd sm" data-delete="${b.building_id}" data-name="${esc(b.building_name)}">حذف کامل ساختمان</button>
           </div>
         </div>
       `).join('') || `<div class="empty"><div class="ico">🏢</div><p>ساختمانی وجود ندارد</p></div>`}
     </div>`;
 
-  // رویداد تعلیق
-  $$('[data-suspend]', el).forEach(b => b.addEventListener('click', () => {
-    const reason = prompt('علت تعلیق:');
-    if (!reason) return;
-    T('app_admin_set_building_status', { p_building_id: b.dataset.suspend, p_new_status: 'suspended', p_reason: reason })
-      .then(() => { toastOk('تعلیق شد'); go('sa_buildings'); })
-      .catch(showErr);
-  }));
-
-  // رویداد فعال‌سازی
-  $$('[data-activate]', el).forEach(b => b.addEventListener('click', () => {
-    T('app_admin_set_building_status', { p_building_id: b.dataset.activate, p_new_status: 'active' })
-      .then(() => { toastOk('فعال شد'); go('sa_buildings'); })
-      .catch(showErr);
-  }));
-
-  // رویداد ریست رمز
-  $$('[data-reset]', el).forEach(b => b.addEventListener('click', () => {
-    if (!confirm('رمز مدیر به 1234 بازنشانی شود؟')) return;
-    T('app_admin_reset_manager_password', { p_building_id: b.dataset.reset })
-      .then(() => toastOk('رمز بازنشانی شد (1234)'))
-      .catch(showErr);
-  }));
-
-  // رویداد حذف کامل ساختمان
+  $$('[data-suspend]', el).forEach(b => b.addEventListener('click', () => { const reason = prompt('علت تعلیق:'); if (!reason) return; T('app_admin_set_building_status', { p_building_id: b.dataset.suspend, p_new_status: 'suspended', p_reason: reason }).then(() => { toastOk('تعلیق شد'); go('sa_buildings'); }).catch(showErr); }));
+  $$('[data-activate]', el).forEach(b => b.addEventListener('click', () => { T('app_admin_set_building_status', { p_building_id: b.dataset.activate, p_new_status: 'active' }).then(() => { toastOk('فعال شد'); go('sa_buildings'); }).catch(showErr); }));
+  $$('[data-reset]', el).forEach(b => b.addEventListener('click', () => { if (!confirm('رمز مدیر به 1234 بازنشانی شود؟')) return; T('app_admin_reset_manager_password', { p_building_id: b.dataset.reset }).then(() => toastOk('رمز بازنشانی شد (1234)')).catch(showErr); }));
+  
   $$('[data-delete]', el).forEach(b => b.addEventListener('click', () => {
     const bName = b.dataset.name;
-    const confirm1 = confirm(`⚠️ هشدار بسیار مهم!\n\nآیا از حذف کامل ساختمان «${bName}» مطمئن هستید؟\n\nبا این کار تمام اطلاعات (ساکنین، تراکنش‌ها، هزینه‌ها، صورتحساب‌ها و...) برای همیشه پاک می‌شود و قابل بازگشت نیست!`);
-    if (!confirm1) return;
-
-    const confirm2 = prompt(`برای تایید نهایی، نام ساختمان (${bName}) را دقیقاً تایپ کنید:`);
-    if (confirm2 !== bName) {
-      if (confirm2 !== null) toastErr('نام ساختمان اشتباه وارد شد. عملیات لغو شد.');
-      return;
-    }
-
-    // ارسال درخواست به دیتابیس
-    T('app_admin_delete_building', { p_building_id: b.dataset.delete })
-      .then(() => { 
-        toastOk('ساختمان با موفقیت حذف شد'); 
-        go('sa_buildings'); 
-      })
-      .catch(showErr);
+    if (!confirm(`⚠️ هشدار!\n\nآیا از حذف کامل ساختمان «${bName}» مطمئن هستید؟\nتمام اطلاعات برای همیشه پاک می‌شود!`)) return;
+    const confirm2 = prompt(`برای تایید نهایی، نام ساختمان را تایپ کنید:`);
+    if (confirm2 !== bName) { if (confirm2 !== null) toastErr('نام اشتباه است.'); return; }
+    T('app_admin_delete_building', { p_building_id: b.dataset.delete }).then(() => { toastOk('ساختمان حذف شد'); go('sa_buildings'); }).catch(showErr);
   }));
 }
+
 /* ============================================================
    VIEWS: MANAGER
    ============================================================ */
@@ -1368,7 +1242,8 @@ async function viewManagerReport(el) {
   $('#rp-month', el).addEventListener('change', loadReport);
   loadReport();
 }
-   /* ============================================================
+
+/* ============================================================
    VIEWS: RESIDENT
    ============================================================ */
 async function viewResidentDash(el) {
