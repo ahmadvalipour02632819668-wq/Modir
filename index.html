@@ -636,10 +636,10 @@ function renderShell() {
   const building = currentBuilding();
   const isAdmin = S.me.is_superadmin;
   
-  // تشخیص نقش برای ذخیره تنظیمات
+  // تشخیص نقش
   const roleKey = isAdmin ? 'superadmin' : (isManager() ? 'manager' : 'resident');
   
-  // تعریف همه دکمه‌های ممکن برای هر نقش (برای استفاده در تنظیمات)
+  // تعریف تمام دکمه‌های ممکن
   const ALL_BUTTONS = {
     superadmin: {
       'sa_buildings': { label: 'ساختمان‌ها', icon: lineIco('building') },
@@ -669,7 +669,7 @@ function renderShell() {
     }
   };
 
-  // گرفتن لیست دکمه‌های فعال از حافظه
+  // گرفتن لیست دکمه‌های فعال
   const activeNavKeys = getSavedNav(roleKey);
   const nav = activeNavKeys.map(key => [key, ALL_BUTTONS[roleKey][key]?.label || '', ALL_BUTTONS[roleKey][key]?.icon || '']);
 
@@ -703,12 +703,9 @@ function renderShell() {
     </nav>`;
 
   bindThemeSwatches();
-  
-  // بقیه رویدادها...
   $('#top-logout').addEventListener('click', () => doLogout());
   $('#lo').addEventListener('click', () => doLogout());
   
-  // دکمه جدید تنظیمات منو
   $('#edit-nav-btn').addEventListener('click', () => { 
     $('#who-pop').style.display = 'none'; 
     showNavSettingsModal(roleKey, ALL_BUTTONS[roleKey]); 
@@ -723,12 +720,6 @@ function renderShell() {
   const startView = S.me.is_superadmin ? 'sa_dash' : isManager() ? 'm_dash' : 'r_dash';
   go(S.view && S.view !== 'dash' ? S.view : startView);
 }
-const VIEWS = {
-  sa_dash: viewSuperAdminDash, sa_buildings: viewSuperAdminBuildings, sa_requests: viewSuperAdminRequests, sa_profile: viewProfile, sa_services: viewServices,
-  admin_db: viewAdminDatabase, m_dash: viewManagerDash, m_payments: viewManagerPayments, m_requests: viewManagerRequests, m_report: viewManagerReport, m_services: viewServices, m_units: viewManagerUnits, m_expenses: viewManagerExpenses, m_rates: viewManagerRates, m_requests_pending: viewManagerPendingSignups, m_transfer: viewManagerTransfer,
-  r_dash: viewResidentDash, r_pay: viewResidentPay, r_charges: viewResidentCharges, r_requests: viewResidentRequests, r_services: viewServices,
-  profile: viewProfile, services: viewServices
-};
 
 function showNavSettingsModal(roleKey, allButtons) {
   const currentKeys = getSavedNav(roleKey);
