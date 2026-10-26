@@ -183,8 +183,14 @@ tr:hover td { background: var(--bg); }
   height: 26px; 
 }
 .bnav-items button.on { 
-  opacity: 0; 
-  transform: translateY(-8px); 
+  opacity: 1; 
+  transform: none; 
+  color: var(--navy);
+  z-index: 5;
+}
+/* Keep the active tab label visible; only its icon sits behind the floating diamond. */
+.bnav-items button.on svg {
+  opacity: 0;
 }
 
 .bnav-diamond-wrap {
@@ -210,7 +216,7 @@ tr:hover td { background: var(--bg); }
   display: grid;
   place-items: center;
   transform: rotate(45deg);
-  pointer-events: auto;
+  pointer-events: none;
 }
 .bnav-diamond > span {
   transform: rotate(-45deg);
