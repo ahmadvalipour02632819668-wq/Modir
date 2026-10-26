@@ -1044,20 +1044,137 @@ async function viewManagerTransfer(el) {
 async function viewManagerReport(el) {
   const m = currentMembership(); if (!m) return;
   const bid = m.building_id;
-  const yearOptions = []; for (let y = TODAY.y; y >= TODAY.y - 3; y--) yearOptions.push(y);
-  el.innerHTML = `<h1>گزارش ماهانه</h1><p class="sub">گزارش مالی و وضعیت بدهی‌ها</p><div class="card" style="margin-bottom:16px"><div style="display:flex;gap:10px;flex-wrap:wrap"><label class="f" style="flex:1;min-width:120px">سال<select id="rp-year">${yearOptions.map(y => `<option value="${y}" ${y === TODAY.y ? 'selected' : ''}>${fa(y)}</option>`).join('')}</select></label><label class="f" style="flex:1;min-width:120px">ماه<select id="rp-month">${MONTHS.map((n, i) => `<option value="${i+1}" ${i+1 === TODAY.m ? 'selected' : ''}>${n}</option>`).join('')}</select></label><div style="display:flex;align-items:flex-end"><button class="btn" id="rp-load">نمایش گزارش</button></div></div></div><div id="rp-body"></div>`;
+  
+  // ساخت لیست سال‌ها (از سال جاری تا ۳ سال قبل)
+  const yearOptions = []; 
+  for (let y = TODAY.y; y >= TODAY.y - 3; y--) yearOptions.push(y);
+
+  el.innerHTML = `
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; gap:12px; flex-wrap:wrap; width:100%; box-sizing:border-box;">
+      <div><h1 style="margin:0; line-height:1.5;">گزارش ماهانه</h1></div>
+      <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+        <select id="rp-year" style="width:100px; min-height:38px; padding:4px 10px;">${yearOptions.map(y => `<option value="${y}" ${y === TODAY.y ? 'selected' : ''}>${fa(y)}</option>`).join('')}</select>
+        <select id="rp-month" style="width:120px; min-height:38px; padding:4px 10px;">${MONTHS.map((n, i) => `<option value="${i+1}" ${i+1 === TODAY.m ? 'selected' : ''}>${n}</option>`).join('')}</select>
+        <button class="btn sf" id="bale-btn" style="min-height:38px; padding:0 16px; font-size:12px; border-radius:12px;">📤 ارسال به بله</button>
+        <button class="btn lt" id="pr-btn" style="min-height:38px; padding:0 16px; font-size:12px; border-radius:12px;">چاپ</button>
+      </div>
+    </div>
+    <div id="rp-body"></div>
+  `;
+
   const loadReport = async () => {
     const y = +$('#rp-year', el).value, mo = +$('#rp-month', el).value, body = $('#rp-body', el);
     body.innerHTML = '<p class="sub">در حال بارگذاری...</p>';
+    
     try {
       const g = jalaliToGregorian(y, mo, 1);
-      const r = await T('app_manager_get_monthly_report', { p_building_id: bid, p_year: g.getFullYear(), p_month: g.getMonth() + 1 });
-      body.innerHTML = `<div class="grid g3" style="margin-bottom:20px"><div class="bank-card"><b>موجودی صندوق</b><div class="bc-amt">${fmt(r.fund_balance_to_month_end)}</div></div><div class="bank-card soft"><b>دریافتی ماه</b><div class="bc-amt">${fmt(r.month_income)}</div></div><div class="bank-card peach"><b>هزینه ماه</b><div class="bc-amt">${fmt(r.month_expenses)}</div></div></div><div class="card"><h2>خلاصه</h2><div style="line-height:2.2;font-size:13.5px"><div>سود/زیان ماه: <b>${fmt(r.month_net)}</b> تومان</div><div>مطالبات معوق: <b>${fmt(r.total_debt_to_month_end)}</b> تومان</div><div>بستانکاری: <b>${fmt(r.total_credit_to_month_end)}</b> تومان</div><div>پرداخت‌های در انتظار: <b>${fmt(r.pending_payments)}</b> تومان</div></div></div>${r.expenses?.length ? `<div class="sec-title">هزینه‌های ماه</div><div class="tbl-wrap"><table><thead><tr><th>شرح</th><th>مبلغ</th><th>روش تسهیم</th><th>وضعیت</th></tr></thead><tbody>${r.expenses.map(e => `<tr><td>${esc(e.description)}</td><td>${fmt(e.amount)}</td><td>${allocationLabel(e.allocation_method)}</td><td>${e.expense_status === 'active' ? '<span class="chip ok">فعال</span>' : '<span class="chip no">برگشت</span>'}</td></tr>`).join('')}</tbody></table></div>` : ''}`;
-    } catch (err) { body.innerHTML = `<div class="card" style="color:var(--danger)">خطا: ${esc(err.message)}</div>`; }
-  };
-  $('#rp-load', el).addEventListener('click', loadReport); loadReport();
-}
+      // دریافت گزارش از دیتابیس
+      const r = await T('app_manager_get_monthly_report', { 
+        p_building_id: bid, 
+        p_year: g.getFullYear(), 
+        p_month: g.getMonth() + 1 
+      });
+      
+      // دریافت اطلاعات اعضا برای نمایش نام و واحد در جدول (چون گزارش دیتابیس فقط آیدی می‌دهد)
+      const membersRes = await T('app_manager_list_building_members', { p_building_id: bid });
+      const members = membersRes.members || [];
 
+      // دریافت بدهی‌های فعلی هر عضو برای محاسبه دقیق
+      const balances = await T('app_manager_get_member_balances', { p_building_id: bid }).catch(()=>null);
+
+      // --- ساخت جدول HTML شبیه به اکسل ---
+      let tableRows = '';
+      
+      members.filter(x => x.access_role === 'resident' && x.membership_status === 'active').forEach(mem => {
+          const unitNo = mem.unit_no || '—';
+          const fullName = mem.full_name || '';
+          const rType = RESIDENT_TYPES[mem.resident_type] || '';
+          
+          // پیدا کردن بدهی این واحد (از خلاصه بدهی‌ها)
+          const memBalance = balances?.members?.find(x => x.membership_id === mem.membership_id);
+          const remaining = memBalance?.outstanding_debt || 0;
+          
+          // رنگ‌بندی ردیف: اگر بدهی صفر بود سبز، اگر بدهی داشت قرمز/زرد
+          let rowBg = '#ffffff'; 
+          let textColor = '#000000';
+          if (remaining <= 0) { rowBg = '#00B050'; textColor = '#ffffff'; } // سبز (تسویه)
+          else if (remaining > 0) { rowBg = '#FFC000'; textColor = '#000000'; } // نارنجی (بدهکار)
+          
+          tableRows += `
+            <tr style="background-color:${rowBg}; color:${textColor}; font-weight:bold;">
+              <td style="border:1px solid #333; padding:10px; text-align:center;">
+                واحد ${fa(unitNo)}<br>
+                <span style="font-size:11px; font-weight:normal; opacity:0.8;">${esc(rType)}</span>
+              </td>
+              <td style="border:1px solid #333; padding:10px; text-align:center;">—</td>
+              <td style="border:1px solid #333; padding:10px; text-align:center;">—</td>
+              <td style="border:1px solid #333; padding:10px; text-align:center;">—</td>
+              <td style="border:1px solid #333; padding:10px; text-align:center;">—</td>
+              <td style="border:1px solid #333; padding:10px; text-align:center;">—</td>
+              <td style="border:1px solid #333; padding:10px; text-align:center; font-size:16px;">
+                ${remaining <= 0 ? 'تسویه' : fmt(remaining)}
+              </td>
+            </tr>
+          `;
+      });
+
+      // اگر هیچ عضوی نبود
+      if (!tableRows) {
+        tableRows = `<tr><td colspan="7" style="text-align:center; padding:20px;">اطلاعاتی برای این دوره وجود ندارد.</td></tr>`;
+      }
+
+      // رندر نهایی جدول
+      body.innerHTML = `
+        <div class="tbl-wrap" style="border-radius:8px; overflow-x:auto; border:1px solid #333; background:#fff; width:100%; box-sizing:border-box;">
+          <table style="width:100%; border-collapse:collapse; font-size:14px; text-align:center; direction:rtl; border:2px solid #000;">
+            <thead>
+              <tr>
+                <th colspan="7" style="background-color:#7A9CBE; color:white; padding:12px; font-size:16px; border:1px solid #333;">
+                  گزارش ${MONTHS[mo-1]} ماه - ${fa(y)}/${String(mo).padStart(2, '0')}
+                </th>
+              </tr>
+              <tr>
+                <th style="background-color:#D9E1F2; border:1px solid #333; padding:8px; color:#000;">واحد</th>
+                <th style="background-color:#D9E1F2; border:1px solid #333; padding:8px; color:#000;">شارژ</th>
+                <th style="background-color:#D9E1F2; border:1px solid #333; padding:8px; color:#000;">قبض آب</th>
+                <th style="background-color:#D9E1F2; border:1px solid #333; padding:8px; color:#000;">قبض گاز</th>
+                <th style="background-color:#D9E1F2; border:1px solid #333; padding:8px; color:#000;">بازسازی</th>
+                <th style="background-color:#D9E1F2; border:1px solid #333; padding:8px; color:#000;">بدهی قبلی</th>
+                <th style="background-color:#D9E1F2; border:1px solid #333; padding:8px; color:#000;">جمع مبلغ<br>قابل پرداخت</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${tableRows}
+            </tbody>
+          </table>
+        </div>
+        <div class="card" style="margin-top:16px; display:flex; justify-content:space-around; text-align:center; flex-wrap:wrap; gap:10px;">
+          <div><small class="sub">کل دریافتی ماه</small><div style="font-weight:900; color:var(--success)">${fmt(r.month_income)} تومان</div></div>
+          <div><small class="sub">کل هزینه ماه</small><div style="font-weight:900; color:var(--danger)">${fmt(r.month_expenses)} تومان</div></div>
+          <div><small class="sub">موجودی صندوق</small><div style="font-weight:900; color:var(--navy)">${fmt(r.fund_balance_to_month_end)} تومان</div></div>
+        </div>
+      `;
+
+      // دکمه چاپ
+      $('#pr-btn', el).addEventListener('click', () => {
+        window.print();
+      });
+
+      // دکمه ارسال به بله (شبیه‌سازی)
+      $('#bale-btn', el).addEventListener('click', () => {
+        toastOk('گزارش به صورت تصویر به بله ارسال شد (شبیه‌سازی)');
+      });
+
+    } catch (err) { 
+      body.innerHTML = `<div class="card" style="color:var(--danger)">خطا در دریافت گزارش: ${esc(err.message)}</div>`; 
+    }
+  };
+
+  // لود اولیه با تغییر سال و ماه
+  $('#rp-year', el).addEventListener('change', loadReport);
+  $('#rp-month', el).addEventListener('change', loadReport);
+  loadReport();
+}
 /* ============================================================
    VIEWS: RESIDENT
    ============================================================ */
