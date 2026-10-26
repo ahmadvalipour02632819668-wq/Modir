@@ -939,22 +939,36 @@ function renderHeaderState() {
     m_dash: 'داشبورد مدیریت', m_payments: 'تایید پرداخت‌ها', m_requests: 'درخواست‌ها', m_report: 'گزارش ماهانه', m_services: 'خدمات', m_units: 'واحدها و ساکنین', m_expenses: 'هزینه‌ها', m_rates: 'تنظیمات مالی', m_requests_pending: 'تایید ثبت‌نام‌ها', m_transfer: 'انتقال مدیریت',
     r_dash: 'خانه', r_pay: 'پرداخت', r_charges: 'صورتحساب', r_requests: 'درخواست‌ها', r_services: 'خدمات', profile: 'پروفایل', services: 'خدمات'
   };
+  
   t.innerHTML = S.view === 'm_dash' || S.view === 'r_dash' || S.view === 'sa_dash'
     ? `${esc(building?.building_name || 'مدیریت مجتمع‌های مسکونی')}<small>${S.me.is_superadmin ? 'ادمین اصلی' : (isManager() ? 'پنل مدیریت' : `واحد ${fa(currentMembership()?.unit_id ? '?' : '')}`)}</small>`
     : esc(titles[S.view] || '');
+
   const btns = $$('.bnav-items button');
   const active = btns.find(b => b.dataset.v.replace(/^(sa_|m_|r_)/, '') === S.view) || btns.find(b => b.dataset.v.endsWith('_services')) || btns[2];
+  
   btns.forEach(b => b.classList.toggle('on', b === active));
-  const dia = $('#bnav-dia'), wrap = $('.bnav-in');
-  if (dia && active && wrap) {
-    const wr = wrap.getBoundingClientRect(), br = active.getBoundingClientRect();
+  
+  const diaWrap = $('#bnav-dia-wrap'), notch = $('#bnav-notch'), wrap = $('.bnav-in');
+  if (diaWrap && active && wrap) {
+    const wr = wrap.getBoundingClientRect();
+    const br = active.getBoundingClientRect();
+    
+    // محاسبه دقیق مرکز دکمه
     const centerOffset = (br.left - wr.left) + (br.width / 2);
-    dia.style.right = (wr.width - centerOffset) + 'px';
+    const rightPos = wr.width - centerOffset;
+    
+    // انتقال لوزی
+    diaWrap.style.right = rightPos + 'px';
+    
+    // انتقال بریدگی پشت لوزی
+    if(notch) notch.style.right = (rightPos - 50) + 'px';
+    
+    // تغییر آیکون
     const svgMatch = active.innerHTML.match(/<svg[\s\S]*?<\/svg>/);
-    if (svgMatch) $('span', dia).innerHTML = svgMatch[0];
+    if (svgMatch) $('#bnav-dia-icon').innerHTML = svgMatch[0];
   }
 }
-
 /* ============================================================
    VIEWS: ADMIN
    ============================================================ */
