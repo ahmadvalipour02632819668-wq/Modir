@@ -710,11 +710,20 @@ async function go(v) {
   S.view = v;
   const el = $('#view'); if (!el) return;
   el.innerHTML = `<p class="sub">در حال بارگذاری...</p>`;
-  renderHeaderState();
+  
+  renderHeaderState(); // موقعیت اولیه
   const rid = ++S.renderId;
+  
   try { 
     await VIEWS[v](el); 
-    requestAnimationFrame(() => { requestAnimationFrame(() => { if(rid === S.renderId) renderHeaderState(); }); });
+    
+    // این خطوط برای رفع مشکل لوزی اضافه شدند:
+    // با استفاده از requestAnimationFrame مطمئن می‌شویم DOM حتماً رندر شده است
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+            if(rid === S.renderId) renderHeaderState();
+        });
+    });
   } catch (e) {
     if (rid !== S.renderId) return;
     if (e.message === 'NETWORK_ERROR') {
