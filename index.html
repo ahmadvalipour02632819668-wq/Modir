@@ -636,18 +636,42 @@ function renderShell() {
   const building = currentBuilding();
   const isAdmin = S.me.is_superadmin;
   
-  // رفع باگ آرایه منوی ادمین
-  const nav = isAdmin ? [
-    ['sa_buildings', 'ساختمان‌ها', lineIco('building')], 
-    ['admin_db', 'دیتابیس', lineIco('db')], 
-    ['sa_dash', 'داشبورد', lineIco('home')], 
-    ['sa_requests', 'درخواست‌ها', lineIco('people')], 
-    ['sa_profile', 'پروفایل', lineIco('user')]
-  ] : isManager() ? [
-    ['m_payments', 'تایید پرداخت', lineIco('money')], ['m_requests', 'درخواست‌ها', lineIco('msg')], ['m_dash', 'داشبورد', lineIco('home')], ['m_report', 'گزارش', lineIco('report')], ['m_services', 'خدمات', lineIco('services')]
-  ] : [
-    ['r_pay', 'پرداخت', lineIco('money')], ['r_requests', 'درخواست‌ها', lineIco('msg')], ['r_dash', 'داشبورد', lineIco('home')], ['r_charges', 'صورتحساب', lineIco('report')], ['r_services', 'خدمات', lineIco('services')]
-  ];
+  // تشخیص نقش برای ذخیره تنظیمات
+  const roleKey = isAdmin ? 'superadmin' : (isManager() ? 'manager' : 'resident');
+  
+  // تعریف همه دکمه‌های ممکن برای هر نقش (برای استفاده در تنظیمات)
+  const ALL_BUTTONS = {
+    superadmin: {
+      'sa_buildings': { label: 'ساختمان‌ها', icon: lineIco('building') },
+      'admin_db': { label: 'دیتابیس', icon: lineIco('db') },
+      'sa_dash': { label: 'داشبورد', icon: lineIco('home') },
+      'sa_requests': { label: 'درخواست‌ها', icon: lineIco('people') },
+      'sa_profile': { label: 'پروفایل', icon: lineIco('user') },
+      'sa_services': { label: 'خدمات', icon: lineIco('services') }
+    },
+    manager: {
+      'm_dash': { label: 'داشبورد', icon: lineIco('home') },
+      'm_payments': { label: 'تایید پرداخت', icon: lineIco('money') },
+      'm_requests': { label: 'درخواست‌ها', icon: lineIco('msg') },
+      'm_report': { label: 'گزارش', icon: lineIco('report') },
+      'm_services': { label: 'خدمات', icon: lineIco('services') },
+      'm_expenses': { label: 'هزینه‌ها', icon: '💸' },
+      'm_units': { label: 'واحدها', icon: '👥' },
+      'm_rates': { label: 'تنظیمات', icon: '⚙️' }
+    },
+    resident: {
+      'r_dash': { label: 'داشبورد', icon: lineIco('home') },
+      'r_pay': { label: 'پرداخت', icon: lineIco('money') },
+      'r_requests': { label: 'درخواست‌ها', icon: lineIco('msg') },
+      'r_charges': { label: 'صورتحساب', icon: lineIco('report') },
+      'r_services': { label: 'خدمات', icon: lineIco('services') },
+      'profile': { label: 'پروفایل', icon: lineIco('user') }
+    }
+  };
+
+  // گرفتن لیست دکمه‌های فعال از حافظه
+  const activeNavKeys = getSavedNav(roleKey);
+  const nav = activeNavKeys.map(key => [key, ALL_BUTTONS[roleKey][key]?.label || '', ALL_BUTTONS[roleKey][key]?.icon || '']);
 
   $('#app').innerHTML = `
     <header class="top">
@@ -661,6 +685,7 @@ function renderShell() {
           <div style="margin-top:12px;font-size:12px;font-weight:bold;color:var(--muted)">انتخاب تم رنگی:</div>
           ${themeSwatchesHTML()}
           <button class="btn lt sm" id="go-profile" style="width:100%;margin-bottom:6px">پروفایل کاربری</button>
+          <button class="btn lt sm" id="edit-nav-btn" style="width:100%;margin-bottom:6px">تنظیمات منوی پایین</button>
           <button class="btn rd" id="lo" style="width:100%">خروج از حساب</button>
         </div>
       </div>
@@ -676,17 +701,28 @@ function renderShell() {
         <div class="bnav-items">${nav.map(([k, l, i]) => `<button data-v="${k}">${i}<span>${l}</span></button>`).join('')}</div>
       </div>
     </nav>`;
+
   bindThemeSwatches();
+  
+  // بقیه رویدادها...
   $('#top-logout').addEventListener('click', () => doLogout());
   $('#lo').addEventListener('click', () => doLogout());
+  
+  // دکمه جدید تنظیمات منو
+  $('#edit-nav-btn').addEventListener('click', () => { 
+    $('#who-pop').style.display = 'none'; 
+    showNavSettingsModal(roleKey, ALL_BUTTONS[roleKey]); 
+  });
+
   $('#who-btn').addEventListener('click', e => { e.stopPropagation(); const pop = $('#who-pop'); pop.style.display = pop.style.display === 'none' ? 'block' : 'none'; });
   document.addEventListener('click', e => { const pop = $('#who-pop'); if (pop && !e.target.closest('#who-pop') && !e.target.closest('#who-btn')) pop.style.display = 'none'; });
   $('#go-profile').addEventListener('click', () => { $('#who-pop').style.display = 'none'; go('profile'); });
+  
   $$('.bnav-items button').forEach(b => b.addEventListener('click', () => go(b.dataset.v)));
+  
   const startView = S.me.is_superadmin ? 'sa_dash' : isManager() ? 'm_dash' : 'r_dash';
   go(S.view && S.view !== 'dash' ? S.view : startView);
 }
-
 const VIEWS = {
   sa_dash: viewSuperAdminDash, sa_buildings: viewSuperAdminBuildings, sa_requests: viewSuperAdminRequests, sa_profile: viewProfile, sa_services: viewServices,
   admin_db: viewAdminDatabase, m_dash: viewManagerDash, m_payments: viewManagerPayments, m_requests: viewManagerRequests, m_report: viewManagerReport, m_services: viewServices, m_units: viewManagerUnits, m_expenses: viewManagerExpenses, m_rates: viewManagerRates, m_requests_pending: viewManagerPendingSignups, m_transfer: viewManagerTransfer,
@@ -694,6 +730,44 @@ const VIEWS = {
   profile: viewProfile, services: viewServices
 };
 
+function showNavSettingsModal(roleKey, allButtons) {
+  const currentKeys = getSavedNav(roleKey);
+  const buttonKeys = Object.keys(allButtons);
+  
+  // ساخت لیست چک‌باکس‌ها
+  let checkboxesHtml = buttonKeys.map(k => {
+    const isChecked = currentKeys.includes(k);
+    return `
+      <label style="display:flex;align-items:center;gap:8px;padding:8px;border-bottom:1px solid var(--line);cursor:pointer">
+        <input type="checkbox" value="${k}" class="nav-check" ${isChecked ? 'checked' : ''} style="width:20px;height:20px;accent-color:var(--navy)">
+        <span style="font-size:16px">${allButtons[k].icon}</span>
+        <span style="font-size:14px;font-weight:700">${allButtons[k].label}</span>
+      </label>
+    `;
+  }).join('');
+
+  const m = modal(`
+    <h2>تنظیمات منوی پایین</h2>
+    <p class="sub">حداکثر ۵ گزینه را برای نمایش در منوی پایین انتخاب کنید. (پیشنهاد می‌شود ۴ یا ۵ گزینه باشد)</p>
+    <div style="max-height:50vh;overflow-y:auto;margin-bottom:20px;background:var(--card);border-radius:12px;border:1px solid var(--line)">
+      ${checkboxesHtml}
+    </div>
+    <button class="btn" id="save-nav-btn" style="width:100%">ذخیره تغییرات</button>
+  `);
+
+  $('#save-nav-btn', m).addEventListener('click', () => {
+    const selected = [];
+    $$('.nav-check', m).forEach(cb => { if (cb.checked) selected.push(cb.value); });
+    
+    if (selected.length < 3) { toastErr('حداقل ۳ گزینه را انتخاب کنید'); return; }
+    if (selected.length > 5) { toastErr('حداکثر ۵ گزینه قابل انتخاب است'); return; }
+    
+    saveNav(roleKey, selected);
+    m.remove();
+    toastOk('منو با موفقیت تغییر کرد');
+    renderShell(); // رندر مجدد برای اعمال تغییرات
+  });
+}   
 async function go(v) {
   if (!VIEWS[v]) v = S.me?.is_superadmin ? 'sa_dash' : isManager() ? 'm_dash' : 'r_dash';
   S.view = v;
