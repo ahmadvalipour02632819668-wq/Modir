@@ -725,7 +725,6 @@ function showNavSettingsModal(roleKey, allButtons) {
   const currentKeys = getSavedNav(roleKey);
   const buttonKeys = Object.keys(allButtons);
   
-  // ساخت لیست چک‌باکس‌ها
   let checkboxesHtml = buttonKeys.map(k => {
     const isChecked = currentKeys.includes(k);
     return `
@@ -756,9 +755,9 @@ function showNavSettingsModal(roleKey, allButtons) {
     saveNav(roleKey, selected);
     m.remove();
     toastOk('منو با موفقیت تغییر کرد');
-    renderShell(); // رندر مجدد برای اعمال تغییرات
+    renderShell();
   });
-}   
+}
 async function go(v) {
   if (!VIEWS[v]) v = S.me?.is_superadmin ? 'sa_dash' : isManager() ? 'm_dash' : 'r_dash';
   S.view = v;
