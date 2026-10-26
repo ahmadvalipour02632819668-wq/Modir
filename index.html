@@ -1082,10 +1082,44 @@ async function viewManagerUnits(el) {
   $$('[data-end]', el).forEach(b => b.addEventListener('click', async () => { if (!await confirmDlg('پایان عضویت این ساکن؟ (تاریخچه مالی حفظ می‌شود)')) return; T('app_manager_end_member_membership', { p_building_id: m.building_id, p_membership_id: b.dataset.end }).then(() => { toastOk('عضویت پایان یافت'); go('m_units'); }).catch(showErr); }));
 }
 function editMemberModal(mem, bid) {
-  const m = modal(`<h2>ویرایش ساکن</h2><p class="sub">${esc(mem.full_name)} · واحد ${fa(mem.unit_no)}</p><form id="em" class="grid" style="gap:14px"><label class="f">نام و نام خانوادگی<input id="em-name" value="${esc(mem.full_name)}" required></label><label class="f">شماره موبایل<input id="em-phone" dir="ltr" value="${esc(mem.phone || '')}"></label><label class="f">ایمیل<input id="em-email" type="email" dir="ltr" value="${esc(mem.email || '')}"></label><button class="btn" type="submit">ذخیره</button></form>`);
-  $('#em', m).addEventListener('submit', async e => { e.preventDefault(); try { await T('app_manager_update_member_profile', { p_building_id: bid, p_membership_id: mem.membership_id, p_full_name: $('#em-name', m).value, p_phone: $('#em-phone', m).value || null, p_email: $('#em-email', m).value || null }); m.remove(); toastOk('ذخیره شد'); go('m_units'); } catch (err) { showErr(err); } });
-}
-async function viewManagerExpenses(el) {
+  const m = modal(`
+    <h2>ویرایش ساکن</h2>
+    <p class="sub">${esc(mem.full_name)} · واحد ${fa(mem.unit_no)}</p>
+    <form id="em" class="grid" style="gap:14px">
+      <label class="f">نام و نام خانوادگی<input id="em-name" value="${esc(mem.full_name)}" required></label>
+      <label class="f">شماره موبایل<input id="em-phone" dir="ltr" value="${esc(mem.phone || '')}"></label>
+      <label class="f">ایمیل<input id="em-email" type="email" dir="ltr" value="${esc(mem.email || '')}"></label>
+      
+      <!-- فیلد جدید برای ویرایش وضعیت سکونت -->
+      <label class="f">وضعیت سکونت
+        <select id="em-role">
+          <option value="owner_resident" ${mem.resident_type === 'owner_resident' ? 'selected' : ''}>مالک ساکن</option>
+          <option value="owner" ${mem.resident_type === 'owner' ? 'selected' : ''}>مالک (غیرساکن)</option>
+          <option value="tenant" ${mem.resident_type === 'tenant' ? 'selected' : ''}>مستأجر</option>
+        </select>
+      </label>
+      
+      <button class="btn" type="submit">ذخیره تغییرات</button>
+    </form>
+  `);
+  
+  $('#em', m).addEventListener('submit', async e => {
+    e.preventDefault();
+    try {
+      await T('app_manager_update_member_profile', {
+        p_building_id: bid,
+        p_membership_id: mem.membership_id,
+        p_full_name: $('#em-name', m).value,
+        p_phone: $('#em-phone', m).value || null,
+        p_email: $('#em-email', m).value || null,
+        p_resident_type: $('#em-role', m).value // ارسال نقش جدید
+      });
+      m.remove();
+      toastOk('ذخیره شد');
+      go('m_units');
+    } catch (err) { showErr(err); }
+  });
+}async function viewManagerExpenses(el) {
   const m = currentMembership(); if (!m) return;
   const bid = m.building_id;
   const [report, membersRes] = await Promise.all([T('app_manager_get_monthly_report', { p_building_id: bid, p_year: TODAY.y, p_month: TODAY.m }).catch(() => null), T('app_manager_list_building_members', { p_building_id: bid })]);
