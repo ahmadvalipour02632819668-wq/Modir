@@ -782,12 +782,16 @@ function renderHeaderState() {
     admin_db: 'مدیریت دیتابیس', m_dash: 'داشبورد مدیریت', m_payments: 'تایید پرداخت‌ها', m_requests: 'درخواست‌ها', m_report: 'گزارش ماهانه', m_services: 'خدمات', m_units: 'واحدها و ساکنین', m_expenses: 'هزینه‌ها', m_rates: 'تنظیمات مالی', m_requests_pending: 'تایید ثبت‌نام‌ها', m_transfer: 'انتقال مدیریت',
     r_dash: 'خانه', r_pay: 'پرداخت', r_charges: 'صورتحساب', r_requests: 'درخواست‌ها', r_services: 'خدمات', profile: 'پروفایل', services: 'خدمات'
   };
+  
+  // تغییر مهم: استفاده از unit_no به جای unit_id
   t.innerHTML = S.view === 'm_dash' || S.view === 'r_dash' || S.view === 'sa_dash'
-    ? `${esc(building?.building_name || 'مدیریت مجتمع‌های مسکونی')}<small>${S.me.is_superadmin ? 'ادمین اصلی' : (isManager() ? 'پنل مدیریت' : `واحد ${fa(currentMembership()?.unit_id ? '?' : '')}`)}</small>`
+    ? `${esc(building?.building_name || 'مدیریت مجتمع‌های مسکونی')}<small>${S.me.is_superadmin ? 'ادمین اصلی' : (isManager() ? 'پنل مدیریت' : `واحد ${fa(currentMembership()?.unit_no || '—')}`)}</small>`
     : esc(titles[S.view] || '');
+
   const btns = $$('.bnav-items button');
   const active = btns.find(b => b.dataset.v === S.view) || btns.find(b => b.dataset.v.endsWith('_services') && (S.view === 'services')) || btns[2];
   btns.forEach(b => b.classList.toggle('on', b === active));
+  
   const diaWrap = $('#bnav-dia-wrap'), notch = $('#bnav-notch'), wrap = $('.bnav-in');
   if (diaWrap && active && wrap) {
     const wr = wrap.getBoundingClientRect(), br = active.getBoundingClientRect();
@@ -795,6 +799,8 @@ function renderHeaderState() {
     const rightPos = wr.width - centerOffset;
     diaWrap.style.right = rightPos + 'px';
     if(notch) notch.style.right = (rightPos - 100) + 'px';
+    
+    // تغییر آیکون لوزی بر اساس تب فعال
     const svgMatch = active.innerHTML.match(/<svg[\s\S]*?<\/svg>/);
     if (svgMatch) $('#bnav-dia-icon').innerHTML = svgMatch[0];
   }
