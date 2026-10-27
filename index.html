@@ -1249,6 +1249,7 @@ window.deleteTx = async (id) => {
   const m = modal(`
     <h2>ثبت تراکنش جدید</h2>
     <form id="tx-form" class="grid" style="gap:14px">
+      
       <label class="f">نوع تراکنش
         <select id="tx-type">
           <option value="درآمد">درآمد (دریافتنی از ساکنین)</option>
@@ -1261,33 +1262,62 @@ window.deleteTx = async (id) => {
       </label>
 
       <label class="f">شرح تراکنش
-        <input id="tx-desc" placeholder="مثلاً شارژ آبان ۱۴۰۵" required>
+        <input id="tx-desc" placeholder="مثلاً شارژ آبان یا تعمیر آسانسور" required>
       </label>
 
-      <label class="f">مبلغ کل (تومان)
+      <label class="f">مبلغ (تومان)
         <input id="tx-amount" inputmode="numeric" required>
+        <small id="tx-amount-hint" style="color:var(--muted); font-weight:normal; margin-top:4px;"></small>
       </label>
 
       <label class="f">تاریخ
         <input id="tx-date" class="date-picker-input" readonly required>
       </label>
 
-      <!-- بخش انتخاب مسئول پرداخت (بر اساس نوع سکونت) -->
-      <div id="tx-alloc-wrap" style="margin-top:8px; padding:12px; background:var(--bg); border-radius:12px; border:1px solid var(--line)">
-        <label class="f" style="margin-bottom:8px; color:var(--ink)">مسئول پرداخت (می‌توانید چند مورد را تیک بزنید):</label>
-        <div style="display:flex; flex-direction:column; gap:10px;">
+      <div id="tx-expense-split-wrap" style="display:none; margin-top:8px; padding:12px; background:var(--bg); border-radius:12px; border:1px solid var(--line)">
+        <label class="f" style="margin-bottom:8px; color:var(--ink)">آیا این هزینه تسهیمی است؟</label>
+        <select id="tx-is-split" style="margin-bottom:10px;">
+          <option value="yes">بله، بین ساکنین تسهیم شود</option>
+          <option value="no">خیر، فقط از صندوق کسر شود (بدون بدهی برای ساکنین)</option>
+        </select>
+        
+        <div id="tx-split-methods" style="display:none;">
+          <label class="f" style="margin-bottom:8px; color:var(--ink)">روش تسهیم:</label>
+          <select id="tx-method" style="margin-bottom:10px;">
+            <option value="fixed">مبلغ ثابت برای هر واحد</option>
+            <option value="area">بر اساس متراژ</option>
+            <option value="residents">بر اساس نفرات</option>
+            <option value="selected">واحدهای خاص (انتخابی)</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- لیست انتخاب مسئولین (برای درآمد یا واحدهای خاص) -->
+      <div id="tx-alloc-wrap" style="display:none; margin-top:8px; padding:12px; background:var(--bg); border-radius:12px; border:1px solid var(--line); max-height:250px; overflow-y:auto;">
+        <label class="f" style="margin-bottom:8px; color:var(--ink)" id="tx-alloc-label">مسئول پرداخت:</label>
+        
+        <!-- حالت ۱: انتخاب بر اساس نوع سکونت (برای شارژ) -->
+        <div id="tx-occ-list" style="display:flex; flex-direction:column; gap:10px;">
           <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
-            <input type="checkbox" class="occ-check" value="owner" checked style="width:20px;height:20px;accent-color:var(--navy)">
-            <span style="font-weight:700">مالک (غیرساکن)</span>
+            <input type="checkbox" class="occ-check" value="owner" checked style="width:20px;height:20px;accent-color:var(--navy)"><span style="font-weight:700">مالک (غیرساکن)</span>
           </label>
           <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
-            <input type="checkbox" class="occ-check" value="tenant" checked style="width:20px;height:20px;accent-color:var(--navy)">
-            <span style="font-weight:700">مستأجر</span>
+            <input type="checkbox" class="occ-check" value="tenant" checked style="width:20px;height:20px;accent-color:var(--navy)"><span style="font-weight:700">مستأجر</span>
           </label>
           <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
-            <input type="checkbox" class="occ-check" value="owner_resident" checked style="width:20px;height:20px;accent-color:var(--navy)">
-            <span style="font-weight:700">مالک ساکن</span>
+            <input type="checkbox" class="occ-check" value="owner_resident" checked style="width:20px;height:20px;accent-color:var(--navy)"><span style="font-weight:700">مالک ساکن</span>
           </label>
+        </div>
+
+        <!-- حالت ۲: انتخاب تک تک واحدها (برای واحدهای خاص) -->
+        <div id="tx-unit-list" style="display:none; flex-direction:column; gap:10px;">
+          ${members.filter(x => x.access_role === 'resident').map(x => `
+            <label style="display:flex; align-items:center; gap:8px; cursor:pointer; padding:4px 0; border-bottom:1px dashed var(--line)">
+              <input type="checkbox" class="unit-check" value="${x.membership_id}" checked style="width:20px;height:20px;accent-color:var(--navy)">
+              <span style="font-weight:700">واحد ${fa(x.unit_no)}</span>
+              <span style="font-size:12px;color:var(--muted)">(${esc(x.full_name)})</span>
+            </label>
+          `).join('')}
         </div>
       </div>
 
@@ -1297,13 +1327,66 @@ window.deleteTx = async (id) => {
 
   bindDatePickers(m);
   const typeSel = $('#tx-type', m), catSel = $('#tx-cat', m);
+  const splitWrap = $('#tx-expense-split-wrap', m), splitSel = $('#tx-is-split', m), methodsWrap = $('#tx-split-methods', m), methodSel = $('#tx-method', m);
+  const allocWrap = $('#tx-alloc-wrap', m), occList = $('#tx-occ-list', m), unitList = $('#tx-unit-list', m), allocLabel = $('#tx-alloc-label', m);
+  const amountHint = $('#tx-amount-hint', m);
 
-  const updateCats = () => {
+  const updateUI = () => {
     const isInc = typeSel.value === 'درآمد';
+    const isSplit = splitSel.value === 'yes';
+    const method = methodSel.value;
+    
     catSel.innerHTML = (isInc ? incCats : expCats).map(c => `<option value="${c}">${c}</option>`).join('');
+    
+    // نمایش/مخفی کردن بخش تسهیم هزینه
+    splitWrap.style.display = isInc ? 'none' : 'block';
+    methodsWrap.style.display = (!isInc && isSplit) ? 'block' : 'none';
+    
+    // تعیین وضعیت بخش انتخاب افراد
+    if (isInc) {
+      allocWrap.style.display = 'block';
+      occList.style.display = 'flex';
+      unitList.style.display = 'none';
+      allocLabel.textContent = 'مسئول پرداخت (بر اساس نوع سکونت):';
+    } else if (isSplit && method === 'selected') {
+      allocWrap.style.display = 'block';
+      occList.style.display = 'none';
+      unitList.style.display = 'flex';
+      allocLabel.textContent = 'انتخاب واحدهای مشمول هزینه:';
+    } else if (isSplit && method !== 'selected') {
+      allocWrap.style.display = 'block';
+      occList.style.display = 'flex';
+      unitList.style.display = 'none';
+      allocLabel.textContent = 'مسئول پرداخت (بر اساس نوع سکونت):';
+    } else {
+      allocWrap.style.display = 'none';
+    }
+    
+    updateHint();
   };
-  typeSel.addEventListener('change', updateCats);
-  updateCats();
+
+  const updateHint = () => {
+    const isInc = typeSel.value === 'درآمد';
+    const isSplit = splitSel.value === 'yes';
+    const m = methodSel.value;
+    
+    if (!isInc && !isSplit) {
+      amountHint.textContent = 'این مبلغ مستقیماً از صندوق کسر می‌شود و بدهی برای ساکنین ایجاد نمی‌کند.';
+    } else if (m === 'fixed') {
+      amountHint.textContent = 'مبلغی که وارد می‌کنید، برای هر واحد به صورت ثابت محاسبه می‌شود.';
+    } else if (m === 'area') {
+      amountHint.textContent = 'مبلغی که وارد می‌کنید، به ازای هر متر مربع محاسبه می‌شود.';
+    } else if (m === 'residents') {
+      amountHint.textContent = 'مبلغی که وارد می‌کنید، به ازای هر نفر ساکن محاسبه می‌شود.';
+    } else if (m === 'selected') {
+      amountHint.textContent = 'مبلغی که وارد می‌کنید، بین واحدهایی که در پایین انتخاب می‌کنید (به صورت مساوی) تقسیم می‌شود.';
+    }
+  };
+
+  typeSel.addEventListener('change', updateUI);
+  splitSel.addEventListener('change', updateUI);
+  methodSel.addEventListener('change', updateUI);
+  updateUI();
 
   $$('#tx-amount', m).forEach(inp => inp.addEventListener('input', e => { const n = toNum(e.target.value); e.target.value = n ? fmt(n) : ''; }));
 
@@ -1311,39 +1394,62 @@ window.deleteTx = async (id) => {
     e.preventDefault();
     const amount = toNum($('#tx-amount', m).value);
     const type = typeSel.value;
+    const isSplit = splitSel.value === 'yes';
+    const method = methodSel.value;
     
-    // پیدا کردن نوع‌های سکونتی که تیک خورده‌اند
-    const selectedOccTypes = [];
-    $$('.occ-check', m).forEach(cb => { if (cb.checked) selectedOccTypes.push(cb.value); });
-    
-    if (selectedOccTypes.length === 0) { toastErr('حداقل یک مسئول پرداخت انتخاب کنید'); return; }
-
-    // فیلتر کردن اعضا بر اساس نوع سکونت انتخاب شده
-    const targetMembers = members.filter(x => x.access_role === 'resident' && selectedOccTypes.includes(x.resident_type));
-
-    if (targetMembers.length === 0) { toastErr('هیچ ساکنی با این ویژگی‌ها پیدا نشد'); return; }
-
     let allocations = [];
-    // برای شارژ (درآمد)، مبلغ کل به هر واحد تعلق می‌گیرد
-    if (type === 'درآمد') {
-      targetMembers.forEach(mem => {
-        allocations.push({ membership_id: mem.membership_id, amount: amount });
-      });
-    } 
-    // برای هزینه، مساوی بین انتخاب‌شده‌ها تقسیم می‌شود (می‌توانید منطق را تغییر دهید)
-    else {
-      targetMembers.forEach(mem => {
-        allocations.push({ membership_id: mem.membership_id }); // بدون مبلغ = مساوی
-      });
+    let finalDbMethod = 'none';
+    let totalAmountToSend = amount;
+
+    if (type === 'درآمد' || (isSplit && method !== 'selected')) {
+      // بر اساس نوع سکونت
+      const selectedOccTypes = [];
+      $$('.occ-check', m).forEach(cb => { if (cb.checked) selectedOccTypes.push(cb.value); });
+      if (selectedOccTypes.length === 0) { toastErr('حداقل یک نوع سکونت را انتخاب کنید'); return; }
+      
+      const targetMembers = members.filter(x => x.access_role === 'resident' && selectedOccTypes.includes(x.resident_type));
+      if (targetMembers.length === 0) { toastErr('هیچ ساکنی با این ویژگی‌ها پیدا نشد'); return; }
+
+      if (method === 'fixed') {
+        totalAmountToSend = amount * targetMembers.length;
+        finalDbMethod = 'fixed';
+      } else if (method === 'area') {
+        totalAmountToSend = targetMembers.reduce((sum, mem) => sum + (amount * (mem.area || 1)), 0);
+        finalDbMethod = 'area';
+      } else if (method === 'residents') {
+        totalAmountToSend = targetMembers.reduce((sum, mem) => sum + (amount * (mem.resident_count || 1)), 0);
+        finalDbMethod = 'residents';
+      } else if (type === 'درآمد') {
+        // اگر درآمد بود و روش تسهیم انتخاب نشده بود، پیش فرض مبلغ ثابت
+        totalAmountToSend = amount * targetMembers.length;
+        finalDbMethod = 'manual'; 
+        targetMembers.forEach(mem => allocations.push({ membership_id: mem.membership_id, amount: amount }));
+      }
+      
+      if (type !== 'درآمد') {
+         targetMembers.forEach(mem => allocations.push({ membership_id: mem.membership_id }));
+      }
+
+    } else if (isSplit && method === 'selected') {
+      // تسهیم بین واحدهای خاص
+      const selectedUnits = [];
+      $$('.unit-check', m).forEach(cb => { if (cb.checked) selectedUnits.push(cb.value); });
+      if (selectedUnits.length === 0) { toastErr('حداقل یک واحد را انتخاب کنید'); return; }
+      
+      totalAmountToSend = amount; // مبلغ کل وارد شده، بین این واحدها مساوی تقسیم می‌شود
+      finalDbMethod = 'manual'; // به دیتابیس می‌گوییم خودمان سهم‌ها را محاسبه کردیم
+      
+      const perUnit = amount / selectedUnits.length;
+      selectedUnits.forEach(mid => allocations.push({ membership_id: mid, amount: perUnit }));
     }
 
     try {
       await T('app_manager_create_expense', {
         p_building_id: bid,
         p_description: $('#tx-desc', m).value,
-        p_amount: type === 'درآمد' ? amount * targetMembers.length : amount, // مبلغ کل برای دیتابیس
+        p_amount: totalAmountToSend,
         p_expense_date: $('#tx-date', m).dataset.gregorian || $('#tx-date', m).value,
-        p_allocation_method: type === 'درآمد' ? 'manual' : 'equal',
+        p_allocation_method: finalDbMethod,
         p_tx_type: type,
         p_category: catSel.value,
         p_allocations: allocations
