@@ -1,0 +1,11 @@
+{
+  "name": "مدیریت مجتمع‌های مسکونی",
+  "short_name": "مدیریت مجتمع",
+  "description": "سامانه مدیریت مالی و درخواست‌های مجتمع‌های مسکونی",
+  "lang": "fa",
+  "dir": "rtl",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#f4f7f6",
+  "theme_color": "#123c35"
+}
