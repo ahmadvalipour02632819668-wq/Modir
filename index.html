@@ -1417,7 +1417,7 @@ window.deleteTx = async (id) => {
         totalAmountToSend = targetMembers.reduce((sum, mem) => sum + (amount * (mem.area || 1)), 0);
         finalDbMethod = 'area';
       } else if (method === 'residents') {
-        totalAmountToSend = targetMembers.reduce((sum, mem) => sum + (amount * (mem.resident_count || 1)), 0);
+        totalAmountToSend = targetMembers.reduce((sum, mem) => sum + (amount * (Number(mem.resident_count || 1)), 0);
         finalDbMethod = 'residents';
       } else if (type === 'درآمد') {
         // اگر درآمد بود و روش تسهیم انتخاب نشده بود، پیش فرض مبلغ ثابت
