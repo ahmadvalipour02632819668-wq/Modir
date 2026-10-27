@@ -1091,8 +1091,7 @@ async function viewManagerUnits(el) {
   el.innerHTML = `<h1>واحدها و ساکنین</h1><p class="sub">${fa(Object.keys(byUnit).length)} واحد ثبت‌شده</p><div class="grid g2">${Object.entries(byUnit).sort((a, b) => b[0] - a[0]).map(([unit, arr]) => `<div class="card"><h2 style="margin:0 0 12px">واحد ${fa(unit)}</h2>${arr.map(x => `<div style="padding:10px 0;border-bottom:1px dashed var(--line)"><div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap"><b>${esc(x.full_name)}</b><span class="chip ${x.membership_status === 'active' ? 'ok' : 'ex'}">${x.membership_status === 'active' ? 'فعال' : x.membership_status}</span></div><div class="sub" style="margin:4px 0">${RESIDENT_TYPES[x.resident_type] || ''} · <span dir="ltr">${esc(x.username)}</span></div><div class="sub" style="margin:4px 0">${esc(x.phone || 'بدون موبایل')}</div><div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap"><button class="btn lt sm" data-edit="${x.membership_id}">ویرایش</button>${x.membership_status === 'active' ? `<button class="btn rd sm" data-end="${x.membership_id}">پایان عضویت</button>` : ''}</div></div>`).join('')}</div>`).join('') || `<div class="empty"><div class="ico">🏢</div><p>ساکنی ثبت نشده</p></div>`}</div>`;
   $$('[data-edit]', el).forEach(b => b.addEventListener('click', () => { const mem = members.find(x => x.membership_id === b.dataset.edit); if (mem) editMemberModal(mem, m.building_id); }));
   $$('[data-end]', el).forEach(b => b.addEventListener('click', async () => { if (!await confirmDlg('پایان عضویت این ساکن؟ (تاریخچه مالی حفظ می‌شود)')) return; T('app_manager_end_member_membership', { p_building_id: m.building_id, p_membership_id: b.dataset.end }).then(() => { toastOk('عضویت پایان یافت'); go('m_units'); }).catch(showErr); }));
-}
-function editMemberModal(mem, bid) {
+}function editMemberModal(mem, bid) {
   const m = modal(`
     <h2>ویرایش ساکن</h2>
     <p class="sub">${esc(mem.full_name)} · واحد ${fa(mem.unit_no)}</p>
@@ -1101,13 +1100,17 @@ function editMemberModal(mem, bid) {
       <label class="f">شماره موبایل<input id="em-phone" dir="ltr" value="${esc(mem.phone || '')}"></label>
       <label class="f">ایمیل<input id="em-email" type="email" dir="ltr" value="${esc(mem.email || '')}"></label>
       
-      <!-- فیلد جدید برای ویرایش وضعیت سکونت -->
       <label class="f">وضعیت سکونت
         <select id="em-role">
           <option value="owner_resident" ${mem.resident_type === 'owner_resident' ? 'selected' : ''}>مالک ساکن</option>
           <option value="owner" ${mem.resident_type === 'owner' ? 'selected' : ''}>مالک (غیرساکن)</option>
           <option value="tenant" ${mem.resident_type === 'tenant' ? 'selected' : ''}>مستأجر</option>
         </select>
+      </label>
+
+      <!-- فیلد جدید: تعداد نفرات ساکن -->
+      <label class="f">تعداد نفرات ساکن در واحد
+        <input id="em-res-count" type="number" min="0" value="${mem.unit_resident_count || 1}">
       </label>
       
       <button class="btn" type="submit">ذخیره تغییرات</button>
@@ -1123,7 +1126,8 @@ function editMemberModal(mem, bid) {
         p_full_name: $('#em-name', m).value,
         p_phone: $('#em-phone', m).value || null,
         p_email: $('#em-email', m).value || null,
-        p_resident_type: $('#em-role', m).value // ارسال نقش جدید
+        p_resident_type: $('#em-role', m).value,
+        p_resident_count: +$('#em-res-count', m).value // ارسال تعداد نفرات
       });
       m.remove();
       toastOk('ذخیره شد');
