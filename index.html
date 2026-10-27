@@ -1169,26 +1169,54 @@ function newExpenseModal(bid, members) {
     if (method === 'none') { wrap.style.display = 'none'; return; }
     wrap.style.display = '';
     listEl.innerHTML = members.map(x => `<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px dashed var(--line)"><input type="checkbox" class="alloc-check" data-mid="${x.membership_id}" checked style="width:18px;height:18px;accent-color:var(--navy)"><span style="flex:1;font-size:13px">${esc(x.full_name)} <small style="color:var(--muted)">(واحد ${fa(x.unit_no)})</small></span>${method === 'manual' ? `<input type="text" class="alloc-amount" inputmode="numeric" placeholder="مبلغ" style="width:120px;min-height:36px;padding:4px 8px">` : ''}</div>`).join('');
-    $$('.alloc-amount', listEl).forEach(inp => inp.addEventListener('input', e => { const n = toNum(e.target.value); e.target.value = n ? fmt(n) : ''; }));
+    attachNumericInputIn(listEl, '.alloc-amount');
   };
   methodSel.addEventListener('change', buildAllocList); buildAllocList();
+  
   $('#nef', m).addEventListener('submit', async e => {
     e.preventDefault();
     const method = methodSel.value, amount = toNum($('#ne-amount', m).value);
     if (amount <= 0) { toastErr('مبلغ باید بیشتر از صفر باشد'); return; }
+    
     let allocations = [];
     if (method !== 'none') {
       $$('.alloc-check', m).forEach(cb => {
         if (cb.checked) {
           const item = { membership_id: cb.dataset.mid };
-          if (method === 'manual') { const amtInput = cb.parentElement.querySelector('.alloc-amount'); item.amount = toNum(amtInput.value); if (item.amount <= 0) return; }
-          else if (method === 'fixed') { item.amount = amount; }
+          // اگر روش "مبلغ ثابت" انتخاب شده بود، مبلغ وارد شده برابر با سهم هر نفر است
+          if (method === 'manual') { 
+            const amtInput = cb.parentElement.querySelector('.alloc-amount'); 
+            item.amount = toNum(amtInput.value); 
+            if (item.amount <= 0) return; 
+          } else if (method === 'fixed') { 
+            item.amount = amount; 
+          }
           allocations.push(item);
         }
       });
       if (allocations.length === 0) { toastErr('حداقل یک مسئول پرداخت انتخاب کنید'); return; }
     }
-    try { await T('app_manager_create_expense', { p_building_id: bid, p_description: $('#ne-desc', m).value, p_amount: amount, p_expense_date: $('#ne-date', m).dataset.gregorian || $('#ne-date', m).value, p_allocation_method: method === 'fixed' ? 'manual' : method, p_allocations: allocations }); m.remove(); toastOk('هزینه ثبت شد'); go('m_expenses'); } catch (err) { showErr(err); }
+    
+    // محاسبه مبلغ کل نهایی برای فرستادن به دیتابیس (در حالت مبلغ ثابت، مبلغ در تعداد افراد ضرب می‌شود)
+    let totalAmountToSend = amount;
+    if (method === 'fixed') {
+        totalAmountToSend = amount * allocations.length;
+    }
+
+    try { 
+      await T('app_manager_create_expense', { 
+        p_building_id: bid, 
+        p_description: $('#ne-desc', m).value, 
+        p_amount: totalAmountToSend, 
+        p_expense_date: $('#ne-date', m).dataset.gregorian || $('#ne-date', m).value, 
+        // روش در دیتابیس "دستی" فرستاده می‌شود چون خودمان مبلغ هر نفر را محاسبه و ارسال کردیم
+        p_allocation_method: method === 'fixed' ? 'manual' : method, 
+        p_allocations: allocations 
+      }); 
+      m.remove(); 
+      toastOk('هزینه ثبت شد'); 
+      go('m_expenses'); 
+    } catch (err) { showErr(err); }
   });
 }
 async function viewManagerRates(el) {
