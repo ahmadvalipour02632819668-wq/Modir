@@ -1130,92 +1130,211 @@ function editMemberModal(mem, bid) {
       go('m_units');
     } catch (err) { showErr(err); }
   });
-}async function viewManagerExpenses(el) {
+}
+  async function viewManagerExpenses(el) {
   const m = currentMembership(); if (!m) return;
   const bid = m.building_id;
-  const [report, membersRes] = await Promise.all([T('app_manager_get_monthly_report', { p_building_id: bid, p_year: TODAY.y, p_month: TODAY.m }).catch(() => null), T('app_manager_list_building_members', { p_building_id: bid })]);
-  const members = (membersRes.members || []).filter(x => x.membership_status === 'active');
-  const expenses = report?.expenses || [];
+  
+  let members = [];
+  try { const r = await T('app_manager_list_building_members', { p_building_id: bid }); members = r.members || []; } catch {}
+
+  const yearOptions = []; for (let y = TODAY.y; y >= TODAY.y - 3; y--) yearOptions.push(y);
+
   el.innerHTML = `
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px"><div><h1 style="margin:0">هزینه‌ها</h1><p class="sub" style="margin:0">مدیریت هزینه‌های ساختمان</p></div><button class="btn" id="new-exp">+ ثبت هزینه جدید</button></div>
-    ${expenses.length ? `<div class="grid g2">${expenses.map(e => `<div class="card"><div style="display:flex;justify-content:space-between;gap:8px;margin-bottom:8px"><b>${esc(e.description)}</b><span class="chip ${e.expense_status === 'active' ? 'ok' : 'no'}">${e.expense_status === 'active' ? 'فعال' : 'برگشت‌خورده'}</span></div><div class="sub" style="margin:0 0 8px">مبلغ: <b>${fmt(e.amount)}</b> تومان · ${e.expense_date}</div><div class="sub" style="margin:0 0 10px">روش تسهیم: ${allocationLabel(e.allocation_method)}</div>${e.expense_status === 'active' ? `<button class="btn rd sm" data-reverse="${e.id}">برگشت هزینه</button>` : ''}</div>`).join('')}</div>` : `<div class="empty"><div class="ico">💰</div><p>هزینه‌ای در این ماه ثبت نشده</p></div>`}`;
-  $('#new-exp', el).addEventListener('click', () => newExpenseModal(bid, members));
-  $$('[data-reverse]', el).forEach(b => b.addEventListener('click', async () => { const reason = await promptDlg('دلیل برگشت هزینه:'); if (!reason || reason.length < 3) { toastErr('دلیل باید حداقل ۳ کاراکتر باشد'); return; } T('app_manager_reverse_expense', { p_building_id: bid, p_expense_id: b.dataset.reverse, p_reason: reason }).then(() => { toastOk('برگشت خورد'); go('m_expenses'); }).catch(showErr); }));
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px">
+      <div><h1 style="margin:0">تراکنش‌های مالی</h1><p class="sub" style="margin:0">مدیریت درآمدها و هزینه‌ها</p></div>
+      <button class="btn" id="new-tx">ثبت تراکنش جدید</button>
+    </div>
+
+    <div class="card" style="margin-bottom:20px;padding:16px;background:var(--bg)">
+      <div class="grid g3" style="grid-template-columns:repeat(auto-fit, minmax(120px, 1fr)); gap:12px;">
+        <label class="f">سال
+          <select id="f-y"><option value="">همه</option>${yearOptions.map(y => `<option value="${y}" ${y === TODAY.y ? 'selected' : ''}>${fa(y)}</option>`).join('')}</select>
+        </label>
+        <label class="f">ماه
+          <select id="f-m"><option value="">همه</option>${MONTHS.map((n, i) => `<option value="${i+1}">${n}</option>`).join('')}</select>
+        </label>
+        <label class="f">نوع
+          <select id="f-t"><option value="">همه</option><option value="درآمد">درآمد</option><option value="هزینه">هزینه</option></select>
+        </label>
+        <label class="f">واحد
+          <select id="f-u"><option value="">همه</option><option value="0">ساختمان</option>${members.filter(x => x.access_role === 'resident').map(x => `<option value="${x.unit_no}">واحد ${fa(x.unit_no)}</option>`).join('')}</select>
+        </label>
+      </div>
+    </div>
+
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>تاریخ</th><th>واحد</th><th>نوع</th><th>دسته</th><th>شرح</th><th>مبلغ</th><th>سکونت</th><th>عملیات</th></tr></thead>
+        <tbody id="tx-list"><tr><td colspan="8" style="text-align:center">در حال بارگذاری...</td></tr></tbody>
+      </table>
+    </div>
+  `;
+
+  const loadTx = async () => {
+    const y = $('#f-y', el).value, m = $('#f-m', el).value, t = $('#f-t', el).value, u = $('#f-u', el).value;
+    const tbody = $('#tx-list', el);
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center">در حال بارگذاری...</td></tr>';
+    
+    try {
+      // تبدیل سال شمسی به میلادی برای فیلتر دیتابیس (چون دیتابیس تاریخ میلادی ذخیره میکند)
+      let gYear = null, gMonth = null;
+      if (y) {
+         if (m) {
+            const g = jalaliToGregorian(+y, +m, 1);
+            gYear = g.getFullYear(); gMonth = g.getMonth() + 1;
+         } else {
+            gYear = jalaliToGregorian(+y, 1, 1).getFullYear(); // فقط سال
+         }
+      }
+
+      const list = await T('app_manager_get_transactions', { 
+        p_building_id: bid, 
+        p_year: gYear, 
+        p_month: gMonth, 
+        p_type: t || null, 
+        p_unit_no: u ? +u : null 
+      });
+
+      if (!list || !list.length) {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:20px">تراکنشی یافت نشد</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = list.map(tx => {
+        const isInc = tx.type === 'درآمد';
+        const badge = isInc ? '<span class="chip ok">درآمد</span>' : '<span class="chip no">هزینه</span>';
+        const unitLabel = tx.unit_no ? `واحد ${fa(tx.unit_no)}` : '<b>ساختمان</b>';
+        const occ = tx.occupancy ? (RESIDENT_TYPES[tx.occupancy] || tx.occupancy) : '—';
+        
+        // تبدیل تاریخ میلادی به شمسی برای نمایش
+        const d = new Date(tx.date);
+        const j = gregorianToJalali(d.getFullYear(), d.getMonth() + 1, d.getDate());
+        const dateStr = `${fa(j[0])}/${String(j[1]).padStart(2,'0')}/${String(j[2]).padStart(2,'0')}`;
+
+        return `<tr>
+          <td>${dateStr}</td>
+          <td>${unitLabel}</td>
+          <td>${badge}</td>
+          <td>${esc(tx.category)}</td>
+          <td>${esc(tx.description)}</td>
+          <td style="font-weight:900;color:${isInc?'var(--success)':'var(--danger)'}">${fmt(tx.amount)}</td>
+          <td>${occ}</td>
+          <td><button class="btn rd sm" onclick="deleteTx('${tx.id}')">حذف</button></td>
+        </tr>`;
+      }).join('');
+
+    } catch (e) {
+      tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:red">${esc(e.message)}</td></tr>`;
+    }
+  };
+
+  $('#f-y', el).addEventListener('change', loadTx);
+  $('#f-m', el).addEventListener('change', loadTx);
+  $('#f-t', el).addEventListener('change', loadTx);
+  $('#f-u', el).addEventListener('change', loadTx);
+  $('#new-tx', el).addEventListener('click', () => newTransactionModal(bid, members));
+
+  loadTx();
 }
-function newExpenseModal(bid, members) {
+
+// تابع حذف تراکنش (اختیاری - فعلا فقط پیام میدهد)
+window.deleteTx = async (id) => {
+    if (!await confirmDlg('آیا از حذف این تراکنش مطمئن هستید؟')) return;
+    toastOk('در نسخه بعدی پیاده‌سازی می‌شود');
+};function newTransactionModal(bid, members) {
+  // لیست‌های پیش‌فرض (می‌توانید از تنظیمات بخوانید)
+  const incCats = ['شارژ ماهیانه', 'پس‌انداز', 'جریمه', 'سایر'];
+  const expCats = ['نظافت', 'سرویس آسانسور', 'تعمیرات', 'قبض آب', 'قبض گاز', 'قبض برق', 'سایر'];
+
   const m = modal(`
-    <h2>ثبت هزینه جدید</h2>
-    <form id="nef" class="grid" style="gap:14px">
-      <label class="f">شرح هزینه<input id="ne-desc" placeholder="مثلاً شارژ آبان..." required></label>
-      <label class="f">مبلغ (تومان)<input id="ne-amount" inputmode="numeric" required></label>
-      <label class="f">تاریخ<input id="ne-date" class="date-picker-input" readonly placeholder="انتخاب تاریخ" required></label>
-      <label class="f">روش تسهیم
-        <select id="ne-method">
-          <option value="none">بدون تسهیم</option>
-          <option value="fixed">مبلغ ثابت برای همه (مثل شارژ)</option>
-          <option value="equal">مساوی بین همه</option>
-          <option value="area">بر اساس متراژ</option>
-          <option value="residents">بر اساس تعداد ساکنین</option>
-          <option value="manual">دستی</option>
+    <h2>ثبت تراکنش جدید</h2>
+    <form id="tx-form" class="grid" style="gap:14px">
+      <label class="f">نوع تراکنش
+        <select id="tx-type">
+          <option value="درآمد">درآمد (دریافتنی از ساکنین)</option>
+          <option value="هزینه">هزینه (کسر از صندوق)</option>
         </select>
       </label>
-      <div id="ne-alloc-wrap" style="display:none"><label class="f" style="margin-bottom:8px">مسئولین پرداخت (تیک افراد غیرمسئول را بردارید)</label><div id="ne-alloc-list" style="margin-top:8px"></div></div>
-      <button class="btn" type="submit">ثبت هزینه</button>
-    </form>`);
+
+      <label class="f">دسته‌بندی
+        <select id="tx-cat"></select>
+      </label>
+
+      <label class="f">شرح تراکنش
+        <input id="tx-desc" placeholder="مثلاً شارژ آبان ۱۴۰۵" required>
+      </label>
+
+      <label class="f">مبلغ کل (تومان)
+        <input id="tx-amount" inputmode="numeric" required>
+      </label>
+
+      <label class="f">تاریخ
+        <input id="tx-date" class="date-picker-input" readonly required>
+      </label>
+
+      <div id="tx-alloc-wrap" style="display:none">
+        <label class="f" style="margin-bottom:8px">تسهیم بین چه کسانی؟ (تیک بزنید)</label>
+        <div id="tx-alloc-list" style="margin-top:8px"></div>
+      </div>
+
+      <button class="btn" type="submit" style="margin-top:10px">ثبت تراکنش</button>
+    </form>
+  `);
+
   bindDatePickers(m);
-  const methodSel = $('#ne-method', m), wrap = $('#ne-alloc-wrap', m), listEl = $('#ne-alloc-list', m);
-  const buildAllocList = () => {
-    const method = methodSel.value;
-    if (method === 'none') { wrap.style.display = 'none'; return; }
-    wrap.style.display = '';
-    listEl.innerHTML = members.map(x => `<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px dashed var(--line)"><input type="checkbox" class="alloc-check" data-mid="${x.membership_id}" checked style="width:18px;height:18px;accent-color:var(--navy)"><span style="flex:1;font-size:13px">${esc(x.full_name)} <small style="color:var(--muted)">(واحد ${fa(x.unit_no)})</small></span>${method === 'manual' ? `<input type="text" class="alloc-amount" inputmode="numeric" placeholder="مبلغ" style="width:120px;min-height:36px;padding:4px 8px">` : ''}</div>`).join('');
-    attachNumericInputIn(listEl, '.alloc-amount');
+  const typeSel = $('#tx-type', m), catSel = $('#tx-cat', m), allocWrap = $('#tx-alloc-wrap', m), allocList = $('#tx-alloc-list', m);
+
+  // تغییر دسته‌بندی‌ها بر اساس نوع
+  const updateCats = () => {
+    const isInc = typeSel.value === 'درآمد';
+    catSel.innerHTML = (isInc ? incCats : expCats).map(c => `<option value="${c}">${c}</option>`).join('');
+    
+    // در حالت هزینه، فرم تسهیم باز می‌شود. در حالت درآمد، فقط مسئول پرداخت مشخص می‌شود.
+    allocWrap.style.display = 'block';
+    
+    allocList.innerHTML = members.filter(x => x.access_role === 'resident').map(x => `
+      <div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px dashed var(--line)">
+        <input type="checkbox" class="tx-alloc-check" data-mid="${x.membership_id}" checked style="width:18px;height:18px;accent-color:var(--navy)">
+        <span style="flex:1;font-size:13px">${esc(x.full_name)} <small style="color:var(--muted)">(واحد ${fa(x.unit_no)})</small></span>
+      </div>
+    `).join('');
   };
-  methodSel.addEventListener('change', buildAllocList); buildAllocList();
-  
-  $('#nef', m).addEventListener('submit', async e => {
+  typeSel.addEventListener('change', updateCats);
+  updateCats();
+
+  $$('#tx-amount', m).forEach(inp => inp.addEventListener('input', e => { const n = toNum(e.target.value); e.target.value = n ? fmt(n) : ''; }));
+
+  $('#tx-form', m).addEventListener('submit', async e => {
     e.preventDefault();
-    const method = methodSel.value, amount = toNum($('#ne-amount', m).value);
-    if (amount <= 0) { toastErr('مبلغ باید بیشتر از صفر باشد'); return; }
+    const amount = toNum($('#tx-amount', m).value);
+    const method = typeSel.value === 'درآمد' ? 'fixed' : 'equal'; // درآمد ثابت، هزینه مساوی (فعلا)
     
     let allocations = [];
     if (method !== 'none') {
-      $$('.alloc-check', m).forEach(cb => {
+      $$('.tx-alloc-check', m).forEach(cb => {
         if (cb.checked) {
           const item = { membership_id: cb.dataset.mid };
-          // اگر روش "مبلغ ثابت" انتخاب شده بود، مبلغ وارد شده برابر با سهم هر نفر است
-          if (method === 'manual') { 
-            const amtInput = cb.parentElement.querySelector('.alloc-amount'); 
-            item.amount = toNum(amtInput.value); 
-            if (item.amount <= 0) return; 
-          } else if (method === 'fixed') { 
-            item.amount = amount; 
-          }
+          if (method === 'fixed') item.amount = amount; // در حالت شارژ، هر نفر کل مبلغ را بدهکار است
           allocations.push(item);
         }
       });
-      if (allocations.length === 0) { toastErr('حداقل یک مسئول پرداخت انتخاب کنید'); return; }
-    }
-    
-    // محاسبه مبلغ کل نهایی برای فرستادن به دیتابیس (در حالت مبلغ ثابت، مبلغ در تعداد افراد ضرب می‌شود)
-    let totalAmountToSend = amount;
-    if (method === 'fixed') {
-        totalAmountToSend = amount * allocations.length;
     }
 
-    try { 
-      await T('app_manager_create_expense', { 
-        p_building_id: bid, 
-        p_description: $('#ne-desc', m).value, 
-        p_amount: totalAmountToSend, 
-        p_expense_date: $('#ne-date', m).dataset.gregorian || $('#ne-date', m).value, 
-        // روش در دیتابیس "دستی" فرستاده می‌شود چون خودمان مبلغ هر نفر را محاسبه و ارسال کردیم
-        p_allocation_method: method === 'fixed' ? 'manual' : method, 
-        p_allocations: allocations 
-      }); 
-      m.remove(); 
-      toastOk('هزینه ثبت شد'); 
-      go('m_expenses'); 
+    try {
+      await T('app_manager_create_expense', {
+        p_building_id: bid,
+        p_description: $('#tx-desc', m).value,
+        p_amount: amount,
+        p_expense_date: $('#tx-date', m).dataset.gregorian || $('#tx-date', m).value,
+        p_allocation_method: method,
+        p_tx_type: typeSel.value,
+        p_category: catSel.value,
+        p_allocations: allocations
+      });
+      m.remove();
+      toastOk('تراکنش با موفقیت ثبت شد');
+      go('m_expenses');
     } catch (err) { showErr(err); }
   });
 }
