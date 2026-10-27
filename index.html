@@ -1019,7 +1019,7 @@ async function viewManagerDash(el) {
   const totalDebt = unitList.reduce((s, u) => s + Math.max(0, u.debt), 0);
   el.innerHTML = `
     <h1>داشبورد مدیریت</h1><p class="sub">${esc(m.building_name)} · خوش آمدید</p>
-    <div class="grid g3" style="margin-bottom:20px">
+    <div class="grid" style="grid-template-columns: 1fr; gap: 16px; margin-bottom:20px;">
       <div class="bank-card"><b style="font-size:15px">موجودی صندوق</b><div class="bc-row"><span>تومان</span></div><div class="bc-row" style="margin-top:4px"><span class="bc-amt">${fmt(fund?.fund_balance || 0)}</span></div></div>
       <div class="bank-card soft"><b style="font-size:15px">دریافتی تاییدشده</b><div class="bc-row"><span>تومان</span></div><div class="bc-amt" style="margin-top:4px">${fmt(fund?.approved_income || 0)}</div></div>
       <div class="bank-card peach"><b style="font-size:15px">مطالبات معوق</b><div class="bc-row"><span>تومان</span></div><div class="bc-amt" style="margin-top:4px">${fmt(totalDebt)}</div></div>
