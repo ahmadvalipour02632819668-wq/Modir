@@ -1,3 +1,4 @@
+<link rel="manifest" href="manifest.json">
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
@@ -1413,6 +1414,9 @@ async function viewProfile(el) {
 /* ============================================================
    INIT
    ============================================================ */
+/* ============================================================
+   INIT
+   ============================================================ */
 if (S.token) { afterLogin(); } else { renderLogin(); }
 
 window.addEventListener('popstate', () => {
@@ -1425,5 +1429,14 @@ window.addEventListener('popstate', () => {
 history.replaceState({ app: true }, '', '');
 history.pushState({ app: true }, '', '');
 </script>
+
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW registration failed:', err));
+    });
+  }
+</script>
+
 </body>
 </html>
