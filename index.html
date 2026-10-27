@@ -1243,7 +1243,6 @@ window.deleteTx = async (id) => {
     if (!await confirmDlg('آیا از حذف این تراکنش مطمئن هستید؟')) return;
     toastOk('در نسخه بعدی پیاده‌سازی می‌شود');
 };function newTransactionModal(bid, members) {
-  // لیست‌های پیش‌فرض (می‌توانید از تنظیمات بخوانید)
   const incCats = ['شارژ ماهیانه', 'پس‌انداز', 'جریمه', 'سایر'];
   const expCats = ['نظافت', 'سرویس آسانسور', 'تعمیرات', 'قبض آب', 'قبض گاز', 'قبض برق', 'سایر'];
 
@@ -1273,9 +1272,23 @@ window.deleteTx = async (id) => {
         <input id="tx-date" class="date-picker-input" readonly required>
       </label>
 
-      <div id="tx-alloc-wrap" style="display:none">
-        <label class="f" style="margin-bottom:8px">تسهیم بین چه کسانی؟ (تیک بزنید)</label>
-        <div id="tx-alloc-list" style="margin-top:8px"></div>
+      <!-- بخش انتخاب مسئول پرداخت (بر اساس نوع سکونت) -->
+      <div id="tx-alloc-wrap" style="margin-top:8px; padding:12px; background:var(--bg); border-radius:12px; border:1px solid var(--line)">
+        <label class="f" style="margin-bottom:8px; color:var(--ink)">مسئول پرداخت (می‌توانید چند مورد را تیک بزنید):</label>
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+            <input type="checkbox" class="occ-check" value="owner" checked style="width:20px;height:20px;accent-color:var(--navy)">
+            <span style="font-weight:700">مالک (غیرساکن)</span>
+          </label>
+          <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+            <input type="checkbox" class="occ-check" value="tenant" checked style="width:20px;height:20px;accent-color:var(--navy)">
+            <span style="font-weight:700">مستأجر</span>
+          </label>
+          <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+            <input type="checkbox" class="occ-check" value="owner_resident" checked style="width:20px;height:20px;accent-color:var(--navy)">
+            <span style="font-weight:700">مالک ساکن</span>
+          </label>
+        </div>
       </div>
 
       <button class="btn" type="submit" style="margin-top:10px">ثبت تراکنش</button>
@@ -1283,22 +1296,11 @@ window.deleteTx = async (id) => {
   `);
 
   bindDatePickers(m);
-  const typeSel = $('#tx-type', m), catSel = $('#tx-cat', m), allocWrap = $('#tx-alloc-wrap', m), allocList = $('#tx-alloc-list', m);
+  const typeSel = $('#tx-type', m), catSel = $('#tx-cat', m);
 
-  // تغییر دسته‌بندی‌ها بر اساس نوع
   const updateCats = () => {
     const isInc = typeSel.value === 'درآمد';
     catSel.innerHTML = (isInc ? incCats : expCats).map(c => `<option value="${c}">${c}</option>`).join('');
-    
-    // در حالت هزینه، فرم تسهیم باز می‌شود. در حالت درآمد، فقط مسئول پرداخت مشخص می‌شود.
-    allocWrap.style.display = 'block';
-    
-    allocList.innerHTML = members.filter(x => x.access_role === 'resident').map(x => `
-      <div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px dashed var(--line)">
-        <input type="checkbox" class="tx-alloc-check" data-mid="${x.membership_id}" checked style="width:18px;height:18px;accent-color:var(--navy)">
-        <span style="flex:1;font-size:13px">${esc(x.full_name)} <small style="color:var(--muted)">(واحد ${fa(x.unit_no)})</small></span>
-      </div>
-    `).join('');
   };
   typeSel.addEventListener('change', updateCats);
   updateCats();
@@ -1308,16 +1310,30 @@ window.deleteTx = async (id) => {
   $('#tx-form', m).addEventListener('submit', async e => {
     e.preventDefault();
     const amount = toNum($('#tx-amount', m).value);
-    const method = typeSel.value === 'درآمد' ? 'fixed' : 'equal'; // درآمد ثابت، هزینه مساوی (فعلا)
+    const type = typeSel.value;
     
+    // پیدا کردن نوع‌های سکونتی که تیک خورده‌اند
+    const selectedOccTypes = [];
+    $$('.occ-check', m).forEach(cb => { if (cb.checked) selectedOccTypes.push(cb.value); });
+    
+    if (selectedOccTypes.length === 0) { toastErr('حداقل یک مسئول پرداخت انتخاب کنید'); return; }
+
+    // فیلتر کردن اعضا بر اساس نوع سکونت انتخاب شده
+    const targetMembers = members.filter(x => x.access_role === 'resident' && selectedOccTypes.includes(x.resident_type));
+
+    if (targetMembers.length === 0) { toastErr('هیچ ساکنی با این ویژگی‌ها پیدا نشد'); return; }
+
     let allocations = [];
-    if (method !== 'none') {
-      $$('.tx-alloc-check', m).forEach(cb => {
-        if (cb.checked) {
-          const item = { membership_id: cb.dataset.mid };
-          if (method === 'fixed') item.amount = amount; // در حالت شارژ، هر نفر کل مبلغ را بدهکار است
-          allocations.push(item);
-        }
+    // برای شارژ (درآمد)، مبلغ کل به هر واحد تعلق می‌گیرد
+    if (type === 'درآمد') {
+      targetMembers.forEach(mem => {
+        allocations.push({ membership_id: mem.membership_id, amount: amount });
+      });
+    } 
+    // برای هزینه، مساوی بین انتخاب‌شده‌ها تقسیم می‌شود (می‌توانید منطق را تغییر دهید)
+    else {
+      targetMembers.forEach(mem => {
+        allocations.push({ membership_id: mem.membership_id }); // بدون مبلغ = مساوی
       });
     }
 
@@ -1325,10 +1341,10 @@ window.deleteTx = async (id) => {
       await T('app_manager_create_expense', {
         p_building_id: bid,
         p_description: $('#tx-desc', m).value,
-        p_amount: amount,
+        p_amount: type === 'درآمد' ? amount * targetMembers.length : amount, // مبلغ کل برای دیتابیس
         p_expense_date: $('#tx-date', m).dataset.gregorian || $('#tx-date', m).value,
-        p_allocation_method: method,
-        p_tx_type: typeSel.value,
+        p_allocation_method: type === 'درآمد' ? 'manual' : 'equal',
+        p_tx_type: type,
         p_category: catSel.value,
         p_allocations: allocations
       });
