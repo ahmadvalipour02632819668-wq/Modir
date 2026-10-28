@@ -12,6 +12,8 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%232d3463'/><path d='M18 82V38L50 12l32 26v44z' fill='white'/><rect x='40' y='60' width='20' height='22' fill='%23f7ae74'/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.8/dist/umd/supabase.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <style>
@@ -655,7 +657,7 @@ function renderShell() {
       'm_requests': { label: 'درخواست‌ها', icon: lineIco('msg') },
       'm_report': { label: 'گزارش', icon: lineIco('report') },
       'm_services': { label: 'خدمات', icon: lineIco('services') },
-      'm_expenses': { label: 'هزینه‌ها', icon: '💸' },
+      'm_expenses': { label: 'تراکنش‌ها', icon: '💳' },
       'm_units': { label: 'واحدها', icon: '👥' },
       'm_rates': { label: 'تنظیمات', icon: '⚙️' }
     },
@@ -1288,8 +1290,12 @@ async function viewManagerExpenses(el) {
 
   el.innerHTML = `
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px">
-      <div><h1 style="margin:0">تراکنش‌های مالی</h1><p class="sub" style="margin:0">مدیریت درآمدها و هزینه‌ها</p></div>
-      <button class="btn" id="new-tx">ثبت تراکنش جدید</button>
+      <div><h1 style="margin:0">تراکنش‌های مالی</h1><p class="sub" style="margin:0">مدیریت درآمدها، هزینه‌ها و واریزی‌ها</p></div>
+      <div style="display:flex;gap:8px">
+        <button class="btn lt sm" id="export-excel" style="background:#16a34a;color:#fff;border:none">📊 اکسل</button>
+        <button class="btn lt sm" id="export-pdf" style="background:#e5484d;color:#fff;border:none">📄 PDF</button>
+        <button class="btn" id="new-tx">ثبت تراکنش جدید</button>
+      </div>
     </div>
 
     <div class="card" style="margin-bottom:20px;padding:16px;background:var(--bg)">
@@ -1301,7 +1307,7 @@ async function viewManagerExpenses(el) {
           <select id="f-m"><option value="">همه</option>${MONTHS.map((n, i) => `<option value="${i+1}">${n}</option>`).join('')}</select>
         </label>
         <label class="f">نوع
-          <select id="f-t"><option value="">همه</option><option value="درآمد">درآمد</option><option value="هزینه">هزینه</option></select>
+          <select id="f-t"><option value="">همه</option><option value="درآمد">درآمد</option><option value="هزینه">هزینه</option><option value="واریز ساکنین">واریز ساکنین</option></select>
         </label>
         <label class="f">واحد
           <select id="f-u"><option value="">همه</option><option value="0">ساختمان</option>${members.filter(x => (x.access_role === 'resident' || x.access_role === 'manager') && x.unit_no).map(x => `<option value="${x.unit_no}">واحد ${fa(x.unit_no)}</option>`).join('')}</select>
@@ -1309,13 +1315,15 @@ async function viewManagerExpenses(el) {
       </div>
     </div>
 
-    <div class="tbl-wrap">
+    <div class="tbl-wrap" id="printable-area">
       <table>
-        <thead><tr><th>تاریخ</th><th>واحد</th><th>نوع</th><th>دسته</th><th>شرح</th><th>مبلغ کل</th><th>سکونت</th><th>عملیات</th></tr></thead>
+        <thead><tr><th>تاریخ</th><th>واحد</th><th>نوع</th><th>دسته</th><th>شرح</th><th>مبلغ (تومان)</th><th>وضعیت</th><th class="no-print">عملیات</th></tr></thead>
         <tbody id="tx-list"><tr><td colspan="8" style="text-align:center">در حال بارگذاری...</td></tr></tbody>
       </table>
     </div>
   `;
+
+  let currentData = []; // برای استفاده در خروجی اکسل
 
   const loadTx = async () => {
     const y = $('#f-y', el).value, m = $('#f-m', el).value, t = $('#f-t', el).value, u = $('#f-u', el).value;
@@ -1329,48 +1337,56 @@ async function viewManagerExpenses(el) {
          else { gYear = jalaliToGregorian(+y, 1, 1).getFullYear(); }
       }
 
-      // دریافت تمام تراکنش‌ها
-      const rawList = await T('app_manager_get_transactions', { p_building_id: bid, p_year: gYear, p_month: gMonth, p_type: t || null, p_unit_no: u ? +u : null });
+      currentData = await T('app_manager_get_transactions', { 
+        p_building_id: bid, p_year: gYear, p_month: gMonth, p_type: t || null, p_unit_no: u ? +u : null 
+      }) || [];
 
-      if (!rawList || !rawList.length) {
+      if (!currentData.length) {
         tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:20px">تراکنشی یافت نشد</td></tr>';
         return;
       }
 
-      // گروه‌بندی برای نمایش (یک تراکنش = یک ردیف)
-      const grouped = {};
-      rawList.forEach(tx => {
-          if (!grouped[tx.id]) grouped[tx.id] = { ...tx, units: new Set(), occupancies: new Set() };
-          if (tx.unit_no) grouped[tx.id].units.add(tx.unit_no);
-          if (tx.occupancy) grouped[tx.id].occupancies.add(tx.occupancy);
-      });
-
-      const list = Object.values(grouped).sort((a, b) => new Date(b.date) - new Date(a.date));
-
-      tbody.innerHTML = list.map(tx => {
+      tbody.innerHTML = currentData.map(tx => {
         const isInc = tx.type === 'درآمد';
-        const badge = isInc ? '<span class="chip ok">درآمد</span>' : '<span class="chip no">هزینه</span>';
+        const isPay = tx.type === 'واریز ساکنین';
+        
+        let badge = '';
+        if (isInc) badge = '<span class="chip ok">درآمد</span>';
+        else if (isPay) badge = '<span class="chip pd">واریز ساکنین</span>';
+        else badge = '<span class="chip no">هزینه</span>';
+
         const d = new Date(tx.date); const j = gregorianToJalali(d.getFullYear(), d.getMonth() + 1, d.getDate());
         const dateStr = `${fa(j[0])}/${String(j[1]).padStart(2,'0')}/${String(j[2]).padStart(2,'0')}`;
 
-        // اگر بیش از یک واحد باشد یا هیچ واحدی نباشد = ساختمان
-        let unitLabel = (tx.units.size === 1) ? `واحد ${fa(Array.from(tx.units)[0])}` : '<b>ساختمان</b>';
-        let occLabel = tx.occupancies.size > 0 ? Array.from(tx.occupancies).map(o => RESIDENT_TYPES[o] || o).join(' ، ') : '—';
+        let statusChip = '—';
+        if (isPay) {
+            if (tx.status === 'approved') statusChip = '<span class="chip ok">تایید شده</span>';
+            else if (tx.status === 'pending') statusChip = '<span class="chip pd">در انتظار</span>';
+            else if (tx.status === 'rejected') statusChip = '<span class="chip no">رد شده</span>';
+        } else {
+            statusChip = '<span class="chip ex">فعال</span>';
+        }
+
+        // دکمه‌های عملیات (برای واریزی‌ها، دکمه‌های ویرایش و حذف مخفی می‌شوند)
+        let actionBtns = '';
+        if (!isPay) {
+            actionBtns = `
+              <button class="btn lt sm" onclick="editTx('${tx.id}')">ویرایش</button>
+              <button class="btn rd sm" onclick="deleteTx('${tx.id}')">حذف</button>
+            `;
+        } else {
+            actionBtns = `<span style="font-size:12px;color:var(--muted)">در صفحه تایید پرداخت</span>`;
+        }
 
         return `<tr>
           <td>${dateStr}</td>
-          <td>${unitLabel}</td>
+          <td>${esc(tx.unit_display || '—')}</td>
           <td>${badge}</td>
-          <td>${esc(tx.category)}</td>
+          <td>${esc(tx.category || '—')}</td>
           <td>${esc(tx.description)}</td>
-          <td style="font-weight:900;color:${isInc?'var(--success)':'var(--danger)'}">${fmt(tx.amount)}</td>
-          <td style="font-size:12px">${occLabel}</td>
-          <td>
-            <div style="display:flex;gap:4px;flex-wrap:nowrap">
-              <button class="btn lt sm" onclick="editTx('${tx.id}')">ویرایش</button>
-              <button class="btn rd sm" onclick="deleteTx('${tx.id}')">حذف</button>
-            </div>
-          </td>
+          <td style="font-weight:900;color:${(isInc || isPay)?'var(--success)':'var(--danger)'}">${fmt(tx.amount)}</td>
+          <td>${statusChip}</td>
+          <td class="no-print"><div style="display:flex;gap:4px;flex-wrap:nowrap">${actionBtns}</div></td>
         </tr>`;
       }).join('');
     } catch (e) { tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:red">${esc(e.message)}</td></tr>`; }
@@ -1381,30 +1397,57 @@ async function viewManagerExpenses(el) {
   $('#f-t', el).addEventListener('change', loadTx);
   $('#f-u', el).addEventListener('change', loadTx);
   $('#new-tx', el).addEventListener('click', () => newTransactionModal(bid, members));
+  
+  // ⚠️ خروجی اکسل
+  $('#export-excel', el).addEventListener('click', () => {
+    if (!currentData.length) { toastErr('داده‌ای برای خروجی نیست'); return; }
+    const sep = ';'; const q = v => `"${String(v ?? '').replace(/"/g, '""')}"`;
+    const head = ['تاریخ', 'واحد', 'نوع', 'دسته', 'شرح', 'مبلغ', 'وضعیت'];
+    const lines = [head.map(q).join(sep)].concat(currentData.map(tx => {
+        const d = new Date(tx.date); const j = gregorianToJalali(d.getFullYear(), d.getMonth() + 1, d.getDate());
+        const dateStr = `${j[0]}/${String(j[1]).padStart(2,'0')}/${String(j[2]).padStart(2,'0')}`;
+        return [dateStr, tx.unit_display, tx.type, tx.category, tx.description, tx.amount, tx.status].map(q).join(sep);
+    }));
+    const blob = new Blob(['\ufeff' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `گزارش-تراکنش‌ها.csv`; a.click();
+    toastOk('فایل اکسل دانلود شد');
+  });
+
+  // ⚠️ خروجی PDF
+  $('#export-pdf', el).addEventListener('click', async () => {
+    if (!currentData.length) { toastErr('داده‌ای برای خروجی نیست'); return; }
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('p', 'pt', 'a4');
+    
+    // عنوان
+    doc.setFontSize(16);
+    doc.text("Financial Transactions Report", 40, 40);
+    
+    // جدول
+    const tableRows = currentData.map(tx => {
+        const d = new Date(tx.date); const j = gregorianToJalali(d.getFullYear(), d.getMonth() + 1, d.getDate());
+        return [
+            `${j[0]}/${j[1]}/${j[2]}`,
+            tx.unit_display || '—',
+            tx.type,
+            tx.amount.toLocaleString(),
+            tx.description
+        ];
+    });
+
+    doc.autoTable({
+        head: [['Date', 'Unit', 'Type', 'Amount (Toman)', 'Description']],
+        body: tableRows,
+        startY: 60,
+        styles: { font: 'helvetica', fontSize: 10 }
+    });
+
+    doc.save('Transactions-Report.pdf');
+    toastOk('فایل PDF دانلود شد');
+  });
+
   loadTx();
 }
-
-window.deleteTx = async (id) => {
-    if (!await confirmDlg('آیا از حذف این تراکنش مطمئن هستید؟ (اثر آن بر صندوق و بدهی ساکنین برگشت می‌خورد)')) return;
-    try {
-        await T('app_manager_delete_transaction', { p_id: id });
-        toastOk('تراکنش حذف شد');
-        go('m_expenses');
-    } catch (e) { showErr(e); }
-};
-
-window.editTx = async (id) => {
-    const m = currentMembership(); if (!m) return;
-    try {
-        const list = await T('app_manager_get_transactions', { p_building_id: m.building_id });
-        const tx = list.find(x => x.id === id);
-        if (tx) {
-            const membersRes = await T('app_manager_list_building_members', { p_building_id: m.building_id });
-            newTransactionModal(m.building_id, membersRes.members || [], tx);
-        } else { toastErr('تراکنش پیدا نشد'); }
-    } catch (e) { showErr(e); }
-};
-
 function newTransactionModal(bid, members, tx = null) {
   const incCats = ['شارژ ماهیانه', 'پس‌انداز', 'جریمه', 'سایر'];
   const expCats = ['قبض آب', 'قبض گاز', 'قبض برق', 'نظافت', 'سرویس آسانسور', 'تعمیرات', 'سایر'];
