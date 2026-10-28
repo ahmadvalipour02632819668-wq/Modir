@@ -1167,6 +1167,9 @@ async function viewManagerPendingSignups(el) {
   $$('[data-edit]', el).forEach(b => b.addEventListener('click', () => { const mem = members.find(x => x.membership_id === b.dataset.edit); if (mem) editMemberModal(mem, m.building_id); }));
   $$('[data-end]', el).forEach(b => b.addEventListener('click', async () => { if (!await confirmDlg('پایان عضویت این ساکن؟ (تاریخچه مالی حفظ می‌شود)')) return; T('app_manager_end_member_membership', { p_building_id: m.building_id, p_membership_id: b.dataset.end }).then(() => { toastOk('عضویت پایان یافت'); go('m_units'); }).catch(showErr); }));
 }function editMemberModal(mem, bid) {
+  // تبدیل تاریخ عضویت فعلی به شمسی برای نمایش در فرم
+  let initialJoinDate = mem.joined_at || new Date().toISOString().slice(0, 10);
+  
   const m = modal(`
     <h2>ویرایش ساکن</h2>
     <p class="sub">${esc(mem.full_name)} · واحد ${fa(mem.unit_no)}</p>
@@ -1183,14 +1186,33 @@ async function viewManagerPendingSignups(el) {
         </select>
       </label>
 
-      <!-- فیلد جدید: تعداد نفرات ساکن -->
       <label class="f">تعداد نفرات ساکن در واحد
         <input id="em-res-count" type="number" min="0" value="${mem.unit_resident_count || 1}">
+      </label>
+
+      <!-- ⚠️ فیلد جدید: تاریخ شروع عضویت -->
+      <label class="f">تاریخ شروع محاسبه هزینه‌ها (عضویت)
+        <input id="em-join-date" type="text" class="date-picker-input" readonly value="${initialJoinDate}" required>
+        <small style="font-weight:normal;color:var(--muted);margin-top:4px">با تغییر این تاریخ، بدهی‌های قبلی این واحد مجدداً محاسبه می‌شوند.</small>
       </label>
       
       <button class="btn" type="submit">ذخیره تغییرات</button>
     </form>
   `);
+  
+  // فعال‌سازی تقویم شمسی
+  bindDatePickers(m);
+  
+  // تبدیل مقدار اولیه به شمسی برای نمایش در فیلد
+  const dateInput = $('#em-join-date', m);
+  if (initialJoinDate) {
+      const d = new Date(initialJoinDate);
+      if (!isNaN(d.getTime())) {
+          const j = gregorianToJalali(d.getFullYear(), d.getMonth() + 1, d.getDate());
+          dateInput.value = `${j[0]}/${String(j[1]).padStart(2,'0')}/${String(j[2]).padStart(2,'0')}`;
+          dateInput.dataset.gregorian = initialJoinDate;
+      }
+  }
   
   $('#em', m).addEventListener('submit', async e => {
     e.preventDefault();
@@ -1202,10 +1224,11 @@ async function viewManagerPendingSignups(el) {
         p_phone: $('#em-phone', m).value || null,
         p_email: $('#em-email', m).value || null,
         p_resident_type: $('#em-role', m).value,
-        p_resident_count: +$('#em-res-count', m).value // ارسال تعداد نفرات
+        p_resident_count: +$('#em-res-count', m).value,
+        p_joined_at: $('#em-join-date', m).dataset.gregorian || $('#em-join-date', m).value // ارسال تاریخ میلادی
       });
       m.remove();
-      toastOk('ذخیره شد');
+      toastOk('ذخیره شد و محاسبات به‌روزرسانی گردید');
       go('m_units');
     } catch (err) { showErr(err); }
   });
