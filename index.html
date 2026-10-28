@@ -589,7 +589,7 @@ const lineIco = k => LINE_ICONS[k] || ICONS[k] || ICONS.services;
 
 const VIEWS = {
   sa_dash: viewSuperAdminDash, sa_buildings: viewSuperAdminBuildings, sa_requests: viewSuperAdminRequests, sa_profile: viewProfile, sa_services: viewServices,
-  admin_db: viewAdminDatabase, m_dash: viewManagerDash, m_payments: viewManagerPayments, m_requests: viewManagerRequests, m_report: viewManagerReport, m_services: viewServices, m_units: viewManagerUnits, m_expenses: viewManagerExpenses, m_rates: viewManagerRates, m_requests_pending: viewManagerPendingSignups, m_transfer: viewManagerTransfer,
+  admin_db: viewAdminDatabase, m_dash: viewManagerDash, m_payments: viewManagerPayments, m_requests: viewManagerRequests, m_report: viewManagerReport, m_services: viewServices, m_units: viewManagerUnits, m_expenses: viewManagerExpenses, m_rates: viewManagerRates, m_requests_pending: viewManagerPendingSignups, m_transfer: viewManagerTransfer, m_my_pay: viewManagerMyPay,
   r_dash: viewResidentDash, r_pay: viewResidentPay, r_charges: viewResidentCharges, r_requests: viewResidentRequests, r_services: viewServices,
   profile: viewProfile, services: viewServices
 };
@@ -611,6 +611,7 @@ function renderShell() {
     manager: {
       'm_dash': { label: 'داشبورد', icon: lineIco('home') },
       'm_payments': { label: 'تایید پرداخت', icon: lineIco('money') },
+      'm_my_pay': { label: 'پرداخت بدهی خودم', icon: lineIco('money') },
       'm_requests': { label: 'درخواست‌ها', icon: lineIco('msg') },
       'm_report': { label: 'گزارش', icon: lineIco('report') },
       'm_services': { label: 'خدمات', icon: lineIco('services') },
@@ -969,6 +970,8 @@ async function viewManagerDash(el) {
       }); 
   }
   
+  // Keep manager's own unit in the building map even when the members list omits it.
+  if (m.unit_no && !unitMap[m.unit_no]) unitMap[m.unit_no] = {unit_no:m.unit_no, members:[{full_name:S.me?.full_name || 'مدیر ساختمان'}], debt:0, credit:0};
   const unitList = Object.values(unitMap).sort((a, b) => b.unit_no - a.unit_no);
   const totalDebt = unitList.reduce((s, u) => s + Math.max(0, u.debt), 0);
   
@@ -991,13 +994,13 @@ async function viewManagerDash(el) {
           <b style="color:#92400e">بدهی شما به عنوان ساکن</b>
           <div style="font-size:20px;font-weight:900;color:var(--danger)">${fmt(myDebt)} تومان</div>
         </div>
-        <button class="btn" onclick="go('r_pay')" style="background:var(--warning);color:#fff;border-radius:12px;">پرداخت بدهی</button>
+        <button class="btn" onclick="go('m_my_pay')" style="background:var(--warning);color:#fff;border-radius:12px;">پرداخت بدهی</button>
       </div>
     </div>` : ''}
 
     <div class="sec-title" style="margin-top:20px">دسترسی سریع</div>
     <div class="grid" style="grid-template-columns:repeat(4, 1fr); gap:8px; margin-bottom:24px;">
-      ${[['m_payments', 'تایید پرداخت', '💸'], ['m_expenses', 'تراکنش‌ها', '💳'], ['m_units', 'واحدها', '👥'], ['m_requests_pending', 'ثبت‌نام‌ها', '📝']].map(([k, l, ic]) => `<button class="card" data-go="${k}" style="cursor:pointer;display:flex;flex-direction:column;align-items:center;padding:12px 4px;gap:8px;border:0;text-align:center"><div style="font-size:24px">${ic}</div><b style="font-size:11px;white-space:nowrap">${l}</b></button>`).join('')}
+      ${[['m_my_pay', 'بدهی من', '💳'], ['m_expenses', 'تراکنش‌ها', '💳'], ['m_units', 'واحدها', '👥'], ['m_requests_pending', 'ثبت‌نام‌ها', '📝']].map(([k, l, ic]) => `<button class="card" data-go="${k}" style="cursor:pointer;display:flex;flex-direction:column;align-items:center;padding:12px 4px;gap:8px;border:0;text-align:center"><div style="font-size:24px">${ic}</div><b style="font-size:11px;white-space:nowrap">${l}</b></button>`).join('')}
     </div>
     
     <div class="grid g2">
@@ -1506,6 +1509,7 @@ function newTransactionModal(bid, members, tx = null) {
   const isEdit = !!tx;
   
   const allResidents = members.filter(x => (x.access_role === 'resident' || x.access_role === 'manager') && x.unit_no && x.membership_status === 'active');
+  const unitChoices = [...new Map(allResidents.map(x => [String(x.unit_no), x])).values()];
   
   const m = modal(`
     <h2>${isEdit ? 'ویرایش تراکنش' : 'ثبت تراکنش جدید'}</h2>
@@ -1521,13 +1525,13 @@ function newTransactionModal(bid, members, tx = null) {
         <select id="tx-is-split" style="margin-bottom:10px;"><option value="yes">بله</option><option value="no">خیر (فقط از صندوق)</option></select>
         <div id="tx-expense-methods" style="display:none;">
           <label class="f" style="margin-bottom:8px; color:var(--ink)">روش تسهیم:</label>
-          <select id="tx-exp-method" style="margin-bottom:10px;"><option value="equal">مساوی</option><option value="area">نسبت متراژ</option><option value="residents">نسبت نفرات</option><option value="per_unit">مبلغ ثابت هر واحد</option><option value="selected">واحدهای خاص</option></select>
+          <select id="tx-exp-method" style="margin-bottom:10px;"><option value="equal">مساوی</option><option value="area">نسبت متراژ</option><option value="residents">نسبت نفرات</option><option value="per_unit">مساوی (مبلغ کل هزینه تقسیم شود)</option><option value="selected">واحدهای خاص</option></select>
         </div>
       </div>
 
       <div id="tx-income-methods" style="margin-top:8px; padding:12px; background:var(--bg); border-radius:12px; border:1px solid var(--line)">
         <label class="f" style="margin-bottom:8px; color:var(--ink)">روش محاسبه شارژ:</label>
-        <select id="tx-inc-method" style="margin-bottom:10px;"><option value="per_unit">مبلغ ثابت هر واحد</option><option value="per_meter">مبلغ هر متر</option><option value="per_resident">مبلغ هر نفر</option><option value="total_equal">مبلغ کل مساوی</option></select>
+        <select id="tx-inc-method" style="margin-bottom:10px;"><option value="per_unit">مبلغ ثابت هر واحد</option><option value="per_meter">مبلغ هر متر</option><option value="per_resident">مبلغ هر نفر</option><option value="total_equal">مبلغ کل مساوی</option><option value="selected_units">فقط واحدهای انتخابی</option></select>
       </div>
 
       <div id="tx-alloc-wrap" style="display:none; margin-top:8px; padding:12px; background:var(--bg); border-radius:12px; border:1px solid var(--line); max-height:250px; overflow-y:auto;">
@@ -1538,7 +1542,7 @@ function newTransactionModal(bid, members, tx = null) {
           <label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" class="occ-check" value="owner_resident" checked><span>مالک ساکن</span></label>
         </div>
         <div id="tx-unit-list" style="display:none; flex-direction:column; gap:10px;">
-          ${allResidents.map(x => `<label style="display:flex; align-items:center; gap:8px; padding:4px 0; border-bottom:1px dashed var(--line)"><input type="checkbox" class="unit-check" value="${x.membership_id}" checked><span>واحد ${fa(x.unit_no)} (${esc(x.full_name)})</span></label>`).join('')}
+          ${unitChoices.map(x => `<label style="display:flex; align-items:center; gap:8px; padding:4px 0; border-bottom:1px dashed var(--line)"><input type="checkbox" class="unit-check" value="${x.membership_id}"><span>واحد ${fa(x.unit_no)} (${esc(x.full_name)})</span></label>`).join('')}
         </div>
       </div>
       <button class="btn" type="submit" style="margin-top:10px">${isEdit ? 'ذخیره تغییرات' : 'ثبت تراکنش'}</button>
@@ -1569,15 +1573,15 @@ function newTransactionModal(bid, members, tx = null) {
     incMethodsWrap.style.display = isInc ? 'block' : 'none'; 
     expMethodsWrap.style.display = (!isInc && isSplit) ? 'block' : 'none';
     
-    if (isInc) { allocWrap.style.display = 'block'; occList.style.display = 'flex'; unitList.style.display = 'none'; allocLabel.textContent = 'مسئول پرداخت:'; }
+    if (isInc) { allocWrap.style.display = 'block'; occList.style.display = 'flex'; unitList.style.display = incMethodSel.value === 'selected_units' ? 'flex' : 'none'; allocLabel.textContent = 'مسئول پرداخت:'; }
     else if (isSplit && expMethodSel.value === 'selected') { allocWrap.style.display = 'block'; occList.style.display = 'none'; unitList.style.display = 'flex'; allocLabel.textContent = 'انتخاب واحدها:'; }
     else if (isSplit) { allocWrap.style.display = 'block'; occList.style.display = 'flex'; unitList.style.display = 'none'; allocLabel.textContent = 'مسئول پرداخت:'; }
     else { allocWrap.style.display = 'none'; }
     
     if (isInc) {
       const im = incMethodSel.value;
-      amountLabel.textContent = im === 'per_unit' ? 'مبلغ ثابت هر واحد' : im === 'per_meter' ? 'مبلغ هر متر' : im === 'per_resident' ? 'مبلغ هر نفر' : 'مبلغ کل';
-      amountHint.textContent = im === 'total_equal' ? 'مبلغ کل بین واحدها مساوی تقسیم می‌شود.' : 'این مبلغ به عنوان نرخ محاسبه می‌شود.';
+      amountLabel.textContent = im === 'per_unit' ? 'مبلغ ثابت هر واحد' : im === 'per_meter' ? 'مبلغ هر متر' : im === 'per_resident' ? 'مبلغ هر نفر' : im === 'selected_units' ? 'مبلغ ثابت برای هر واحد انتخابی' : 'مبلغ کل';
+      amountHint.textContent = im === 'total_equal' ? 'این مبلغ کل است و بین واحدها تقسیم می‌شود.' : im === 'selected_units' ? 'هر واحد انتخابی دقیقاً همین مبلغ را بدهکار می‌شود؛ مبلغ تقسیم نمی‌شود.' : im === 'per_unit' ? 'هر واحد مشمول دقیقاً همین مبلغ را بدهکار می‌شود؛ مثلاً ۱۰ واحد × ۳۰۰٬۰۰۰ = ۳٬۰۰۰٬۰۰۰ تومان.' : 'این مبلغ نرخ هر متر یا هر نفر است، نه مبلغ کل.';
     } else if (isSplit) { amountLabel.textContent = 'مبلغ کل'; amountHint.textContent = 'مبلغ کل طبق روش انتخابی تقسیم می‌شود.'; }
     else { amountLabel.textContent = 'مبلغ کل'; amountHint.textContent = 'این مبلغ مستقیماً از صندوق کسر می‌شود.'; }
   };
@@ -1605,14 +1609,19 @@ function newTransactionModal(bid, members, tx = null) {
     
     const selectedRoles = $$('.occ-check', m).filter(cb => cb.checked).map(cb => cb.value);
     if (selectedRoles.includes('owner') && selectedRoles.includes('tenant')) { toastErr('مالک و مستأجر را هم‌زمان انتخاب نکنید'); return; }
-    if ((type === 'درآمد' || isSplit) && !selectedRoles.length) { toastErr('مسئول پرداخت را انتخاب کنید'); return; }
+    if ((type === 'درآمد' || (isSplit && expMethodSel.value !== 'selected')) && !selectedRoles.length) { toastErr('مسئول پرداخت را انتخاب کنید'); return; }
     let allocations = [];
     let finalDbMethod = 'none';
     if (type === 'درآمد') {
-      const methods = { per_unit:'dynamic_per_unit', per_meter:'dynamic_per_meter', per_resident:'dynamic_per_resident', total_equal:'equal' };
+      const methods = { per_unit:'dynamic_per_unit', per_meter:'dynamic_per_meter', per_resident:'dynamic_per_resident', total_equal:'equal', selected_units:'dynamic_per_unit' };
       finalDbMethod = methods[incMethodSel.value];
+      if (incMethodSel.value === 'selected_units') {
+        const chosen = $$('.unit-check', m).filter(cb => cb.checked).map(cb => cb.value);
+        if (!chosen.length) { toastErr('حداقل یک واحد را انتخاب کنید'); return; }
+        allocations = chosen.map(id => ({membership_id:id}));
+      }
     } else if (isSplit) {
-      const methods = { equal:'equal', area:'area', residents:'residents', per_unit:'dynamic_per_unit', selected:'manual' };
+      const methods = { equal:'equal', area:'area', residents:'residents', per_unit:'equal', selected:'manual' };
       finalDbMethod = methods[expMethodSel.value];
       if (expMethodSel.value === 'selected') {
         const selectedIds = $$('.unit-check', m).filter(cb => cb.checked).map(cb => cb.value);
@@ -1832,6 +1841,12 @@ async function viewResidentCharges(el) {
   el.innerHTML = `<h1>صورتحساب</h1><p class="sub">${esc(m.building_name)} · واحد ${fa(s.unit_no)}</p><div class="grid g3" style="margin-bottom:20px"><div class="card"><small class="sub">جمع بدهی</small><div style="font-size:22px;font-weight:900;color:var(--danger)">${fmt(s.debt_balance)}</div></div><div class="card"><small class="sub">بستانکاری</small><div style="font-size:22px;font-weight:900;color:var(--success)">${fmt(s.credit_balance)}</div></div><div class="card"><small class="sub">در انتظار تایید</small><div style="font-size:22px;font-weight:900;color:var(--warning)">${fmt(s.pending_payments)}</div></div></div><div class="sec-title">اقلام صورتحساب</div>${charges.length ? `<div class="tbl-wrap" style="margin-bottom:20px"><table><thead><tr><th>شرح</th><th>مبلغ</th><th>تاریخ</th><th>نوع</th></tr></thead><tbody>${charges.map(c => `<tr><td>${esc(c.description)}</td><td>${fmt(c.amount)}</td><td>${esc(c.item_date)}</td><td>${c.item_type === 'expense' ? '<span class="chip ex">هزینه</span>' : '<span class="chip pd">بدهی اولیه</span>'}</td></tr>`).join('')}</tbody></table></div>` : `<div class="empty"><p>صورتحسابی ثبت نشده</p></div>`}<div class="sec-title">سابقه پرداخت‌ها</div>${payments.length ? `<div class="tbl-wrap"><table><thead><tr><th>مبلغ</th><th>وضعیت</th><th>تاریخ</th></tr></thead><tbody>${payments.map(p => `<tr><td>${fmt(p.amount)}</td><td>${p.status === 'approved' ? '<span class="chip ok">تایید</span>' : p.status === 'pending' ? '<span class="chip pd">در انتظار</span>' : p.status === 'rejected' ? '<span class="chip no">رد</span>' : '<span class="chip ex">' + esc(p.status) + '</span>'}</td><td>${esc(p.payment_date)}</td></tr>`).join('')}</tbody></table></div>` : `<div class="empty"><p>پرداختی ثبت نشده</p></div>`}`;
 }
 
+async function viewManagerMyPay(el) {
+  if (!isManager()) { el.innerHTML = '<div class="empty">فقط مدیر به این صفحه دسترسی دارد</div>'; return; }
+  await viewResidentPay(el);
+  const heading = el.querySelector('h1'); if (heading) heading.textContent = 'پرداخت بدهی شخصی مدیر';
+}
+
 async function viewResidentPay(el) {
   const m = currentMembership(); if (!m) return;
   const s = await T('app_resident_get_financial_summary', { p_building_id: m.building_id, p_membership_id: m.membership_id });
@@ -1867,7 +1882,7 @@ function viewServices(el) {
   const isAdmin = S.me.is_superadmin, mgr = isManager();
   let items = [];
   if (isAdmin) { items = [['sa_buildings', 'ساختمان‌ها', '🏢'], ['sa_requests', 'درخواست مدیران', '👥'], ['sa_profile', 'پروفایل', '👤']]; }
-  else if (mgr) { items = [['m_units', 'واحدها و ساکنین', '👥'], ['m_expenses', 'تراکنش‌ها', '💸'], ['m_payments', 'تایید پرداخت', '✅'], ['m_requests_pending', 'تایید ثبت‌نام', '📝'], ['m_transfer', 'انتقال مدیریت', '🔄'], ['m_rates', 'تنظیمات مالی', '⚙️'], ['m_report', 'گزارش ماهانه', '📊'], ['m_requests', 'درخواست‌ها', '💬'], ['profile', 'پروفایل', '👤']]; }
+  else if (mgr) { items = [['m_units', 'واحدها و ساکنین', '👥'], ['m_expenses', 'تراکنش‌ها', '💸'], ['m_payments', 'تایید پرداخت', '✅'], ['m_my_pay', 'پرداخت بدهی خودم', '💳'], ['m_requests_pending', 'تایید ثبت‌نام', '📝'], ['m_transfer', 'انتقال مدیریت', '🔄'], ['m_rates', 'تنظیمات مالی', '⚙️'], ['m_report', 'گزارش ماهانه', '📊'], ['m_requests', 'درخواست‌ها', '💬'], ['profile', 'پروفایل', '👤']]; }
   else { items = [['r_charges', 'صورتحساب', '📄'], ['r_pay', 'پرداخت', '💸'], ['r_requests', 'درخواست‌ها', '💬'], ['profile', 'پروفایل', '👤']]; }
   el.innerHTML = `<h1>خدمات</h1><p class="sub">دسترسی سریع به بخش‌های سامانه</p><div class="grid g3">${items.map(([k, l, ic]) => `<button class="card" data-go="${k}" style="cursor:pointer;display:flex;flex-direction:column;align-items:center;padding:20px;gap:10px;border:0;text-align:center"><div style="font-size:32px">${ic}</div><b>${l}</b></button>`).join('')}</div>`;
   $$('[data-go]', el).forEach(b => b.addEventListener('click', () => go(b.dataset.go)));
