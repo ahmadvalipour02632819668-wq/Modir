@@ -1015,27 +1015,70 @@ async function viewManagerDash(el) {
     el.innerHTML = `<h1>داشبورد مدیریت</h1><p class="sub">${esc(m.building_name)}</p><div class="card" style="background:#fef3c7;color:#92400e;border-color:#fde68a"><h2 style="margin:0 0 8px">⚠️ تنظیمات مالی هنوز انجام نشده</h2><p style="margin:0 0 14px">برای شروع کار با سامانه، ابتدا تنظیمات مالی ساختمان را ثبت کنید.</p><button class="btn" id="go-rates">رفتن به تنظیمات مالی</button></div>`;
     $('#go-rates', el).addEventListener('click', () => go('m_rates')); return;
   }
-  let balances = null; try { balances = await T('app_manager_get_member_balances', { p_building_id: bid }); } catch {}
-  let members = []; try { const r = await T('app_manager_list_building_members', { p_building_id: bid }); members = r.members || []; } catch {}
+  
+  let balances = null; 
+  try { balances = await T('app_manager_get_member_balances', { p_building_id: bid }); } catch {}
+  
+  let members = []; 
+  try { const r = await T('app_manager_list_building_members', { p_building_id: bid }); members = r.members || []; } catch {}
   
   const unitMap = {};
-  // ⚠️ تغییر: اضافه کردن access_role === 'manager' تا واحد مدیر هم نمایش داده شود
+  // ⚠️ اضافه کردن نقش مدیر (manager) تا واحد خودش را هم ببیند
   members.filter(x => (x.access_role === 'resident' || x.access_role === 'manager') && x.membership_status === 'active' && x.unit_no).forEach(x => { 
       if (!unitMap[x.unit_no]) unitMap[x.unit_no] = { unit_no: x.unit_no, members: [], debt: 0 }; 
       unitMap[x.unit_no].members.push(x); 
   });
-  if (balances?.members) { balances.members.forEach(b => { if (b.unit_no && unitMap[b.unit_no]) unitMap[b.unit_no].debt += (b.outstanding_debt || 0); }); }
+  
+  if (balances?.members) { 
+      balances.members.forEach(b => { if (b.unit_no && unitMap[b.unit_no]) unitMap[b.unit_no].debt += (b.outstanding_debt || 0); }); 
+  }
   
   const unitList = Object.values(unitMap).sort((a, b) => b.unit_no - a.unit_no);
   const totalDebt = unitList.reduce((s, u) => s + Math.max(0, u.debt), 0);
   
-  // پیدا کردن بدهی خود مدیر (اگر مدیر ساکن باشد)
+  // پیدا کردن بدهی خود مدیر
   const myMember = balances?.members?.find(x => x.membership_id === m.membership_id);
   const myDebt = myMember?.outstanding_debt || 0;
-function unitDetailsModal(u, bid) {
-  modal(`<h2>واحد ${fa(u.unit_no)}</h2><div style="margin-bottom:14px">${u.members.map(x => `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px dashed var(--line)"><div><b>${esc(x.full_name)}</b><div class="sub" style="margin:2px 0 0">${RESIDENT_TYPES[x.resident_type] || ''} · <span dir="ltr">${esc(x.username)}</span></div></div><span class="chip ${x.membership_status === 'active' ? 'ok' : 'no'}">${x.membership_status === 'active' ? 'فعال' : x.membership_status}</span></div>`).join('')}</div><div class="sub">بدهی این واحد: ${fmt(u.debt)} تومان</div>`);
+
+  el.innerHTML = `
+    <h1>داشبورد مدیریت</h1><p class="sub">${esc(m.building_name)} · خوش آمدید</p>
+    
+    <div class="grid" style="grid-template-columns: 1fr; gap: 16px; margin-bottom:20px;">
+      <div class="bank-card"><b style="font-size:15px">موجودی صندوق</b><div class="bc-row"><span>تومان</span></div><div class="bc-row" style="margin-top:4px"><span class="bc-amt">${fmt(fund?.fund_balance || 0)}</span></div></div>
+      <div class="bank-card soft"><b style="font-size:15px">دریافتی تاییدشده</b><div class="bc-row"><span>تومان</span></div><div class="bc-amt" style="margin-top:4px">${fmt(fund?.approved_income || 0)}</div></div>
+      <div class="bank-card peach"><b style="font-size:15px">مطالبات معوق</b><div class="bc-row"><span>تومان</span></div><div class="bc-amt" style="margin-top:4px">${fmt(totalDebt)}</div></div>
+    </div>
+    
+    ${myDebt > 0 ? `
+    <div class="card" style="background:#fef3c7;border:1px solid #fde68a;margin-bottom:20px">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+        <div>
+          <b style="color:#92400e">بدهی شما به عنوان ساکن</b>
+          <div style="font-size:20px;font-weight:900;color:var(--danger)">${fmt(myDebt)} تومان</div>
+        </div>
+        <button class="btn" onclick="go('r_pay')" style="background:var(--warning);color:#fff;border-radius:12px;">پرداخت بدهی</button>
+      </div>
+    </div>` : ''}
+
+    <div class="sec-title" style="margin-top:20px">دسترسی سریع</div>
+    <div class="grid" style="grid-template-columns:repeat(4, 1fr); gap:8px; margin-bottom:24px;">
+      ${[['m_payments', 'تایید پرداخت', '💸'], ['m_expenses', 'هزینه‌ها', '🧾'], ['m_units', 'واحدها', '👥'], ['m_requests_pending', 'ثبت‌نام‌ها', '📝']].map(([k, l, ic]) => `<button class="card" data-go="${k}" style="cursor:pointer;display:flex;flex-direction:column;align-items:center;padding:12px 4px;gap:8px;border:0;text-align:center"><div style="font-size:24px">${ic}</div><b style="font-size:11px;white-space:nowrap">${l}</b></button>`).join('')}
+    </div>
+    
+    <div class="grid g2">
+      <div class="card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><h2 style="margin:0">پرداخت‌های در انتظار</h2><button class="btn lt sm" id="go-pay">مشاهده</button></div><div style="font-size:36px;font-weight:900;color:var(--warning)">${fa(fund?.pending_payments_count || 0)}</div><div class="sub" style="margin:6px 0 0">مبلغ: ${fmt(fund?.pending_payments_amount || 0)} تومان</div></div>
+      <div class="card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><h2 style="margin:0">هزینه‌های فعال</h2><button class="btn lt sm" id="go-exp">مشاهده</button></div><div style="font-size:36px;font-weight:900;color:var(--danger)">${fa(fund?.active_expenses_count || 0)}</div><div class="sub" style="margin:6px 0 0">جمع: ${fmt(fund?.active_expenses || 0)} تومان</div></div>
+    </div>
+    
+    ${unitList.length ? `<div class="sec-title" style="margin-top:26px">نقشه ساختمان</div><div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(min(100%,150px),1fr))">${unitList.map(u => { const bg = u.debt <= 0 ? '#e3f6ea' : u.debt > 0 ? '#fdecec' : '#f1f1f4'; const color = u.debt <= 0 ? '#15803d' : '#c62828'; return `<button class="win" data-unit="${u.unit_no}" style="background:${bg}"><span style="font-size:13px;font-weight:700;color:#555">واحد ${fa(u.unit_no)}</span><span style="font-size:13px;margin-top:4px">${u.members.map(x => esc(x.full_name)).join('<br>')}</span><span style="font-size:13px;font-weight:900;margin-top:8px;color:${color}">${u.debt <= 0 ? 'تسویه' : fmt(u.debt) + ' تومان'}</span></button>`; }).join('')}</div>` : ''}
+  `;
+  
+  $$('[data-go]', el).forEach(b => b.addEventListener('click', () => go(b.dataset.go)));
+  $('#go-pay', el)?.addEventListener('click', () => go('m_payments'));
+  $('#go-exp', el)?.addEventListener('click', () => go('m_expenses'));
+  $$('[data-unit]', el).forEach(b => b.addEventListener('click', () => { const u = unitList.find(x => x.unit_no == b.dataset.unit); if (u) unitDetailsModal(u, bid); }));
 }
-async function viewManagerPayments(el) {
+ async function viewManagerPayments(el) {
   const m = currentMembership(); if (!m) return;
   const bid = m.building_id;
   const [pending, details] = await Promise.all([T('app_manager_list_pending_payments', { p_building_id: bid }), T('app_manager_get_monthly_report', { p_building_id: bid, p_year: TODAY.y, p_month: TODAY.m }).catch(() => null)]);
