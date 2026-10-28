@@ -1,21 +1,20 @@
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
- <link rel="manifest" href="manifest.json"> 
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#2d3463">
 <meta name="referrer" content="no-referrer">
-<!-- SEC-FIX: CSP برای جلوگیری از XSS -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://gjuptvtddrtdydssgnih.supabase.co https://*.supabase.co; object-src 'none'; base-uri 'self';">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.googleapis.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://gjuptvtddrtdydssgnih.supabase.co https://*.supabase.co; object-src 'none'; base-uri 'self';">
 <title>مدیریت مجتمع‌های مسکونی</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%232d3463'/><path d='M18 82V38L50 12l32 26v44z' fill='white'/><rect x='40' y='60' width='20' height='22' fill='%23f7ae74'/></svg>">
+<link rel="manifest" href="manifest.json">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;700;900&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.8/dist/umd/supabase.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
 <style>
 :root{--navy:#2d3463;--navy-2:#3b4380;--navy-3:#232850;--peach:#f7ae74;--peach-2:#fbd2ae;--primary:#2d3463;--accent:#f7ae74;--success:#16a34a;--warning:#f08a3c;--danger:#e5484d;--bg:#f1f1f4;--card:#fff;--line:#e6e7ee;--ink:#23264a;--muted:#7a7f9a;--r:20px;--shadow:0 6px 18px rgba(45,52,99,.07);--shadow-lg:0 14px 34px rgba(45,52,99,.16);--ease:cubic-bezier(.22,1,.36,1)}
 [data-theme="emerald"]{--navy:#0f4c3a;--navy-2:#16654e;--navy-3:#0a3327;--peach:#eab308;--peach-2:#fef08a;--primary:#0f4c3a;--accent:#eab308;--bg:#f0fdf4;--card:#fff;--line:#dcfce7;--ink:#0d281e;--muted:#64748b}
@@ -53,7 +52,7 @@ main > * { animation: up .5s var(--ease) both; }
 h1 { font-size: 20px; font-weight: 900; margin: 0 0 2px; letter-spacing: -.3px; color: var(--ink); }
 h2 { font-size: 16px; font-weight: 900; margin: 0 0 12px; color: var(--ink); }
 h3 { font-size: 14.5px; font-weight: 800; margin: 0 0 8px; color: var(--ink); }
-.sub { color: var(--muted); margin: 0 0 20px; font-size: 10px; }
+.sub { color: var(--muted); margin: 0 0 20px; font-size: 12px; }
 .card { background: var(--card); border: 1px solid var(--line); border-radius: var(--r); padding: 20px; box-shadow: var(--shadow); transition: transform .25s var(--ease), box-shadow .25s; }
 .grid { display: grid; gap: 16px; }
 .g2 { grid-template-columns: repeat(auto-fit, minmax(min(100%,320px),1fr)); }
@@ -99,12 +98,8 @@ select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmln
 .login .form .card { width: 100%; max-width: 440px; }
 .tabs { display: flex; gap: 4px; background: var(--bg); padding: 4px; border-radius: 99px; margin-bottom: 20px; border: 2px solid #64748b; }
 .tabs button { flex: 1; border: 0; background: transparent; padding: 10px; border-radius: 99px; cursor: pointer; font-weight: 700; font-size: 13px; color: var(--muted); }
-.tabs button.on { 
-  background: var(--card); 
-  color: var(--ink); 
-  box-shadow: var(--shadow); 
-  border: 2px solid #000;
-}
+.tabs button.on { background: var(--card); color: var(--ink); box-shadow: var(--shadow); border: 2px solid #000; }
+
 .modal-bg { position: fixed; inset: 0; background: rgba(25,28,60,.6); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; padding: 20px; z-index: 1000; animation: fadeIn .25s ease; }
 .modal { background: var(--bg); border-radius: 28px; width: 100%; max-width: 720px; padding: 30px 22px 24px; box-shadow: var(--shadow-lg); max-height: 90vh; overflow-y: auto; position: relative; animation: up .4s var(--ease); z-index: 1001; }
 .modal::before { content: ""; position: absolute; top: 10px; left: 50%; transform: translateX(-50%); width: 44px; height: 5px; border-radius: 99px; background: var(--line); }
@@ -118,9 +113,6 @@ tr:last-child td { border-bottom: 0; }
 tr:hover td { background: var(--bg); }
 .tbl-wrap { overflow: auto; max-height: 70vh; border-radius: var(--r); border: 1px solid var(--line); background: var(--card); box-shadow: var(--shadow); }
 
-/* ============================================================
-   NEW BOTTOM NAV WITH NOTCH & ANIMATION
-   ============================================================ */
 .bnav { position: fixed; bottom: 0; left: 0; right: 0; z-index: 50; height: 84px; pointer-events: none; }
 .bnav-in { position: relative; max-width: 640px; margin: auto; height: 100%; pointer-events: auto; }
 .bnav-bg { position: absolute; inset: auto 0 0 0; height: 74px; background: var(--card); border-top: 1px solid var(--line); border-radius: 26px 26px 0 0; box-shadow: 0 -8px 30px rgba(0,0,0,.08); z-index: 1; }
@@ -129,12 +121,10 @@ tr:hover td { background: var(--bg); }
 .bnav-items button svg { width: 26px; height: 26px; }
 .bnav-items button.on { opacity: 1; transform: none; color: var(--navy); z-index: 5; }
 .bnav-items button.on svg { opacity: 0; }
-
 .bnav-diamond-wrap { position: absolute; top: -43px; width: 80px; height: 80px; margin-right: -40px; z-index: 4; transition: right 0.45s cubic-bezier(0.34, 1.56, 0.64, 1); pointer-events: none; display: flex; justify-content: center; align-items: center; }
 .bnav-diamond { width: 60px; height: 60px; border-radius: 19px; background: var(--card); border: 1px solid var(--line); box-shadow: 0 10px 26px rgba(0,0,0,.15); display: grid; place-items: center; transform: rotate(45deg); pointer-events: none; }
 .bnav-diamond > span { transform: rotate(-45deg); display: grid; place-items: center; color: var(--navy); }
 .bnav-diamond svg { width: 26px; height: 26px; }
-
 .bnav-notch { position: absolute; top: 10px; width: 100px; height: 44px; background: var(--bg); border-radius: 0 0 50% 50%; box-shadow: 0 8px 12px rgba(0,0,0,.045); z-index: 2; pointer-events: none; transition: right 0.45s cubic-bezier(0.34, 1.56, 0.64, 1); }
 
 .bank-card { position: relative; overflow: hidden; color: #fff; border-radius: 24px; padding: 22px; background: linear-gradient(135deg, var(--navy-2) 0%, var(--navy) 55%, var(--navy-3) 100%); box-shadow: 0 16px 34px rgba(45,52,99,.35); }
@@ -175,13 +165,6 @@ tr:hover td { background: var(--bg); }
 .dp-nav:hover { background: var(--line); }
 .dp-month-year { font-weight: 900; font-size: 16px; }
 .dp-weekdays { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; font-size: 12px; font-weight: 700; color: var(--muted); margin-bottom: 8px; }
-
-@media print {
-  body * { visibility: hidden; }
-  #printable-area, #printable-area * { visibility: visible; }
-  #printable-area { position: absolute; left: 0; top: 0; width: 100% !important; padding: 0 !important; margin: 0 !important; }
-  .no-print { display: none !important; }
-}
 </style>
 </head>
 <body>
@@ -190,7 +173,7 @@ tr:hover td { background: var(--bg); }
 
 <script>
 /* ============================================================
-   SEC-FIX: CORE, HELPERS & CONFIG
+   CORE, HELPERS & CONFIG
    ============================================================ */
 const SUPABASE_URL = 'https://gjuptvtddrtdydssgnih.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_0xCSGon56t3inyZt3rSkSg_mFf7bwH9';
@@ -225,7 +208,6 @@ const toNum = v => {
   return Number(str) || 0;
 };
 
-// SEC-FIX: Strong password check
 function isStrongPwd(p) {
   return typeof p === 'string' && p.length >= 8 && p.length <= 64 && /[0-9]/.test(p) && /[A-Za-z\u0600-\u06FF]/.test(p) && !/\s/.test(p);
 }
@@ -263,12 +245,11 @@ function modal(html) {
   return bg;
 }
 
-// SEC-FIX: Safe confirm/prompt
 function confirmDlg(msg) { return new Promise(res => { const m = modal(`<h2>تأیید</h2><p>${esc(msg)}</p><div style="display:flex;gap:10px;margin-top:14px"><button class="btn" data-ok style="flex:1">تأیید</button><button class="btn lt" data-no style="flex:1">انصراف</button></div>`); $('[data-ok]', m).onclick = () => { m.remove(); res(true); }; $('[data-no]', m).onclick = () => { m.remove(); res(false); }; }); }
 function promptDlg(msg, ph = '') { return new Promise(res => { const m = modal(`<h2>${esc(msg)}</h2><label class="f" style="margin:12px 0">توضیح<input data-in placeholder="${esc(ph)}"></label><div style="display:flex;gap:10px"><button class="btn" data-ok style="flex:1">ثبت</button><button class="btn lt" data-no style="flex:1">انصراف</button></div>`); $('[data-ok]', m).onclick = () => { const v = $('[data-in]', m).value; m.remove(); res(v); }; $('[data-no]', m).onclick = () => { m.remove(); res(null); }; }); }
 
 /* ============================================================
-   SEC-FIX: STATE & THEME
+   STATE & THEME
    ============================================================ */
 const DEFAULT_NAV = {
   superadmin: ['sa_buildings', 'admin_db', 'sa_dash', 'sa_requests', 'sa_profile'],
@@ -280,9 +261,7 @@ function getSavedNav(role) {
   if (saved) { try { return JSON.parse(saved); } catch(e) {} }
   return DEFAULT_NAV[role];
 }
-function saveNav(role, keys) {
-  localStorage.setItem('bm_nav_' + role, JSON.stringify(keys));
-}
+function saveNav(role, keys) { localStorage.setItem('bm_nav_' + role, JSON.stringify(keys)); }
 
 const S = { token: getToken(), me: null, view: 'dash', view_ctx: {}, renderId: 0 };
 try { S.me = JSON.parse(sessionStorage.getItem('bm_me') || 'null'); } catch { S.me = null; }
@@ -493,9 +472,9 @@ function renderMustChangePassword() {
 }
 function renderSuspended(reason) {
   $('#app').innerHTML = `
-    <div class="suspended-screen">
-      <div class="suspended-icon">🚫</div><h1>ساختمان تعلیق شده است</h1>
-      <p class="sub" style="max-width:480px">دسترسی شما به این ساختمان موقتاً غیرفعال شده است.</p>
+    <div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:40px 20px;text-align:center;background:var(--navy);color:#fff;">
+      <div style="font-size:64px">🚫</div><h1 style="color:#fff">ساختمان تعلیق شده است</h1>
+      <p class="sub" style="max-width:480px;color:#b9bde0">دسترسی شما به این ساختمان موقتاً غیرفعال شده است.</p>
       ${reason ? `<div class="card" style="background:#fee2e2;color:#991b1b;max-width:480px"><b>علت:</b><br>${esc(reason)}</div>` : ''}
       <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center">
         <button class="btn lt" id="sus-retry">تلاش مجدد</button><button class="btn rd" id="sus-logout">خروج از حساب</button>
@@ -725,8 +704,6 @@ function renderShell() {
 function showNavSettingsModal(roleKey, allButtons) {
   const currentKeys = getSavedNav(roleKey);
   const dashKey = roleKey === 'superadmin' ? 'sa_dash' : roleKey === 'manager' ? 'm_dash' : 'r_dash';
-  
-  // حذف داشبورد از لیست قابل انتخاب
   const buttonKeys = Object.keys(allButtons).filter(k => k !== dashKey);
   
   let checkboxesHtml = buttonKeys.map(k => {
@@ -752,18 +729,15 @@ function showNavSettingsModal(roleKey, allButtons) {
   $('#save-nav-btn', m).addEventListener('click', () => {
     const selected = [];
     $$('.nav-check', m).forEach(cb => { if (cb.checked) selected.push(cb.value); });
-    
     if (selected.length !== 4) { toastErr('دقیقاً ۴ گزینه (غیر از داشبورد) را انتخاب کنید'); return; }
-    
-    // چیدن منو: ۲ آیتم اول، داشبورد، ۲ آیتم آخر
     const finalNav = [selected[0], selected[1], dashKey, selected[2], selected[3]];
-    
     saveNav(roleKey, finalNav);
     m.remove();
     toastOk('منو با موفقیت تغییر کرد');
     renderShell();
   });
 }
+
 async function go(v) {
   if (!VIEWS[v]) v = S.me?.is_superadmin ? 'sa_dash' : isManager() ? 'm_dash' : 'r_dash';
   S.view = v;
@@ -790,11 +764,10 @@ function renderHeaderState() {
   const building = currentBuilding();
   const titles = {
     sa_dash: 'داشبورد ادمین اصلی', sa_buildings: 'ساختمان‌ها', sa_requests: 'درخواست مدیران', sa_services: 'خدمات', sa_profile: 'پروفایل',
-    admin_db: 'مدیریت دیتابیس', m_dash: 'داشبورد مدیریت', m_payments: 'تایید پرداخت‌ها', m_requests: 'درخواست‌ها', m_report: 'گزارش ماهانه', m_services: 'خدمات', m_units: 'واحدها و ساکنین', m_expenses: 'تراکنش ها', m_rates: 'تنظیمات مالی', m_requests_pending: 'تایید ثبت‌نام‌ها', m_transfer: 'انتقال مدیریت',
+    admin_db: 'مدیریت دیتابیس', m_dash: 'داشبورد مدیریت', m_payments: 'تایید پرداخت‌ها', m_requests: 'درخواست‌ها', m_report: 'گزارش ماهانه', m_services: 'خدمات', m_units: 'واحدها و ساکنین', m_expenses: 'تراکنش‌های مالی', m_rates: 'تنظیمات مالی', m_requests_pending: 'تایید ثبت‌نام‌ها', m_transfer: 'انتقال مدیریت',
     r_dash: 'خانه', r_pay: 'پرداخت', r_charges: 'صورتحساب', r_requests: 'درخواست‌ها', r_services: 'خدمات', profile: 'پروفایل', services: 'خدمات'
   };
   
-  // تغییر مهم: استفاده از unit_no به جای unit_id
   t.innerHTML = S.view === 'm_dash' || S.view === 'r_dash' || S.view === 'sa_dash'
     ? `${esc(building?.building_name || 'مدیریت مجتمع‌های مسکونی')}<small>${S.me.is_superadmin ? 'ادمین اصلی' : (isManager() ? 'پنل مدیریت' : `واحد ${fa(currentMembership()?.unit_no || '—')}`)}</small>`
     : esc(titles[S.view] || '');
@@ -810,8 +783,6 @@ function renderHeaderState() {
     const rightPos = wr.width - centerOffset;
     diaWrap.style.right = rightPos + 'px';
     if(notch) notch.style.right = (rightPos - 100) + 'px';
-    
-    // تغییر آیکون لوزی بر اساس تب فعال
     const svgMatch = active.innerHTML.match(/<svg[\s\S]*?<\/svg>/);
     if (svgMatch) $('#bnav-dia-icon').innerHTML = svgMatch[0];
   }
@@ -822,7 +793,7 @@ window.addEventListener('resize', () => {
 });
 
 /* ============================================================
-   SEC-FIX: VIEWS: DATABASE
+   VIEWS: DATABASE
    ============================================================ */
 const SENS_COLS = ['password', 'pass_hash', 'password_hash', 'token', 'secret'];
 async function viewAdminDatabase(el) {
@@ -834,11 +805,9 @@ async function viewAdminDatabase(el) {
     el.innerHTML = `<div class="empty">خطا در دریافت لیست جداول: ${esc(e.message)}</div>`;
     return;
   }
-
   el.innerHTML = `
     <h1>مدیریت دیتابیس</h1>
     <p class="sub">مشاهده اطلاعات جداول (حداکثر ۱۰۰ رکورد). ستون‌های حساس مخفی هستند.</p>
-    
     <div class="grid g3" style="margin-bottom:20px">
       ${tables.filter(t => !['users', 'logs', 'requests', 'payments', 'debts', 'transactions'].includes(t.table_name)).map(t => `
         <button class="card" data-table="${t.table_name}" style="cursor:pointer;border:1px solid var(--line);text-align:center;padding:16px">
@@ -847,29 +816,21 @@ async function viewAdminDatabase(el) {
         </button>
       `).join('')}
     </div>
-    
     <div id="db-table-content"></div>
   `;
-
-  $$('[data-table]', el).forEach(b => {
-    b.addEventListener('click', () => loadTableData(b.dataset.table, el));
-  });
+  $$('[data-table]', el).forEach(b => { b.addEventListener('click', () => loadTableData(b.dataset.table, el)); });
 }
 
 async function loadTableData(tableName, el) {
   const content = $('#db-table-content', el);
   content.innerHTML = '<p class="sub">در حال بارگذاری دیتای جدول...</p>';
-
   try {
     const data = await T('app_admin_get_table_data', { p_table_name: tableName });
-    
     if (!data || data.length === 0) {
       content.innerHTML = `<div class="card"><h2 dir="ltr">${esc(tableName)}</h2><p class="sub">این جدول خالی است.</p></div>`;
       return;
     }
-
     const columns = Object.keys(data[0]).filter(c => !SENS_COLS.some(s => c.toLowerCase().includes(s)));
-
     content.innerHTML = `
       <div class="card" style="padding:0;overflow:hidden">
         <div style="padding:16px;border-bottom:1px solid var(--line);background:var(--bg)">
@@ -878,11 +839,7 @@ async function loadTableData(tableName, el) {
         </div>
         <div class="tbl-wrap">
           <table>
-            <thead>
-              <tr>
-                ${columns.map(c => `<th dir="ltr">${esc(c)}</th>`).join('')}
-              </tr>
-            </thead>
+            <thead><tr>${columns.map(c => `<th dir="ltr">${esc(c)}</th>`).join('')}</tr></thead>
             <tbody>
               ${data.map(row => `
                 <tr>
@@ -981,20 +938,16 @@ async function viewSuperAdminBuildings(el) {
     T('app_admin_set_building_status', { p_building_id: b.dataset.activate, p_new_status: 'active' }).then(() => { toastOk('فعال شد'); go('sa_buildings'); }).catch(showErr); 
   }));
   
-  // SEC-FIX: استفاده از رمز تصادفی به جای 1234
   $$('[data-reset]', el).forEach(b => b.addEventListener('click', async () => { 
     if (!await confirmDlg('رمز مدیر ریست و رمز موقت صادر شود؟')) return; 
     try {
       const r = await T('app_admin_reset_manager_password', { p_building_id: b.dataset.reset });
       if (r?.temp_password) {
         modal(`<h2>رمز موقت صادر شد</h2><div class="card" style="background:#e3f6ea;text-align:center"><div class="sub">فقط یک‌بار نمایش داده می‌شود:</div><div dir="ltr" style="font-size:28px;font-weight:900;letter-spacing:3px">${esc(r.temp_password)}</div></div><button class="btn" style="width:100%;margin-top:12px" onclick="document.querySelector('.modal-bg').remove()">متوجه شدم</button>`);
-      } else {
-        toastOk('رمز بازنشانی شد');
-      }
+      } else { toastOk('رمز بازنشانی شد'); }
     } catch (e) { showErr(e); }
   }));
   
-  // SEC-FIX: باگ escape در نام
   $$('[data-delete]', el).forEach(b => b.addEventListener('click', async () => {
     const bName = b.dataset.name;
     if (!await confirmDlg(`آیا از حذف کامل ساختمان «${bName}» مطمئن هستید؟`)) return;
@@ -1008,6 +961,7 @@ async function viewSuperAdminBuildings(el) {
    VIEWS: MANAGER
    ============================================================ */
 function allocationLabel(method) { return { area: 'بر اساس متراژ', equal: 'مساوی', residents: 'بر اساس تعداد ساکنین', selected_units: 'واحدهای انتخابی', selected_people: 'افراد انتخابی', manual: 'دستی', fixed: 'مبلغ ثابت', none: 'بدون تسهیم' }[method] || method; }
+
 async function viewManagerDash(el) {
   const m = currentMembership(); if (!m) { el.innerHTML = `<div class="empty">عضو فعال پیدا نشد</div>`; return; }
   const bid = m.building_id;
@@ -1018,39 +972,27 @@ async function viewManagerDash(el) {
     $('#go-rates', el).addEventListener('click', () => go('m_rates')); return;
   }
   
-  let balances = null; 
-  try { balances = await T('app_manager_get_member_balances', { p_building_id: bid }); } catch {}
-  
-  let members = []; 
-  try { const r = await T('app_manager_list_building_members', { p_building_id: bid }); members = r.members || []; } catch {}
+  let balances = null; try { balances = await T('app_manager_get_member_balances', { p_building_id: bid }); } catch {}
+  let members = []; try { const r = await T('app_manager_list_building_members', { p_building_id: bid }); members = r.members || []; } catch {}
   
   const unitMap = {};
-  // ⚠️ اضافه کردن نقش مدیر (manager) تا واحد خودش را هم ببیند
   members.filter(x => (x.access_role === 'resident' || x.access_role === 'manager') && x.membership_status === 'active' && x.unit_no).forEach(x => { 
       if (!unitMap[x.unit_no]) unitMap[x.unit_no] = { unit_no: x.unit_no, members: [], debt: 0 }; 
       unitMap[x.unit_no].members.push(x); 
   });
-  
-  if (balances?.members) { 
-      balances.members.forEach(b => { if (b.unit_no && unitMap[b.unit_no]) unitMap[b.unit_no].debt += (b.outstanding_debt || 0); }); 
-  }
-  
+  if (balances?.members) { balances.members.forEach(b => { if (b.unit_no && unitMap[b.unit_no]) unitMap[b.unit_no].debt += (b.outstanding_debt || 0); }); }
   const unitList = Object.values(unitMap).sort((a, b) => b.unit_no - a.unit_no);
   const totalDebt = unitList.reduce((s, u) => s + Math.max(0, u.debt), 0);
-  
-  // پیدا کردن بدهی خود مدیر
   const myMember = balances?.members?.find(x => x.membership_id === m.membership_id);
   const myDebt = myMember?.outstanding_debt || 0;
 
   el.innerHTML = `
     <h1>داشبورد مدیریت</h1><p class="sub">${esc(m.building_name)} · خوش آمدید</p>
-    
     <div class="grid" style="grid-template-columns: 1fr; gap: 16px; margin-bottom:20px;">
       <div class="bank-card"><b style="font-size:15px">موجودی صندوق</b><div class="bc-row"><span>تومان</span></div><div class="bc-row" style="margin-top:4px"><span class="bc-amt">${fmt(fund?.fund_balance || 0)}</span></div></div>
       <div class="bank-card soft"><b style="font-size:15px">دریافتی تاییدشده</b><div class="bc-row"><span>تومان</span></div><div class="bc-amt" style="margin-top:4px">${fmt(fund?.approved_income || 0)}</div></div>
       <div class="bank-card peach"><b style="font-size:15px">مطالبات معوق</b><div class="bc-row"><span>تومان</span></div><div class="bc-amt" style="margin-top:4px">${fmt(totalDebt)}</div></div>
     </div>
-    
     ${myDebt > 0 ? `
     <div class="card" style="background:#fef3c7;border:1px solid #fde68a;margin-bottom:20px">
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
@@ -1061,17 +1003,14 @@ async function viewManagerDash(el) {
         <button class="btn" onclick="go('r_pay')" style="background:var(--warning);color:#fff;border-radius:12px;">پرداخت بدهی</button>
       </div>
     </div>` : ''}
-
     <div class="sec-title" style="margin-top:20px">دسترسی سریع</div>
     <div class="grid" style="grid-template-columns:repeat(4, 1fr); gap:8px; margin-bottom:24px;">
-      ${[['m_payments', 'تایید پرداخت', '💸'], ['m_expenses', 'ت‌راکنش ها', '💳'], ['m_units', 'واحدها', '👥'], ['m_requests_pending', 'ثبت‌نام‌ها', '📝']].map(([k, l, ic]) => `<button class="card" data-go="${k}" style="cursor:pointer;display:flex;flex-direction:column;align-items:center;padding:12px 4px;gap:8px;border:0;text-align:center"><div style="font-size:24px">${ic}</div><b style="font-size:11px;white-space:nowrap">${l}</b></button>`).join('')}
+      ${[['m_payments', 'تایید پرداخت', '💸'], ['m_expenses', 'تراکنش‌ها', '💳'], ['m_units', 'واحدها', '👥'], ['m_requests_pending', 'ثبت‌نام‌ها', '📝']].map(([k, l, ic]) => `<button class="card" data-go="${k}" style="cursor:pointer;display:flex;flex-direction:column;align-items:center;padding:12px 4px;gap:8px;border:0;text-align:center"><div style="font-size:24px">${ic}</div><b style="font-size:11px;white-space:nowrap">${l}</b></button>`).join('')}
     </div>
-    
     <div class="grid g2">
       <div class="card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><h2 style="margin:0">پرداخت‌های در انتظار</h2><button class="btn lt sm" id="go-pay">مشاهده</button></div><div style="font-size:36px;font-weight:900;color:var(--warning)">${fa(fund?.pending_payments_count || 0)}</div><div class="sub" style="margin:6px 0 0">مبلغ: ${fmt(fund?.pending_payments_amount || 0)} تومان</div></div>
       <div class="card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><h2 style="margin:0">هزینه‌های فعال</h2><button class="btn lt sm" id="go-exp">مشاهده</button></div><div style="font-size:36px;font-weight:900;color:var(--danger)">${fa(fund?.active_expenses_count || 0)}</div><div class="sub" style="margin:6px 0 0">جمع: ${fmt(fund?.active_expenses || 0)} تومان</div></div>
     </div>
-    
     ${unitList.length ? `<div class="sec-title" style="margin-top:26px">نقشه ساختمان</div><div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(min(100%,150px),1fr))">${unitList.map(u => { const bg = u.debt <= 0 ? '#e3f6ea' : u.debt > 0 ? '#fdecec' : '#f1f1f4'; const color = u.debt <= 0 ? '#15803d' : '#c62828'; return `<button class="win" data-unit="${u.unit_no}" style="background:${bg}"><span style="font-size:13px;font-weight:700;color:#555">واحد ${fa(u.unit_no)}</span><span style="font-size:13px;margin-top:4px">${u.members.map(x => esc(x.full_name)).join('<br>')}</span><span style="font-size:13px;font-weight:900;margin-top:8px;color:${color}">${u.debt <= 0 ? 'تسویه' : fmt(u.debt) + ' تومان'}</span></button>`; }).join('')}</div>` : ''}
   `;
   
@@ -1080,20 +1019,118 @@ async function viewManagerDash(el) {
   $('#go-exp', el)?.addEventListener('click', () => go('m_expenses'));
   $$('[data-unit]', el).forEach(b => b.addEventListener('click', () => { const u = unitList.find(x => x.unit_no == b.dataset.unit); if (u) unitDetailsModal(u, bid); }));
 }
- async function viewManagerPayments(el) {
+
+async function unitDetailsModal(u, bid) {
+  let memberSummaries = [];
+  for (const mem of u.members) {
+    try {
+      const summary = await T('app_resident_get_financial_summary', { p_building_id: bid, p_membership_id: mem.membership_id });
+      memberSummaries.push({ ...mem, summary });
+    } catch (e) { memberSummaries.push({ ...mem, summary: null }); }
+  }
+  const m = modal(`
+    <h2>واحد ${fa(u.unit_no)}</h2><p class="sub">مدیریت مالی و ساکنین</p>
+    ${memberSummaries.map(x => `
+      <div class="card" style="margin-bottom:14px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+          <div><b>${esc(x.full_name)}</b><div class="sub" style="margin:0">${RESIDENT_TYPES[x.resident_type] || ''}</div></div>
+          <span class="chip ${x.summary?.debt_balance > 0 ? 'no' : 'ok'}">
+            ${x.summary?.debt_balance > 0 ? 'بدهکار: ' + fmt(x.summary.debt_balance) : 'تسویه'}
+          </span>
+        </div>
+        ${x.summary?.charges?.length ? `<div style="margin-bottom:10px;font-size:12px;color:var(--muted);line-height:1.8;">اقلام بدهی: ${x.summary.charges.map(c => `${esc(c.description)} (${fmt(c.amount)})`).join(' ، ')}</div>` : ''}
+        ${x.summary?.debt_balance > 0 ? `<button class="btn sm" data-pay="${x.membership_id}" style="background:var(--warning);color:#fff">💸 ثبت پرداخت برای این واحد</button>` : ''}
+      </div>
+    `).join('')}
+  `);
+  $$('[data-pay]', m).forEach(btn => {
+    btn.addEventListener('click', () => { m.remove(); managerPaymentModal(bid, btn.dataset.pay); });
+  });
+}
+
+function addUnitModal(bid) {
+  const m = modal(`
+    <h2>افزودن واحد / ساکن جدید</h2><p class="sub">شما می‌توانید بدون نیاز به ثبت‌نام ساکن، مستقیماً برای او حساب بسازید.</p>
+    <form id="au-form" class="grid g2" style="gap:14px">
+      <label class="f">شماره واحد<input id="au-unit" type="number" min="1" required></label>
+      <label class="f">متراژ<input id="au-area" type="number" min="1" required></label>
+      <label class="f">تعداد نفرات<input id="au-res" type="number" min="1" required></label>
+      <label class="f">نوع سکونت<select id="au-role"><option value="owner">مالک (غیرساکن)</option><option value="tenant">مستأجر</option><option value="owner_resident">مالک ساکن</option></select></label>
+      <label class="f" style="grid-column:1/-1">نام و نام خانوادگی<input id="au-name" required></label>
+      <label class="f">موبایل<input id="au-phone" dir="ltr"></label>
+      <label class="f">ایمیل<input id="au-email" type="email" dir="ltr"></label>
+      <label class="f">نام کاربری<input id="au-username" dir="ltr" required></label>
+      <label class="f">رمز عبور<input id="au-pass" type="text" dir="ltr" required></label>
+      <label class="f" style="grid-column:1/-1">تاریخ شروع محاسبه<input id="au-joined" class="date-picker-input" readonly required></label>
+      <button class="btn" type="submit" style="grid-column:1/-1">ایجاد حساب و واحد</button>
+    </form>
+  `);
+  bindDatePickers(m);
+  $('#au-form', m).addEventListener('submit', async e => {
+    e.preventDefault();
+    try {
+      await T('app_manager_add_unit_and_resident', {
+        p_building_id: bid, p_unit_no: +$('#au-unit', m).value, p_area: +$('#au-area', m).value, p_resident_count: +$('#au-res', m).value,
+        p_full_name: $('#au-name', m).value, p_username: $('#au-username', m).value, p_password: $('#au-pass', m).value,
+        p_occupancy: $('#au-role', m).value, p_phone: $('#au-phone', m).value || null, p_email: $('#au-email', m).value || null,
+        p_joined_at: $('#au-joined', m).dataset.gregorian || $('#au-joined', m).value
+      });
+      m.remove(); toastOk('واحد و حساب با موفقیت ایجاد شد'); go('m_units');
+    } catch (err) { showErr(err); }
+  });
+}
+
+async function managerPaymentModal(bid, membershipId) {
+  let summary = null;
+  try { summary = await T('app_resident_get_financial_summary', { p_building_id: bid, p_membership_id: membershipId }); } catch (e) { showErr(e); return; }
+  if (!summary.charges || summary.charges.length === 0) { toastOk('این واحد هیچ بدهی ندارد.'); return; }
+  const m = modal(`
+    <h2>ثبت پرداخت (توسط مدیر)</h2><p class="sub">واحد ${fa(summary.unit_no)} · بدهی کل: ${fmt(summary.debt_balance)} تومان</p>
+    <form id="mp-form" class="grid" style="gap:14px">
+      <div id="mp-alloc-list">
+        ${summary.charges.map(c => `<div class="debt-row" data-id="${c.id}" data-type="${c.item_type}"><input type="checkbox" class="mp-check" checked><span style="flex:1;font-size:13px">${esc(c.description)}</span><input type="text" class="mp-amount" inputmode="numeric" value="${fmt(c.amount)}"></div>`).join('')}
+      </div>
+      <div class="card" style="background:var(--bg);display:flex;justify-content:space-between;padding:14px"><b>جمع انتخاب‌شده:</b><b id="mp-total" style="color:var(--navy)">0</b></div>
+      <label class="f">تاریخ پرداخت<input id="mp-date" class="date-picker-input" readonly required></label>
+      <label class="f">توضیحات<input id="mp-desc" placeholder="مثلاً: فیش بانکی"></label>
+      <button class="btn" type="submit">ثبت پرداخت</button>
+    </form>
+  `);
+  bindDatePickers(m);
+  $$('.mp-amount', m).forEach(inp => inp.addEventListener('input', e => { const n = toNum(e.target.value); e.target.value = n ? fmt(n) : ''; }));
+  const updateTotal = () => {
+    let total = 0;
+    $$('.debt-row', m).forEach(row => { if ($('.mp-check', row).checked) total += toNum($('.mp-amount', row).value); });
+    $('#mp-total', m).textContent = fmt(total) + ' تومان';
+  };
+  $$('.mp-check, .mp-amount', m).forEach(x => x.addEventListener('input', updateTotal));
+  updateTotal();
+  $('#mp-form', m).addEventListener('submit', async e => {
+    e.preventDefault();
+    const allocations = [];
+    $$('.debt-row', m).forEach(row => {
+      if (!$('.mp-check', row).checked) return;
+      const amount = toNum($('.mp-amount', row).value);
+      if (amount > 0) allocations.push({ type: row.dataset.type, id: row.dataset.id, amount });
+    });
+    if (!allocations.length) { toastErr('حداقل یک آیتم را انتخاب کنید'); return; }
+    const total = allocations.reduce((s, a) => s + a.amount, 0);
+    try {
+      await T('app_submit_itemized_payment', { p_building_id: bid, p_membership_id: membershipId, p_payment_date: $('#mp-date', m).dataset.gregorian || $('#mp-date', m).value, p_description: $('#mp-desc', m).value || null, p_allocations: allocations, p_total_amount: total });
+      m.remove(); toastOk('پرداخت ثبت شد و در انتظار تایید است'); go('m_dash'); 
+    } catch (err) { showErr(err); }
+  });
+}
+
+async function viewManagerPayments(el) {
   const m = currentMembership(); if (!m) return;
   const bid = m.building_id;
   const [pending, details] = await Promise.all([T('app_manager_list_pending_payments', { p_building_id: bid }), T('app_manager_get_monthly_report', { p_building_id: bid, p_year: TODAY.y, p_month: TODAY.m }).catch(() => null)]);
   const list = pending.payments || [];
-  
   el.innerHTML = `
     <h1>تایید پرداخت‌ها</h1><p class="sub">${fa(list.length)} پرداخت در انتظار تایید</p>
-    
     ${list.length ? `<div class="grid g2">${list.map(p => `<div class="card"><div style="display:flex;justify-content:space-between;gap:8px;margin-bottom:8px"><b>${esc(p.full_name)}</b><span class="chip pd">در انتظار</span></div><div class="sub" style="margin:0 0 10px">واحد ${fa(p.unit_no)} · ${RESIDENT_TYPES[p.resident_type] || ''}</div><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><span>مبلغ: <b>${fmt(p.amount)}</b> تومان</span><small class="sub">${p.payment_date}</small></div>${p.description ? `<div class="sub" style="margin:0 0 12px">${esc(p.description)}</div>` : ''}<div style="display:flex;gap:8px"><button class="btn sm" data-approve="${p.payment_id}">تایید</button><button class="btn rd sm" data-reject="${p.payment_id}">رد</button></div></div>`).join('')}</div>` : `<div class="empty"><div class="ico">✅</div><p>پرداختی در انتظار تایید نیست</p></div>`}
-    
-    ${details?.payments?.length ? `<div class="sec-title" style="margin-top:26px">سابقه این ماه</div><div class="tbl-wrap"><table><thead><tr><th>واحد</th><th>مبلغ</th><th>وضعیت</th><th>تاریخ</th></tr></thead><tbody>${details.payments.map(p => `<tr><td>${p.membership_id ? p.membership_id.slice(0,6) : '—'}</td><td>${fmt(p.amount)}</td><td>${p.status === 'approved' ? '<span class="chip ok">تایید</span>' : p.status === 'pending' ? '<span class="chip pd">در انتظار</span>' : p.status === 'rejected' ? '<span class="chip no">رد</span>' : '<span class="chip ex">' + esc(p.status) + '</span>'}</td><td>${p.payment_date}</td></tr>`).join('')}</tbody></table></div>` : ''}
-  `;
-
+    ${details?.payments?.length ? `<div class="sec-title" style="margin-top:26px">سابقه این ماه</div><div class="tbl-wrap"><table><thead><tr><th>واحد</th><th>مبلغ</th><th>وضعیت</th><th>تاریخ</th></tr></thead><tbody>${details.payments.map(p => `<tr><td>${p.membership_id ? p.membership_id.slice(0,6) : '—'}</td><td>${fmt(p.amount)}</td><td>${p.status === 'approved' ? '<span class="chip ok">تایید</span>' : p.status === 'pending' ? '<span class="chip pd">در انتظار</span>' : p.status === 'rejected' ? '<span class="chip no">رد</span>' : '<span class="chip ex">' + esc(p.status) + '</span>'}</td><td>${p.payment_date}</td></tr>`).join('')}</tbody></table></div>` : ''}`;
   $$('[data-approve]', el).forEach(b => b.addEventListener('click', () => approvePaymentModal(b.dataset.approve)));
   $$('[data-reject]', el).forEach(b => b.addEventListener('click', async () => { 
     const note = await promptDlg('دلیل رد (اختیاری):'); if (note === null) return; 
@@ -1118,6 +1155,7 @@ function replyRequestModal(req, bid) {
   const m = modal(`<h2>پاسخ به درخواست</h2><p class="sub">${esc(req.resident_name)} · واحد ${fa(req.unit_no)}</p><div class="card" style="background:var(--bg);margin-bottom:14px"><div class="sub" style="margin:0 0 6px">متن درخواست:</div><div style="white-space:pre-wrap">${esc(req.description)}</div></div><form id="rp" class="grid" style="gap:14px"><label class="f">وضعیت<select id="rp-status"><option value="in_progress" ${req.request_status === 'in_progress' ? 'selected' : ''}>در حال بررسی</option><option value="answered" ${req.request_status === 'answered' ? 'selected' : ''}>پاسخ داده شد</option><option value="resolved" ${req.request_status === 'resolved' ? 'selected' : ''}>انجام شد</option><option value="rejected" ${req.request_status === 'rejected' ? 'selected' : ''}>رد شد</option></select></label><label class="f">متن پاسخ<textarea id="rp-text" rows="4" placeholder="توضیح برای ساکن...">${esc(req.manager_reply || '')}</textarea></label><button class="btn" type="submit">ذخیره</button></form>`);
   $('#rp', m).addEventListener('submit', async e => { e.preventDefault(); try { await T('app_manager_reply_building_request', { p_building_id: bid, p_request_id: req.request_id, p_new_status: $('#rp-status', m).value, p_manager_reply: $('#rp-text', m).value || null }); m.remove(); toastOk('ذخیره شد'); go('m_requests'); } catch (err) { showErr(err); } });
 }
+
 async function viewManagerPendingSignups(el) {
   const m = currentMembership(); if (!m) return;
   const r = await T('app_manager_list_resident_requests');
@@ -1126,7 +1164,6 @@ async function viewManagerPendingSignups(el) {
   el.innerHTML = `<h1>تایید ثبت‌نام‌ها</h1><p class="sub">${fa(list.length)} درخواست در انتظار بررسی</p>${list.length ? `<div class="grid g2">${list.map(r => `<div class="card"><div style="display:flex;justify-content:space-between;gap:8px;margin-bottom:10px;flex-wrap:wrap"><b>${esc(r.full_name)}</b><span class="chip pd">${RESIDENT_TYPES[r.requested_role] || r.requested_role}</span></div><div class="sub" style="margin:0 0 10px;line-height:1.9">نام کاربری: <b dir="ltr">${esc(r.username)}</b><br>واحد: ${fa(r.unit_no)} · متراژ: ${fa(r.area)}${r.resident_count ? ` · ساکنین: ${fa(r.resident_count)}` : ''}<br>موبایل: ${esc(r.phone || '—')} · ایمیل: ${esc(r.email || '—')}</div><div style="display:flex;gap:8px"><button class="btn sm" data-ok="${r.id}">تایید</button><button class="btn rd sm" data-no="${r.id}">رد</button></div></div>`).join('')}</div>` : `<div class="empty"><div class="ico">📭</div><p>درخواستی وجود ندارد</p></div>`}`;
   
   $$('[data-ok]', el).forEach(b => b.addEventListener('click', () => {
-    // فرم انتخاب تاریخ
     const modalBg = modal(`
       <h2>تایید ثبت‌نام</h2>
       <p class="sub">لطفاً مشخص کنید از چه تاریخی این واحد مشمول هزینه‌ها و شارژ می‌شود.</p>
@@ -1141,7 +1178,6 @@ async function viewManagerPendingSignups(el) {
     $('#do-approve', modalBg).addEventListener('click', async () => {
       const joinDate = $('#join-date', modalBg).dataset.gregorian;
       if (!joinDate) { toastErr('تاریخ را انتخاب کنید'); return; }
-      
       try {
         await T('app_manager_review_resident_request', { 
           p_request_id: b.dataset.ok, 
@@ -1160,15 +1196,13 @@ async function viewManagerPendingSignups(el) {
     T('app_manager_review_resident_request', { p_request_id: b.dataset.no, p_approve: false, p_review_note: note || null }).then(() => { toastOk('رد شد'); go('m_requests_pending'); }).catch(showErr); 
   }));
 }
+
 async function viewManagerUnits(el) {
   const m = currentMembership(); if (!m) return;
   const r = await T('app_manager_list_building_members', { p_building_id: m.building_id });
-  
-  // اضافه کردن مدیر به لیست ساکنین (اگر واحد دارد)
   const members = (r.members || []).filter(x => 
     (x.access_role === 'resident' || x.access_role === 'manager') && x.unit_no
   );
-  
   const byUnit = {}; 
   members.forEach(x => { 
     if (!byUnit[x.unit_no]) byUnit[x.unit_no] = []; 
@@ -1217,181 +1251,8 @@ async function viewManagerUnits(el) {
   }));
 }
 
-async function unitDetailsModal(u, bid) {
-  // گرفتن صورتحساب برای تمام اعضای این واحد
-  let memberSummaries = [];
-  for (const mem of u.members) {
-    try {
-      const summary = await T('app_resident_get_financial_summary', { p_building_id: bid, p_membership_id: mem.membership_id });
-      memberSummaries.push({ ...mem, summary });
-    } catch (e) {
-      memberSummaries.push({ ...mem, summary: null });
-    }
-  }
-
-  const m = modal(`
-    <h2>واحد ${fa(u.unit_no)}</h2>
-    <p class="sub">مدیریت مالی و ساکنین</p>
-    
-    ${memberSummaries.map(x => `
-      <div class="card" style="margin-bottom:14px">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px">
-          <div>
-            <b>${esc(x.full_name)}</b>
-            <div class="sub" style="margin:0">${RESIDENT_TYPES[x.resident_type] || ''}</div>
-          </div>
-          <span class="chip ${x.summary?.debt_balance > 0 ? 'no' : 'ok'}">
-            ${x.summary?.debt_balance > 0 ? 'بدهکار: ' + fmt(x.summary.debt_balance) : 'تسویه'}
-          </span>
-        </div>
-        
-        ${x.summary?.charges?.length ? `
-          <div style="margin-bottom:10px;font-size:12px;color:var(--muted);line-height:1.8;">
-            اقلام بدهی: ${x.summary.charges.map(c => `${esc(c.description)} (${fmt(c.amount)})`).join(' ، ')}
-          </div>
-        ` : ''}
-
-        ${x.summary?.debt_balance > 0 ? `
-          <button class="btn sf sm" data-pay="${x.membership_id}" style="background:var(--warning);color:#fff">💸 ثبت پرداخت برای این واحد</button>
-        ` : ''}
-      </div>
-    `).join('')}
-  `);
-
-  $$('[data-pay]', m).forEach(btn => {
-    btn.addEventListener('click', () => {
-      m.remove();
-      managerPaymentModal(bid, btn.dataset.pay);
-    });
-  });
-}
- // ⚠️ تابع افزودن واحد و حساب جدید توسط مدیر
-function addUnitModal(bid) {
-  const m = modal(`
-    <h2>افزودن واحد / ساکن جدید</h2>
-    <p class="sub">شما می‌توانید بدون نیاز به ثبت‌نام ساکن، مستقیماً برای او حساب بسازید.</p>
-    <form id="au-form" class="grid g2" style="gap:14px">
-      <label class="f">شماره واحد<input id="au-unit" type="number" min="1" required></label>
-      <label class="f">متراژ<input id="au-area" type="number" min="1" required></label>
-      <label class="f">تعداد نفرات<input id="au-res" type="number" min="1" required></label>
-      <label class="f">نوع سکونت
-        <select id="au-role">
-          <option value="owner">مالک (غیرساکن)</option>
-          <option value="tenant">مستأجر</option>
-          <option value="owner_resident">مالک ساکن</option>
-        </select>
-      </label>
-      <label class="f" style="grid-column:1/-1">نام و نام خانوادگی<input id="au-name" required></label>
-      <label class="f">موبایل<input id="au-phone" dir="ltr"></label>
-      <label class="f">ایمیل<input id="au-email" type="email" dir="ltr"></label>
-      <label class="f">نام کاربری<input id="au-username" dir="ltr" required></label>
-      <label class="f">رمز عبور<input id="au-pass" type="text" dir="ltr" required></label>
-      <label class="f" style="grid-column:1/-1">تاریخ شروع محاسبه<input id="au-joined" class="date-picker-input" readonly required></label>
-      <button class="btn" type="submit" style="grid-column:1/-1">ایجاد حساب و واحد</button>
-    </form>
-  `);
-  bindDatePickers(m);
-
-  $('#au-form', m).addEventListener('submit', async e => {
-    e.preventDefault();
-    try {
-      await T('app_manager_add_unit_and_resident', {
-        p_building_id: bid,
-        p_unit_no: +$('#au-unit', m).value,
-        p_area: +$('#au-area', m).value,
-        p_resident_count: +$('#au-res', m).value,
-        p_full_name: $('#au-name', m).value,
-        p_username: $('#au-username', m).value,
-        p_password: $('#au-pass', m).value,
-        p_occupancy: $('#au-role', m).value,
-        p_phone: $('#au-phone', m).value || null,
-        p_email: $('#au-email', m).value || null,
-        p_joined_at: $('#au-joined', m).dataset.gregorian || $('#au-joined', m).value
-      });
-      m.remove();
-      toastOk('واحد و حساب با موفقیت ایجاد شد');
-      go('m_units');
-    } catch (err) { showErr(err); }
-  });
-}
-
-// ⚠️ تابع ثبت پرداخت توسط مدیر برای ساکنین
-async function managerPaymentModal(bid, membershipId) {
-  let summary = null;
-  try {
-    summary = await T('app_resident_get_financial_summary', { p_building_id: bid, p_membership_id: membershipId });
-  } catch (e) { showErr(e); return; }
-
-  if (!summary.charges || summary.charges.length === 0) {
-    toastOk('این واحد هیچ بدهی ندارد.');
-    return;
-  }
-
-  const m = modal(`
-    <h2>ثبت پرداخت (توسط مدیر)</h2>
-    <p class="sub">واحد ${fa(summary.unit_no)} · بدهی کل: ${fmt(summary.debt_balance)} تومان</p>
-    <form id="mp-form" class="grid" style="gap:14px">
-      <div id="mp-alloc-list">
-        ${summary.charges.map(c => `
-          <div class="debt-row" data-id="${c.id}" data-type="${c.item_type}">
-            <input type="checkbox" class="mp-check" checked>
-            <span style="flex:1;font-size:13px">${esc(c.description)}</span>
-            <input type="text" class="mp-amount" inputmode="numeric" value="${fmt(c.amount)}">
-          </div>
-        `).join('')}
-      </div>
-      <div class="card" style="background:var(--bg);display:flex;justify-content:space-between;padding:14px">
-        <b>جمع انتخاب‌شده:</b><b id="mp-total" style="color:var(--navy)">0</b>
-      </div>
-      <label class="f">تاریخ پرداخت<input id="mp-date" class="date-picker-input" readonly required></label>
-      <label class="f">توضیحات<input id="mp-desc" placeholder="مثلاً: فیش بانکی"></label>
-      <button class="btn" type="submit">ثبت پرداخت</button>
-    </form>
-  `);
-
-  bindDatePickers(m);
-  $$('.mp-amount', m).forEach(inp => inp.addEventListener('input', e => { const n = toNum(e.target.value); e.target.value = n ? fmt(n) : ''; }));
-
-  const updateTotal = () => {
-    let total = 0;
-    $$('.debt-row', m).forEach(row => { if ($('.mp-check', row).checked) total += toNum($('.mp-amount', row).value); });
-    $('#mp-total', m).textContent = fmt(total) + ' تومان';
-  };
-  $$('.mp-check, .mp-amount', m).forEach(x => x.addEventListener('input', updateTotal));
-  updateTotal();
-
-  $('#mp-form', m).addEventListener('submit', async e => {
-    e.preventDefault();
-    const allocations = [];
-    $$('.debt-row', m).forEach(row => {
-      if (!$('.mp-check', row).checked) return;
-      const amount = toNum($('.mp-amount', row).value);
-      if (amount > 0) allocations.push({ type: row.dataset.type, id: row.dataset.id, amount });
-    });
-
-    if (!allocations.length) { toastErr('حداقل یک آیتم را انتخاب کنید'); return; }
-    const total = allocations.reduce((s, a) => s + a.amount, 0);
-
-    try {
-      await T('app_submit_itemized_payment', {
-        p_building_id: bid,
-        p_membership_id: membershipId, 
-        p_payment_date: $('#mp-date', m).dataset.gregorian || $('#mp-date', m).value,
-        p_description: $('#mp-desc', m).value || null,
-        p_allocations: allocations,
-        p_total_amount: total
-      });
-      m.remove();
-      toastOk('پرداخت ثبت شد و در انتظار تایید است');
-      go('m_dash'); 
-    } catch (err) { showErr(err); }
-  });
-}
-
-// ⚠️ تابع ویرایش ساکن (همراه با تاریخ عضویت)
 function editMemberModal(mem, bid) {
   let initialJoinDate = mem.joined_at || new Date().toISOString().slice(0, 10);
-  
   const m = modal(`
     <h2>ویرایش ساکن</h2>
     <p class="sub">${esc(mem.full_name)} · واحد ${fa(mem.unit_no)}</p>
@@ -1399,7 +1260,6 @@ function editMemberModal(mem, bid) {
       <label class="f">نام و نام خانوادگی<input id="em-name" value="${esc(mem.full_name)}" required></label>
       <label class="f">شماره موبایل<input id="em-phone" dir="ltr" value="${esc(mem.phone || '')}"></label>
       <label class="f">ایمیل<input id="em-email" type="email" dir="ltr" value="${esc(mem.email || '')}"></label>
-      
       <label class="f">وضعیت سکونت
         <select id="em-role">
           <option value="owner_resident" ${mem.resident_type === 'owner_resident' ? 'selected' : ''}>مالک ساکن</option>
@@ -1407,22 +1267,17 @@ function editMemberModal(mem, bid) {
           <option value="tenant" ${mem.resident_type === 'tenant' ? 'selected' : ''}>مستأجر</option>
         </select>
       </label>
-
       <label class="f">تعداد نفرات ساکن در واحد
         <input id="em-res-count" type="number" min="0" value="${mem.unit_resident_count || 1}">
       </label>
-
       <label class="f">تاریخ شروع محاسبه هزینه‌ها (عضویت)
         <input id="em-join-date" type="text" class="date-picker-input" readonly value="${initialJoinDate}" required>
         <small style="font-weight:normal;color:var(--muted);margin-top:4px">با تغییر این تاریخ، بدهی‌های قبلی این واحد مجدداً محاسبه می‌شوند.</small>
       </label>
-      
       <button class="btn" type="submit">ذخیره تغییرات</button>
     </form>
   `);
-  
   bindDatePickers(m);
-  
   const dateInput = $('#em-join-date', m);
   if (initialJoinDate) {
       const d = new Date(initialJoinDate);
@@ -1432,102 +1287,27 @@ function editMemberModal(mem, bid) {
           dateInput.dataset.gregorian = initialJoinDate;
       }
   }
-  
   $('#em', m).addEventListener('submit', async e => {
     e.preventDefault();
     try {
       await T('app_manager_update_member_profile', {
-        p_building_id: bid,
-        p_membership_id: mem.membership_id,
-        p_full_name: $('#em-name', m).value,
-        p_phone: $('#em-phone', m).value || null,
-        p_email: $('#em-email', m).value || null,
-        p_resident_type: $('#em-role', m).value,
+        p_building_id: bid, p_membership_id: mem.membership_id,
+        p_full_name: $('#em-name', m).value, p_phone: $('#em-phone', m).value || null,
+        p_email: $('#em-email', m).value || null, p_resident_type: $('#em-role', m).value,
         p_resident_count: +$('#em-res-count', m).value,
         p_joined_at: $('#em-join-date', m).dataset.gregorian || $('#em-join-date', m).value
       });
-      m.remove();
-      toastOk('ذخیره شد و محاسبات به‌روزرسانی گردید');
-      go('m_units');
+      m.remove(); toastOk('ذخیره شد و محاسبات به‌روزرسانی گردید'); go('m_units');
     } catch (err) { showErr(err); }
   });
 }
-function editMemberModal(mem, bid) {
-  // تبدیل تاریخ عضویت فعلی به شمسی برای نمایش در فرم
-  let initialJoinDate = mem.joined_at || new Date().toISOString().slice(0, 10);
-  
-  const m = modal(`
-    <h2>ویرایش ساکن</h2>
-    <p class="sub">${esc(mem.full_name)} · واحد ${fa(mem.unit_no)}</p>
-    <form id="em" class="grid" style="gap:14px">
-      <label class="f">نام و نام خانوادگی<input id="em-name" value="${esc(mem.full_name)}" required></label>
-      <label class="f">شماره موبایل<input id="em-phone" dir="ltr" value="${esc(mem.phone || '')}"></label>
-      <label class="f">ایمیل<input id="em-email" type="email" dir="ltr" value="${esc(mem.email || '')}"></label>
-      
-      <label class="f">وضعیت سکونت
-        <select id="em-role">
-          <option value="owner_resident" ${mem.resident_type === 'owner_resident' ? 'selected' : ''}>مالک ساکن</option>
-          <option value="owner" ${mem.resident_type === 'owner' ? 'selected' : ''}>مالک (غیرساکن)</option>
-          <option value="tenant" ${mem.resident_type === 'tenant' ? 'selected' : ''}>مستأجر</option>
-        </select>
-      </label>
 
-      <label class="f">تعداد نفرات ساکن در واحد
-        <input id="em-res-count" type="number" min="0" value="${mem.unit_resident_count || 1}">
-      </label>
-
-      <!-- ⚠️ فیلد جدید: تاریخ شروع عضویت -->
-      <label class="f">تاریخ شروع محاسبه هزینه‌ها (عضویت)
-        <input id="em-join-date" type="text" class="date-picker-input" readonly value="${initialJoinDate}" required>
-        <small style="font-weight:normal;color:var(--muted);margin-top:4px">با تغییر این تاریخ، بدهی‌های قبلی این واحد مجدداً محاسبه می‌شوند.</small>
-      </label>
-      
-      <button class="btn" type="submit">ذخیره تغییرات</button>
-    </form>
-  `);
-  
-  // فعال‌سازی تقویم شمسی
-  bindDatePickers(m);
-  
-  // تبدیل مقدار اولیه به شمسی برای نمایش در فیلد
-  const dateInput = $('#em-join-date', m);
-  if (initialJoinDate) {
-      const d = new Date(initialJoinDate);
-      if (!isNaN(d.getTime())) {
-          const j = gregorianToJalali(d.getFullYear(), d.getMonth() + 1, d.getDate());
-          dateInput.value = `${j[0]}/${String(j[1]).padStart(2,'0')}/${String(j[2]).padStart(2,'0')}`;
-          dateInput.dataset.gregorian = initialJoinDate;
-      }
-  }
-  
-  $('#em', m).addEventListener('submit', async e => {
-    e.preventDefault();
-    try {
-      await T('app_manager_update_member_profile', {
-        p_building_id: bid,
-        p_membership_id: mem.membership_id,
-        p_full_name: $('#em-name', m).value,
-        p_phone: $('#em-phone', m).value || null,
-        p_email: $('#em-email', m).value || null,
-        p_resident_type: $('#em-role', m).value,
-        p_resident_count: +$('#em-res-count', m).value,
-        p_joined_at: $('#em-join-date', m).dataset.gregorian || $('#em-join-date', m).value // ارسال تاریخ میلادی
-      });
-      m.remove();
-      toastOk('ذخیره شد و محاسبات به‌روزرسانی گردید');
-      go('m_units');
-    } catch (err) { showErr(err); }
-  });
-}
 async function viewManagerExpenses(el) {
   const m = currentMembership(); if (!m) return;
   const bid = m.building_id;
-  
   let members = [];
   try { const r = await T('app_manager_list_building_members', { p_building_id: bid }); members = r.members || []; } catch {}
-
   const yearOptions = []; for (let y = TODAY.y; y >= TODAY.y - 3; y--) yearOptions.push(y);
-
   el.innerHTML = `
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px">
       <div><h1 style="margin:0">تراکنش‌های مالی</h1><p class="sub" style="margin:0">مدیریت درآمدها، هزینه‌ها و واریزی‌ها</p></div>
@@ -1537,99 +1317,53 @@ async function viewManagerExpenses(el) {
         <button class="btn" id="new-tx">ثبت تراکنش جدید</button>
       </div>
     </div>
-
     <div class="card" style="margin-bottom:20px;padding:16px;background:var(--bg)">
       <div class="grid g3" style="grid-template-columns:repeat(auto-fit, minmax(120px, 1fr)); gap:12px;">
-        <label class="f">سال
-          <select id="f-y"><option value="">همه</option>${yearOptions.map(y => `<option value="${y}" ${y === TODAY.y ? 'selected' : ''}>${fa(y)}</option>`).join('')}</select>
-        </label>
-        <label class="f">ماه
-          <select id="f-m"><option value="">همه</option>${MONTHS.map((n, i) => `<option value="${i+1}">${n}</option>`).join('')}</select>
-        </label>
-        <label class="f">نوع
-          <select id="f-t"><option value="">همه</option><option value="درآمد">درآمد</option><option value="هزینه">هزینه</option><option value="واریز ساکنین">واریز ساکنین</option></select>
-        </label>
-        <label class="f">واحد
-          <select id="f-u"><option value="">همه</option><option value="0">ساختمان</option>${members.filter(x => (x.access_role === 'resident' || x.access_role === 'manager') && x.unit_no).map(x => `<option value="${x.unit_no}">واحد ${fa(x.unit_no)}</option>`).join('')}</select>
-        </label>
+        <label class="f">سال<select id="f-y"><option value="">همه</option>${yearOptions.map(y => `<option value="${y}" ${y === TODAY.y ? 'selected' : ''}>${fa(y)}</option>`).join('')}</select></label>
+        <label class="f">ماه<select id="f-m"><option value="">همه</option>${MONTHS.map((n, i) => `<option value="${i+1}">${n}</option>`).join('')}</select></label>
+        <label class="f">نوع<select id="f-t"><option value="">همه</option><option value="درآمد">درآمد</option><option value="هزینه">هزینه</option><option value="واریز ساکنین">واریز ساکنین</option></select></label>
+        <label class="f">واحد<select id="f-u"><option value="">همه</option><option value="0">ساختمان</option>${members.filter(x => (x.access_role === 'resident' || x.access_role === 'manager') && x.unit_no).map(x => `<option value="${x.unit_no}">واحد ${fa(x.unit_no)}</option>`).join('')}</select></label>
       </div>
     </div>
-
     <div class="tbl-wrap" id="printable-area">
       <table>
         <thead><tr><th>تاریخ</th><th>واحد</th><th>نوع</th><th>دسته</th><th>شرح</th><th>مبلغ (تومان)</th><th>وضعیت</th><th class="no-print">عملیات</th></tr></thead>
         <tbody id="tx-list"><tr><td colspan="8" style="text-align:center">در حال بارگذاری...</td></tr></tbody>
       </table>
-    </div>
-  `;
+    </div>`;
 
   let currentData = [];
-
   const loadTx = async () => {
-    const y = $('#f-y', el).value, m = $('#f-m', el).value, t = $('#f-t', el).value, u = $('#f-u', el).value;
+    const y = $('#f-y', el).value, mo = $('#f-m', el).value, t = $('#f-t', el).value, u = $('#f-u', el).value;
     const tbody = $('#tx-list', el);
     tbody.innerHTML = '<tr><td colspan="8" style="text-align:center">در حال بارگذاری...</td></tr>';
-    
     try {
       let gYear = null, gMonth = null;
       if (y) {
-         if (m) { const g = jalaliToGregorian(+y, +m, 1); gYear = g.getFullYear(); gMonth = g.getMonth() + 1; }
+         if (mo) { const g = jalaliToGregorian(+y, +mo, 1); gYear = g.getFullYear(); gMonth = g.getMonth() + 1; }
          else { gYear = jalaliToGregorian(+y, 1, 1).getFullYear(); }
       }
-
-      currentData = await T('app_manager_get_transactions', { 
-        p_building_id: bid, p_year: gYear, p_month: gMonth, p_type: t || null, p_unit_no: u ? +u : null 
-      }) || [];
-
-      if (!currentData.length) {
-        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:20px">تراکنشی یافت نشد</td></tr>';
-        return;
-      }
-
+      currentData = await T('app_manager_get_transactions', { p_building_id: bid, p_year: gYear, p_month: gMonth, p_type: t || null, p_unit_no: u ? +u : null }) || [];
+      if (!currentData.length) { tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:20px">تراکنشی یافت نشد</td></tr>'; return; }
       tbody.innerHTML = currentData.map(tx => {
-        const isInc = tx.type === 'درآمد';
-        const isPay = tx.type === 'واریز ساکنین';
-        
-        let badge = '';
-        if (isInc) badge = '<span class="chip ok">درآمد</span>';
-        else if (isPay) badge = '<span class="chip pd">واریز ساکنین</span>';
-        else badge = '<span class="chip no">هزینه</span>';
-
+        const isInc = tx.type === 'درآمد', isPay = tx.type === 'واریز ساکنین';
+        let badge = isInc ? '<span class="chip ok">درآمد</span>' : isPay ? '<span class="chip pd">واریز ساکنین</span>' : '<span class="chip no">هزینه</span>';
         const d = new Date(tx.date); const j = gregorianToJalali(d.getFullYear(), d.getMonth() + 1, d.getDate());
         const dateStr = `${fa(j[0])}/${String(j[1]).padStart(2,'0')}/${String(j[2]).padStart(2,'0')}`;
-
         let statusChip = '—';
         if (isPay) {
             if (tx.status === 'approved') statusChip = '<span class="chip ok">تایید شده</span>';
             else if (tx.status === 'pending') statusChip = '<span class="chip pd">در انتظار</span>';
             else if (tx.status === 'rejected') statusChip = '<span class="chip no">رد شده</span>';
-        } else {
-            statusChip = '<span class="chip ex">فعال</span>';
-        }
-
+        } else statusChip = '<span class="chip ex">فعال</span>';
         let actionBtns = '';
         if (isPay) {
-            if (tx.status === 'approved') {
-                actionBtns = `
-                  <button class="btn lt sm" onclick="editPayment('${tx.id}', '${tx.amount}', '${tx.date}', '${esc(tx.description)}')">ویرایش</button>
-                  <button class="btn rd sm" onclick="deletePayment('${tx.id}')">حذف</button>
-                `;
-            } else {
-                actionBtns = `<span style="font-size:12px;color:var(--muted)">در صفحه تایید پرداخت</span>`;
-            }
-        } else {
-            actionBtns = `
-              <button class="btn lt sm" onclick="editTx('${tx.id}')">ویرایش</button>
-              <button class="btn rd sm" onclick="deleteTx('${tx.id}')">حذف</button>
-            `;
-        }
-
+            if (tx.status === 'approved') actionBtns = `<button class="btn lt sm" onclick="editPayment('${tx.id}', '${tx.amount}', '${tx.date}', '${esc(tx.description)}')">ویرایش</button><button class="btn rd sm" onclick="deletePayment('${tx.id}')">حذف</button>`;
+            else actionBtns = `<span style="font-size:12px;color:var(--muted)">در صفحه تایید پرداخت</span>`;
+        } else actionBtns = `<button class="btn lt sm" onclick="editTx('${tx.id}')">ویرایش</button><button class="btn rd sm" onclick="deleteTx('${tx.id}')">حذف</button>`;
         return `<tr>
-          <td>${dateStr}</td>
-          <td>${esc(tx.unit_display || '—')}</td>
-          <td>${badge}</td>
-          <td>${esc(tx.category || '—')}</td>
-          <td>${esc(tx.description)}</td>
+          <td>${dateStr}</td><td>${esc(tx.unit_display || '—')}</td><td>${badge}</td>
+          <td>${esc(tx.category || '—')}</td><td>${esc(tx.description)}</td>
           <td style="font-weight:900;color:${(isInc || isPay)?'var(--success)':'var(--danger)'}">${fmt(tx.amount)}</td>
           <td>${statusChip}</td>
           <td class="no-print"><div style="display:flex;gap:4px;flex-wrap:nowrap">${actionBtns}</div></td>
@@ -1642,13 +1376,13 @@ async function viewManagerExpenses(el) {
   $('#f-m', el).addEventListener('change', loadTx);
   $('#f-t', el).addEventListener('change', loadTx);
   $('#f-u', el).addEventListener('change', loadTx);
-  // ⚠️ اصلاح باگ: دریافت مجدد لیست ساکنین در زمان کلیک، برای اعمال تغییرات نقش
-$('#new-tx', el).addEventListener('click', async () => {
+  
+  $('#new-tx', el).addEventListener('click', async () => {
     try {
         const r = await T('app_manager_list_building_members', { p_building_id: bid });
         newTransactionModal(bid, r.members || []);
     } catch (err) { showErr(err); }
-});
+  });
   
   $('#export-excel', el).addEventListener('click', () => {
     if (!currentData.length) { toastErr('داده‌ای برای خروجی نیست'); return; }
@@ -1656,8 +1390,7 @@ $('#new-tx', el).addEventListener('click', async () => {
     const head = ['تاریخ', 'واحد', 'نوع', 'دسته', 'شرح', 'مبلغ', 'وضعیت'];
     const lines = [head.map(q).join(sep)].concat(currentData.map(tx => {
         const d = new Date(tx.date); const j = gregorianToJalali(d.getFullYear(), d.getMonth() + 1, d.getDate());
-        const dateStr = `${j[0]}/${String(j[1]).padStart(2,'0')}/${String(j[2]).padStart(2,'0')}`;
-        return [dateStr, tx.unit_display, tx.type, tx.category, tx.description, tx.amount, tx.status].map(q).join(sep);
+        return [`${j[0]}/${String(j[1]).padStart(2,'0')}/${String(j[2]).padStart(2,'0')}`, tx.unit_display, tx.type, tx.category, tx.description, tx.amount, tx.status].map(q).join(sep);
     }));
     const blob = new Blob(['\ufeff' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `گزارش-تراکنش‌ها.csv`; a.click();
@@ -1666,22 +1399,14 @@ $('#new-tx', el).addEventListener('click', async () => {
 
   $('#export-pdf', el).addEventListener('click', async () => {
     if (!currentData.length) { toastErr('داده‌ای برای خروجی نیست'); return; }
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF('p', 'pt', 'a4');
-    doc.setFontSize(16);
-    doc.text("Financial Transactions Report", 40, 40);
+    const { jsPDF } = window.jspdf; const doc = new jsPDF('p', 'pt', 'a4');
+    doc.setFontSize(16); doc.text("Financial Transactions Report", 40, 40);
     const tableRows = currentData.map(tx => {
         const d = new Date(tx.date); const j = gregorianToJalali(d.getFullYear(), d.getMonth() + 1, d.getDate());
         return [`${j[0]}/${j[1]}/${j[2]}`, tx.unit_display || '—', tx.type, tx.amount.toLocaleString(), tx.description];
     });
-    doc.autoTable({
-        head: [['Date', 'Unit', 'Type', 'Amount (Toman)', 'Description']],
-        body: tableRows,
-        startY: 60,
-        styles: { font: 'helvetica', fontSize: 10 }
-    });
-    doc.save('Transactions-Report.pdf');
-    toastOk('فایل PDF دانلود شد');
+    doc.autoTable({ head: [['Date', 'Unit', 'Type', 'Amount (Toman)', 'Description']], body: tableRows, startY: 60, styles: { font: 'helvetica', fontSize: 10 } });
+    doc.save('Transactions-Report.pdf'); toastOk('فایل PDF دانلود شد');
   });
 
   loadTx();
@@ -1689,11 +1414,7 @@ $('#new-tx', el).addEventListener('click', async () => {
 
 window.deletePayment = async (id) => {
     if (!await confirmDlg('آیا از حذف این واریزی مطمئن هستید؟ (بدهی ساکن دوباره محاسبه می‌شود)')) return;
-    try {
-        await T('app_manager_delete_payment', { p_payment_id: id });
-        toastOk('واریزی حذف شد');
-        go('m_expenses');
-    } catch (e) { showErr(e); }
+    try { await T('app_manager_delete_payment', { p_payment_id: id }); toastOk('واریزی حذف شد'); go('m_expenses'); } catch (e) { showErr(e); }
 };
 
 window.editPayment = (id, amount, date, description) => {
@@ -1711,63 +1432,59 @@ window.editPayment = (id, amount, date, description) => {
     $('#ep-date', m).value = `${j[0]}/${String(j[1]).padStart(2,'0')}/${String(j[2]).padStart(2,'0')}`;
     $('#ep-date', m).dataset.gregorian = date;
     $$('#ep-amount', m).forEach(inp => inp.addEventListener('input', e => { const n = toNum(e.target.value); n && (e.target.value = fmt(n)); }));
-
     $('#ep-form', m).addEventListener('submit', async e => {
         e.preventDefault();
         try {
-            await T('app_manager_update_payment', {
-                p_payment_id: id,
-                p_amount: toNum($('#ep-amount', m).value),
-                p_payment_date: $('#ep-date', m).dataset.gregorian || $('#ep-date', m).value,
-                p_description: $('#ep-desc', m).value || null
-            });
-            m.remove();
-            toastOk('ویرایش شد');
-            go('m_expenses');
+            await T('app_manager_update_payment', { p_payment_id: id, p_amount: toNum($('#ep-amount', m).value), p_payment_date: $('#ep-date', m).dataset.gregorian || $('#ep-date', m).value, p_description: $('#ep-desc', m).value || null });
+            m.remove(); toastOk('ویرایش شد'); go('m_expenses');
         } catch (err) { showErr(err); }
     });
 };
+
+window.deleteTx = async (id) => {
+    if (!await confirmDlg('آیا از حذف این تراکنش مطمئن هستید؟ (بدهی ساکنین دوباره محاسبه می‌شود)')) return;
+    try { await T('app_manager_delete_transaction', { p_id: id }); toastOk('تراکنش حذف شد'); go('m_expenses'); } catch (e) { showErr(e); }
+};
+
+window.editTx = async (id) => {
+    const m = currentMembership(); if (!m) return;
+    try {
+        const r = await T('app_manager_list_building_members', { p_building_id: m.building_id });
+        // Note: editTx is a lightweight trigger; the real edit happens in newTransactionModal if we had the tx data.
+        // Since app_manager_get_transactions doesn't return full details per tx, we redirect to a refresh flow.
+        // For now, best-effort: load transactions to find matching tx and re-open modal.
+        const txs = await T('app_manager_get_transactions', { p_building_id: m.building_id });
+        const tx = (txs || []).find(x => x.id === id);
+        if (!tx) { toastErr('تراکنش یافت نشد'); return; }
+        newTransactionModal(m.building_id, r.members || [], tx);
+    } catch (err) { showErr(err); }
+};
+
 function newTransactionModal(bid, members, tx = null) {
   const incCats = ['شارژ ماهیانه', 'پس‌انداز', 'جریمه', 'سایر'];
   const expCats = ['قبض آب', 'قبض گاز', 'قبض برق', 'نظافت', 'سرویس آسانسور', 'تعمیرات', 'سایر'];
   const isEdit = !!tx;
   const allResidents = members.filter(x => (x.access_role === 'resident' || x.access_role === 'manager') && x.unit_no && x.membership_status === 'active');
-
   const m = modal(`
     <h2>${isEdit ? 'ویرایش تراکنش' : 'ثبت تراکنش جدید'}</h2>
     <form id="tx-form" class="grid" style="gap:14px">
-      <label class="f">نوع تراکنش
-        <select id="tx-type" ${isEdit ? 'disabled' : ''}>
-          <option value="درآمد" ${isEdit && tx.type === 'درآمد' ? 'selected' : ''}>درآمد (دریافتنی)</option>
-          <option value="هزینه" ${isEdit && tx.type === 'هزینه' ? 'selected' : ''}>هزینه (کسر از صندوق)</option>
-        </select>
-      </label>
+      <label class="f">نوع تراکنش<select id="tx-type" ${isEdit ? 'disabled' : ''}><option value="درآمد" ${isEdit && tx.type === 'درآمد' ? 'selected' : ''}>درآمد (دریافتنی)</option><option value="هزینه" ${isEdit && tx.type === 'هزینه' ? 'selected' : ''}>هزینه (کسر از صندوق)</option></select></label>
       <label class="f">دسته‌بندی<select id="tx-cat"></select></label>
       <label class="f">شرح تراکنش<input id="tx-desc" placeholder="مثلاً شارژ آبان یا قبض آب" value="${isEdit ? esc(tx.description) : ''}" required></label>
-      <label class="f"><span id="tx-amount-label">مبلغ (تومان)</span>
-        <input id="tx-amount" inputmode="numeric" value="${isEdit ? fmt(tx.amount) : ''}" required>
-        <small id="tx-amount-hint" style="color:var(--muted); font-weight:normal; margin-top:4px;"></small>
-      </label>
+      <label class="f"><span id="tx-amount-label">مبلغ (تومان)</span><input id="tx-amount" inputmode="numeric" value="${isEdit ? fmt(tx.amount) : ''}" required><small id="tx-amount-hint" style="color:var(--muted); font-weight:normal; margin-top:4px;"></small></label>
       <label class="f">تاریخ<input id="tx-date" class="date-picker-input" readonly required></label>
-
       <div id="tx-expense-split-wrap" style="display:none; margin-top:8px; padding:12px; background:var(--bg); border-radius:12px; border:1px solid var(--line)">
         <label class="f" style="margin-bottom:8px; color:var(--ink)">آیا این هزینه تسهیمی است؟</label>
         <select id="tx-is-split" style="margin-bottom:10px;"><option value="yes">بله</option><option value="no">خیر (فقط از صندوق)</option></select>
         <div id="tx-expense-methods" style="display:none;">
           <label class="f" style="margin-bottom:8px; color:var(--ink)">روش تسهیم:</label>
-          <select id="tx-exp-method" style="margin-bottom:10px;">
-            <option value="equal">مساوی</option><option value="area">نسبت متراژ</option><option value="residents">نسبت نفرات</option><option value="per_unit">مبلغ ثابت هر واحد</option><option value="selected">واحدهای خاص</option>
-          </select>
+          <select id="tx-exp-method" style="margin-bottom:10px;"><option value="equal">مساوی</option><option value="area">نسبت متراژ</option><option value="residents">نسبت نفرات</option><option value="per_unit">مبلغ ثابت هر واحد</option><option value="selected">واحدهای خاص</option></select>
         </div>
       </div>
-
       <div id="tx-income-methods" style="margin-top:8px; padding:12px; background:var(--bg); border-radius:12px; border:1px solid var(--line)">
         <label class="f" style="margin-bottom:8px; color:var(--ink)">روش محاسبه شارژ:</label>
-        <select id="tx-inc-method" style="margin-bottom:10px;">
-          <option value="per_unit">مبلغ ثابت هر واحد</option><option value="per_meter">مبلغ هر متر</option><option value="per_resident">مبلغ هر نفر</option><option value="total_equal">مبلغ کل مساوی</option>
-        </select>
+        <select id="tx-inc-method" style="margin-bottom:10px;"><option value="per_unit">مبلغ ثابت هر واحد</option><option value="per_meter">مبلغ هر متر</option><option value="per_resident">مبلغ هر نفر</option><option value="total_equal">مبلغ کل مساوی</option></select>
       </div>
-
       <div id="tx-alloc-wrap" style="display:none; margin-top:8px; padding:12px; background:var(--bg); border-radius:12px; border:1px solid var(--line); max-height:250px; overflow-y:auto;">
         <label class="f" style="margin-bottom:8px; color:var(--ink)" id="tx-alloc-label">مسئول پرداخت:</label>
         <div id="tx-occ-list" style="display:flex; flex-direction:column; gap:10px;">
@@ -1776,100 +1493,67 @@ function newTransactionModal(bid, members, tx = null) {
           <label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" class="occ-check" value="owner_resident" checked><span>مالک ساکن</span></label>
         </div>
         <div id="tx-unit-list" style="display:none; flex-direction:column; gap:10px;">
-          ${allResidents.map(x => `
-            <label style="display:flex; align-items:center; gap:8px; padding:4px 0; border-bottom:1px dashed var(--line)">
-              <input type="checkbox" class="unit-check" value="${x.membership_id}" checked><span>واحد ${fa(x.unit_no)} (${esc(x.full_name)})</span>
-            </label>
-          `).join('')}
+          ${allResidents.map(x => `<label style="display:flex; align-items:center; gap:8px; padding:4px 0; border-bottom:1px dashed var(--line)"><input type="checkbox" class="unit-check" value="${x.membership_id}" checked><span>واحد ${fa(x.unit_no)} (${esc(x.full_name)})</span></label>`).join('')}
         </div>
       </div>
       <button class="btn" type="submit" style="margin-top:10px">${isEdit ? 'ذخیره تغییرات' : 'ثبت تراکنش'}</button>
     </form>
   `);
-
   bindDatePickers(m);
   const typeSel = $('#tx-type', m), catSel = $('#tx-cat', m), splitWrap = $('#tx-expense-split-wrap', m), splitSel = $('#tx-is-split', m);
   const expMethodsWrap = $('#tx-expense-methods', m), expMethodSel = $('#tx-exp-method', m), incMethodsWrap = $('#tx-income-methods', m), incMethodSel = $('#tx-inc-method', m);
   const allocWrap = $('#tx-alloc-wrap', m), occList = $('#tx-occ-list', m), unitList = $('#tx-unit-list', m), allocLabel = $('#tx-alloc-label', m), amountHint = $('#tx-amount-hint', m), amountLabel = $('#tx-amount-label', m);
-
   if (isEdit && tx.date) {
       const d = new Date(tx.date); const j = gregorianToJalali(d.getFullYear(), d.getMonth() + 1, d.getDate());
       $('#tx-date', m).value = `${j[0]}/${String(j[1]).padStart(2,'0')}/${String(j[2]).padStart(2,'0')}`;
       $('#tx-date', m).dataset.gregorian = tx.date;
   }
-
-  // ⚠️ اصلاح باگ: فقط زمانی لیست دسته‌بندی را تغییر بده که نوع تراکنش عوض شود
   const updateCategories = () => {
     const isInc = typeSel.value === 'درآمد';
     catSel.innerHTML = (isInc ? incCats : expCats).map(c => `<option value="${c}">${c}</option>`).join('');
     if (isEdit && tx.category) catSel.value = tx.category;
   };
-
   const updateLayout = () => {
-    const isInc = typeSel.value === 'درآمد'; 
-    const isSplit = splitSel.value === 'yes';
-    
+    const isInc = typeSel.value === 'درآمد'; const isSplit = splitSel.value === 'yes';
     splitWrap.style.display = isInc ? 'none' : 'block'; 
     incMethodsWrap.style.display = isInc ? 'block' : 'none'; 
     expMethodsWrap.style.display = (!isInc && isSplit) ? 'block' : 'none';
-    
     if (isInc) { allocWrap.style.display = 'block'; occList.style.display = 'flex'; unitList.style.display = 'none'; allocLabel.textContent = 'مسئول پرداخت:'; }
     else if (isSplit && expMethodSel.value === 'selected') { allocWrap.style.display = 'block'; occList.style.display = 'none'; unitList.style.display = 'flex'; allocLabel.textContent = 'انتخاب واحدها:'; }
     else if (isSplit) { allocWrap.style.display = 'block'; occList.style.display = 'flex'; unitList.style.display = 'none'; allocLabel.textContent = 'مسئول پرداخت:'; }
     else { allocWrap.style.display = 'none'; }
-    
     if (isInc) {
       const im = incMethodSel.value;
       amountLabel.textContent = im === 'per_unit' ? 'مبلغ هر واحد' : im === 'per_meter' ? 'مبلغ هر متر' : im === 'per_resident' ? 'مبلغ هر نفر' : 'مبلغ کل';
       amountHint.textContent = im === 'total_equal' ? 'مبلغ کل بین واحدها مساوی تقسیم می‌شود.' : 'مبلغ به عنوان نرخ محاسبه می‌شود.';
-    } else if (isSplit) { 
-      amountLabel.textContent = 'مبلغ کل'; 
-      amountHint.textContent = 'مبلغ کل طبق روش انتخابی تقسیم می‌شود.'; 
-    } else { 
-      amountLabel.textContent = 'مبلغ کل'; 
-      amountHint.textContent = 'این مبلغ مستقیماً از صندوق کسر می‌شود.'; 
-    }
+    } else if (isSplit) { amountLabel.textContent = 'مبلغ کل'; amountHint.textContent = 'مبلغ کل طبق روش انتخابی تقسیم می‌شود.'; }
+    else { amountLabel.textContent = 'مبلغ کل'; amountHint.textContent = 'این مبلغ مستقیماً از صندوق کسر می‌شود.'; }
   };
-
-  // اتصال رویدادها
   typeSel.addEventListener('change', () => { updateCategories(); updateLayout(); });
   splitSel.addEventListener('change', updateLayout);
   incMethodSel.addEventListener('change', updateLayout); 
   expMethodSel.addEventListener('change', updateLayout); 
-  
-  // اجرای اولیه
-  updateCategories();
-  updateLayout();
-
+  updateCategories(); updateLayout();
   $$('#tx-amount', m).forEach(inp => inp.addEventListener('input', e => { const n = toNum(e.target.value); n && (e.target.value = fmt(n)); }));
-
   $('#tx-form', m).addEventListener('submit', async e => {
     e.preventDefault();
     const amount = toNum($('#tx-amount', m).value); 
     const type = typeSel.value; 
     const isSplit = splitSel.value === 'yes'; 
     const txDate = $('#tx-date', m).dataset.gregorian;
-    
     if (amount <= 0) { toastErr('مبلغ نامعتبر است'); return; }
-
-    let allocations = []; 
-    let finalDbMethod = 'manual'; 
-    let totalAmountToSend = amount;
-
+    let allocations = []; let finalDbMethod = 'manual'; let totalAmountToSend = amount;
     if (type === 'درآمد') {
       const selectedOccTypes = []; $$('.occ-check', m).forEach(cb => { if (cb.checked) selectedOccTypes.push(cb.value); });
       const targetMembers = allResidents.filter(x => selectedOccTypes.includes(x.resident_type));
       const im = incMethodSel.value;
-      
       if (im === 'per_unit') { totalAmountToSend = amount * targetMembers.length; targetMembers.forEach(mem => allocations.push({ membership_id: mem.membership_id, amount: amount })); }
       else if (im === 'per_meter') { let total = 0; targetMembers.forEach(mem => { const share = amount * (Number(mem.unit_area) || 0); if(share>0){ allocations.push({ membership_id: mem.membership_id, amount: share }); total += share; } }); totalAmountToSend = total; }
       else if (im === 'per_resident') { let total = 0; targetMembers.forEach(mem => { const share = amount * (Number(mem.unit_resident_count) || 0); if(share>0){ allocations.push({ membership_id: mem.membership_id, amount: share }); total += share; } }); totalAmountToSend = total; }
       else if (im === 'total_equal') { const share = amount / (targetMembers.length || 1); targetMembers.forEach(mem => allocations.push({ membership_id: mem.membership_id, amount: share })); }
-
     } else if (isSplit) {
       const selectedOccTypes = []; $$('.occ-check', m).forEach(cb => { if (cb.checked) selectedOccTypes.push(cb.value); });
       const em = expMethodSel.value;
-      
       if (em === 'selected') { 
         const selectedIds = []; $$('.unit-check', m).forEach(cb => { if (cb.checked) selectedIds.push(cb.value); }); 
         const share = amount / (selectedIds.length || 1);
@@ -1890,30 +1574,15 @@ function newTransactionModal(bid, members, tx = null) {
         }
       }
     } else { finalDbMethod = 'none'; }
-
     if (allocations.length > 0) totalAmountToSend = allocations.reduce((s, a) => s + a.amount, 0);
-
     try {
       if (isEdit) await T('app_manager_delete_transaction', { p_id: tx.id });
-      
-      // ⚠️ ارسال مقادیر به دیتابیس
-      await T('app_manager_create_expense', {
-        p_building_id: bid, 
-        p_description: $('#tx-desc', m).value, 
-        p_amount: totalAmountToSend, 
-        p_expense_date: txDate,
-        p_allocation_method: finalDbMethod, 
-        p_tx_type: type, 
-        p_category: catSel.value, // حالا مقدار درست را می‌فرستد
-        p_allocations: allocations
-      });
-      
-      m.remove(); 
-      toastOk(isEdit ? 'تراکنش ویرایش شد' : 'تراکنش ثبت شد'); 
-      go('m_expenses');
+      await T('app_manager_create_expense', { p_building_id: bid, p_description: $('#tx-desc', m).value, p_amount: totalAmountToSend, p_expense_date: txDate, p_allocation_method: finalDbMethod, p_tx_type: type, p_category: catSel.value, p_allocations: allocations });
+      m.remove(); toastOk(isEdit ? 'تراکنش ویرایش شد' : 'تراکنش ثبت شد'); go('m_expenses');
     } catch (err) { showErr(err); }
   });
 }
+
 async function viewManagerRates(el) {
   const m = currentMembership(); if (!m) return;
   const bid = m.building_id;
@@ -1925,6 +1594,7 @@ async function viewManagerRates(el) {
   if (settings?.accounting_start_date) { $('#s-start', el).value = settings.accounting_start_date; $('#s-start', el).dataset.gregorian = settings.accounting_start_date; bindDatePickers(el); }
   $('#sf', el).addEventListener('submit', async e => { e.preventDefault(); try { await T('app_manager_set_finance_settings', { p_building_id: bid, p_accounting_start_date: $('#s-start', el).dataset.gregorian || $('#s-start', el).value, p_opening_balance: toNum($('#s-open', el).value) }); toastOk('ذخیره شد'); go('m_rates'); } catch (err) { showErr(err); } });
 }
+
 async function viewManagerTransfer(el) {
   const m = currentMembership(); if (!m) return;
   const bid = m.building_id;
@@ -1933,13 +1603,11 @@ async function viewManagerTransfer(el) {
   el.innerHTML = `<h1>انتقال مدیریت</h1><p class="sub">انتقال نقش مدیر به یکی از ساکنین ساختمان</p><div class="card" style="background:#fef3c7;color:#92400e;margin-bottom:20px"><b>⚠️ توجه:</b> بعد از انتقال مدیریت، دسترسی شما به عنوان مدیر سلب می‌شود و به عنوان ساکن عادی ادامه می‌دهید.</div>${residents.length ? `<div class="grid g2">${residents.map(x => `<div class="card"><b>${esc(x.full_name)}</b><div class="sub" style="margin:6px 0">واحد ${fa(x.unit_no)} · ${RESIDENT_TYPES[x.resident_type] || ''}</div><div class="sub" style="margin:0 0 12px" dir="ltr">${esc(x.username)}</div><button class="btn sm" data-transfer="${x.membership_id}">انتقال مدیریت به این ساکن</button></div>`).join('')}</div>` : `<div class="empty"><div class="ico">👥</div><p>ساکن فعالی برای انتقال مدیریت وجود ندارد</p></div>`}`;
   $$('[data-transfer]', el).forEach(b => b.addEventListener('click', async () => { if (!await confirmDlg('آیا مطمئنید؟')) return; toastErr('این قابلیت هنوز پیاده‌سازی نشده'); }));
 }
+
 async function viewManagerReport(el) {
   const m = currentMembership(); if (!m) return;
   const bid = m.building_id;
-  
-  const yearOptions = []; 
-  for (let y = TODAY.y; y >= TODAY.y - 3; y--) yearOptions.push(y);
-
+  const yearOptions = []; for (let y = TODAY.y; y >= TODAY.y - 3; y--) yearOptions.push(y);
   el.innerHTML = `
     <div class="no-print" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; gap:12px; flex-wrap:wrap; width:100%; box-sizing:border-box;">
       <div><h1 style="margin:0; line-height:1.5;">گزارش ماهانه</h1></div>
@@ -1952,22 +1620,18 @@ async function viewManagerReport(el) {
     </div>
     <div id="rp-body"></div>
   `;
-
   const loadReport = async () => {
     const y = +$('#rp-year', el).value, mo = +$('#rp-month', el).value, body = $('#rp-body', el);
     body.innerHTML = '<p class="sub no-print">در حال بارگذاری...</p>';
-    
     try {
       const g = jalaliToGregorian(y, mo, 1);
       const r = await T('app_manager_get_monthly_report', { p_building_id: bid, p_year: g.getFullYear(), p_month: g.getMonth() + 1 });
       const membersRes = await T('app_manager_list_building_members', { p_building_id: bid });
       const members = membersRes.members || [];
       const balances = await T('app_manager_get_member_balances', { p_building_id: bid }).catch(()=>null);
-
       const monthExpenses = r.expenses || [];
       const activeCategories = [];
       const catMap = { charge: 'شارژ ماهیانه', water: 'قبض آب', gas: 'قبض گاز', electric: 'قبض برق', repair: 'بازسازی', parking: 'اجاره پارکینگ' };
-      
       monthExpenses.forEach(e => {
           let cat = 'other';
           if (e.description.includes('شارژ')) cat = 'charge';
@@ -1976,27 +1640,21 @@ async function viewManagerReport(el) {
           else if (e.description.includes('برق')) cat = 'electric';
           else if (e.description.includes('بازسازی')) cat = 'repair';
           else if (e.description.includes('پارکینگ')) cat = 'parking';
-          
           if (!activeCategories.includes(cat) && cat !== 'other') activeCategories.push(cat);
       });
-
       let headerCols = `<th style="background-color:#D9E1F2; border:1px solid #333; padding:8px; color:#000; font-size:20px; font-weight:bold;">واحد</th>`;
       activeCategories.forEach(cat => { headerCols += `<th style="background-color:#D9E1F2; border:1px solid #333; padding:8px; color:#000; font-size:20px; font-weight:bold;">${catMap[cat]}</th>`; });
       headerCols += `<th style="background-color:#D9E1F2; border:1px solid #333; padding:8px; color:#000; font-size:20px; font-weight:bold;">جمع مبلغ<br>قابل پرداخت</th>`;
-
       let tableRows = '';
       members.filter(x => x.access_role === 'resident' && x.membership_status === 'active').forEach(mem => {
           const unitNo = mem.unit_no || '—';
           const rType = RESIDENT_TYPES[mem.resident_type] || '';
           const memBalance = balances?.members?.find(x => x.membership_id === mem.membership_id);
           const remaining = memBalance?.outstanding_debt || 0;
-          
           let rowBg = '#ffffff'; let textColor = '#000000';
           if (remaining <= 0) { rowBg = '#00B050'; textColor = '#ffffff'; }
           else if (remaining > 0) { rowBg = '#FFC000'; textColor = '#000000'; }
-
           let rowHtml = `<tr style="background-color:${rowBg}; color:${textColor};"><td style="border:1px solid #333; padding:10px; text-align:center; font-size:20px; font-weight:bold;">واحد ${fa(unitNo)}<br><span style="font-size:13px; font-weight:normal; opacity:0.8;">${esc(rType)}</span></td>`;
-
           activeCategories.forEach(cat => {
               const catExpenses = monthExpenses.filter(e => {
                   if (cat === 'charge' && e.description.includes('شارژ')) return true;
@@ -2012,13 +1670,10 @@ async function viewManagerReport(el) {
               const perUnit = totalCatAmount / memberCount;
               rowHtml += `<td style="border:1px solid #333; padding:10px; text-align:center; font-size:24px; font-weight:bold;">${perUnit > 0 ? fmt(perUnit) : '—'}</td>`;
           });
-
           rowHtml += `<td style="border:1px solid #333; padding:10px; text-align:center; font-size:24px; font-weight:bold;">${remaining <= 0 ? 'تسویه' : fmt(remaining)}</td></tr>`;
           tableRows += rowHtml;
       });
-
       if (!tableRows) tableRows = `<tr><td colspan="${activeCategories.length + 2}" style="text-align:center; padding:20px; font-size:20px; font-weight:bold;">اطلاعاتی برای این دوره وجود ندارد.</td></tr>`;
-
       body.innerHTML = `
         <div id="printable-area" style="border-radius:8px; overflow-x:auto; border:1px solid #333; background:#fff; width:100%; box-sizing:border-box; padding: 4px;">
           <table style="width:100%; border-collapse:collapse; font-size:14px; text-align:center; direction:rtl; border:2px solid #000;">
@@ -2035,7 +1690,6 @@ async function viewManagerReport(el) {
           <div><small class="sub">موجودی صندوق</small><div style="font-weight:900; color:var(--navy)">${fmt(r.fund_balance_to_month_end)} تومان</div></div>
         </div>
       `;
-
       $('#pr-btn', el).addEventListener('click', () => window.print());
       $('#img-btn', el).addEventListener('click', async () => {
         try {
@@ -2044,14 +1698,11 @@ async function viewManagerReport(el) {
           const canvas = await html2canvas(element, { scale: 2, backgroundColor: '#ffffff' });
           const link = document.createElement('a');
           link.download = `گزارش-${MONTHS[mo-1]}-${y}.png`;
-          link.href = canvas.toDataURL('image/png');
-          link.click();
+          link.href = canvas.toDataURL('image/png'); link.click();
         } catch (err) { showErr(new Error('خطا در گرفتن عکس: ' + err.message)); }
       });
-
     } catch (err) { body.innerHTML = `<div class="card" style="color:var(--danger)">خطا در دریافت گزارش: ${esc(err.message)}</div>`; }
   };
-
   $('#rp-year', el).addEventListener('change', loadReport);
   $('#rp-month', el).addEventListener('change', loadReport);
   loadReport();
@@ -2077,12 +1728,14 @@ async function viewResidentDash(el) {
   $$('[data-go]', el).forEach(b => b.addEventListener('click', () => go(b.dataset.go)));
   $('#go-pay', el)?.addEventListener('click', () => go('r_pay'));
 }
+
 async function viewResidentCharges(el) {
   const m = currentMembership(); if (!m) return;
   const s = await T('app_resident_get_financial_summary', { p_building_id: m.building_id, p_membership_id: m.membership_id });
   const charges = s.charges || [], payments = s.payments || [];
   el.innerHTML = `<h1>صورتحساب</h1><p class="sub">${esc(m.building_name)} · واحد ${fa(s.unit_no)}</p><div class="grid g3" style="margin-bottom:20px"><div class="card"><small class="sub">جمع بدهی</small><div style="font-size:22px;font-weight:900;color:var(--danger)">${fmt(s.debt_balance)}</div></div><div class="card"><small class="sub">بستانکاری</small><div style="font-size:22px;font-weight:900;color:var(--success)">${fmt(s.credit_balance)}</div></div><div class="card"><small class="sub">در انتظار تایید</small><div style="font-size:22px;font-weight:900;color:var(--warning)">${fmt(s.pending_payments)}</div></div></div><div class="sec-title">اقلام صورتحساب</div>${charges.length ? `<div class="tbl-wrap" style="margin-bottom:20px"><table><thead><tr><th>شرح</th><th>مبلغ</th><th>تاریخ</th><th>نوع</th></tr></thead><tbody>${charges.map(c => `<tr><td>${esc(c.description)}</td><td>${fmt(c.amount)}</td><td>${esc(c.item_date)}</td><td>${c.item_type === 'expense' ? '<span class="chip ex">هزینه</span>' : '<span class="chip pd">بدهی اولیه</span>'}</td></tr>`).join('')}</tbody></table></div>` : `<div class="empty"><p>صورتحسابی ثبت نشده</p></div>`}<div class="sec-title">سابقه پرداخت‌ها</div>${payments.length ? `<div class="tbl-wrap"><table><thead><tr><th>مبلغ</th><th>وضعیت</th><th>تاریخ</th></tr></thead><tbody>${payments.map(p => `<tr><td>${fmt(p.amount)}</td><td>${p.status === 'approved' ? '<span class="chip ok">تایید</span>' : p.status === 'pending' ? '<span class="chip pd">در انتظار</span>' : p.status === 'rejected' ? '<span class="chip no">رد</span>' : '<span class="chip ex">' + esc(p.status) + '</span>'}</td><td>${esc(p.payment_date)}</td></tr>`).join('')}</tbody></table></div>` : `<div class="empty"><p>پرداختی ثبت نشده</p></div>`}`;
 }
+
 async function viewResidentPay(el) {
   const m = currentMembership(); if (!m) return;
   const s = await T('app_resident_get_financial_summary', { p_building_id: m.building_id, p_membership_id: m.membership_id });
@@ -2102,6 +1755,7 @@ async function viewResidentPay(el) {
     try { await T('app_submit_itemized_payment', { p_building_id: m.building_id, p_membership_id: m.membership_id, p_payment_date: $('#pay-date', el).dataset.gregorian || $('#pay-date', el).value, p_description: $('#pay-note', el).value || null, p_allocations: allocations, p_total_amount: total }); toastOk('پرداخت ثبت شد'); go('r_dash'); } catch (err) { showErr(err); }
   });
 }
+
 async function viewResidentRequests(el) {
   const m = currentMembership(); if (!m) return;
   const list = await T('app_resident_list_building_requests', { p_building_id: m.building_id, p_membership_id: m.membership_id });
@@ -2117,11 +1771,12 @@ function viewServices(el) {
   const isAdmin = S.me.is_superadmin, mgr = isManager();
   let items = [];
   if (isAdmin) { items = [['sa_buildings', 'ساختمان‌ها', '🏢'], ['sa_requests', 'درخواست مدیران', '👥'], ['sa_profile', 'پروفایل', '👤']]; }
-  else if (mgr) { items = [['m_units', 'واحدها و ساکنین', '👥'], ['m_expenses', 'تراکنش ها', '💸'], ['m_payments', 'تایید پرداخت', '✅'], ['m_requests_pending', 'تایید ثبت‌نام', '📝'], ['m_transfer', 'انتقال مدیریت', '🔄'], ['m_rates', 'تنظیمات مالی', '⚙️'], ['m_report', 'گزارش ماهانه', '📊'], ['m_requests', 'درخواست‌ها', '💬'], ['profile', 'پروفایل', '👤']]; }
+  else if (mgr) { items = [['m_units', 'واحدها و ساکنین', '👥'], ['m_expenses', 'تراکنش‌ها', '💸'], ['m_payments', 'تایید پرداخت', '✅'], ['m_requests_pending', 'تایید ثبت‌نام', '📝'], ['m_transfer', 'انتقال مدیریت', '🔄'], ['m_rates', 'تنظیمات مالی', '⚙️'], ['m_report', 'گزارش ماهانه', '📊'], ['m_requests', 'درخواست‌ها', '💬'], ['profile', 'پروفایل', '👤']]; }
   else { items = [['r_charges', 'صورتحساب', '📄'], ['r_pay', 'پرداخت', '💸'], ['r_requests', 'درخواست‌ها', '💬'], ['profile', 'پروفایل', '👤']]; }
   el.innerHTML = `<h1>خدمات</h1><p class="sub">دسترسی سریع به بخش‌های سامانه</p><div class="grid g3">${items.map(([k, l, ic]) => `<button class="card" data-go="${k}" style="cursor:pointer;display:flex;flex-direction:column;align-items:center;padding:20px;gap:10px;border:0;text-align:center"><div style="font-size:32px">${ic}</div><b>${l}</b></button>`).join('')}</div>`;
   $$('[data-go]', el).forEach(b => b.addEventListener('click', () => go(b.dataset.go)));
 }
+
 async function viewProfile(el) {
   const m = currentMembership();
   el.innerHTML = `<h1>پروفایل</h1><p class="sub">اطلاعات حساب شما</p><div class="card" style="margin-bottom:20px"><h2>اطلاعات حساب</h2><div class="grid g2" style="margin-top:12px"><div><small class="sub">نام کاربری</small><div style="font-weight:800;direction:ltr;text-align:right">${esc(S.me.username)}</div></div><div><small class="sub">نقش</small><div style="font-weight:800">${S.me.is_superadmin ? 'ادمین اصلی' : (m?.access_role === 'manager' ? 'مدیر ساختمان' : (m?.resident_type ? (m.resident_type === 'owner_resident' ? 'مالک ساکن' : m.resident_type === 'tenant' ? 'مستاجر' : 'مالک') : '—'))}</div></div>${m ? `<div><small class="sub">ساختمان</small><div style="font-weight:800">${esc(m.building_name)}</div></div>` : ''}</div></div><form id="pf-pass" class="card grid" style="gap:14px;max-width:640px;margin-top:20px"><h2>تغییر رمز عبور</h2><p class="sub">${PWD_HINT}</p><label class="f">رمز جدید<input id="p-new" type="password" dir="ltr" maxlength="64" autocomplete="new-password"></label><label class="f">تکرار رمز<input id="p-new2" type="password" dir="ltr" maxlength="64"></label><button class="btn lt" type="submit">تغییر رمز</button></form><div class="card" style="margin-top:20px"><h2>تم رنگی</h2>${themeSwatchesHTML()}</div>`;
@@ -2134,9 +1789,6 @@ async function viewProfile(el) {
   });
 }
 
-/* ============================================================
-   INIT
-   ============================================================ */
 /* ============================================================
    INIT
    ============================================================ */
