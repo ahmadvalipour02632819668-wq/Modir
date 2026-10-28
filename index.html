@@ -1521,7 +1521,7 @@ function newTransactionModal(bid, members, tx = null) {
   const expCats = ['قبض آب', 'قبض گاز', 'قبض برق', 'نظافت', 'سرویس آسانسور', 'تعمیرات', 'سایر'];
   const isEdit = !!tx;
   
-  // فیلتر کردن لیست ساکنین فعال برای تخصیص هزینه
+  // فیلتر کردن لیست ساکنین فعال
   const allResidents = members.filter(x => (x.access_role === 'resident' || x.access_role === 'manager') && x.unit_no && x.membership_status === 'active');
   
   const m = modal(`
@@ -1620,15 +1620,27 @@ function newTransactionModal(bid, members, tx = null) {
 
     if (type === 'درآمد') {
       const selectedOccTypes = []; $$('.occ-check', m).forEach(cb => { if (cb.checked) selectedOccTypes.push(cb.value); });
-      
-      // مهم: فقط کسانی که در لیست ساکنین فعال هستند
       const targetMembers = allResidents.filter(x => selectedOccTypes.includes(x.resident_type));
       const im = incMethodSel.value;
       
-      if (im === 'per_unit') { totalAmountToSend = amount * targetMembers.length; targetMembers.forEach(mem => allocations.push({ membership_id: mem.membership_id, amount: amount })); }
-      else if (im === 'per_meter') { let total = 0; targetMembers.forEach(mem => { const share = amount * (Number(mem.unit_area) || 0); if(share>0){ allocations.push({ membership_id: mem.membership_id, amount: share }); total += share; } }); totalAmountToSend = total; }
-      else if (im === 'per_resident') { let total = 0; targetMembers.forEach(mem => { const share = amount * (Number(mem.unit_resident_count) || 0); if(share>0){ allocations.push({ membership_id: mem.membership_id, amount: share }); total += share; } }); totalAmountToSend = total; }
-      else if (im === 'total_equal') { const share = amount / (targetMembers.length || 1); targetMembers.forEach(mem => allocations.push({ membership_id: mem.membership_id, amount: share })); }
+      // 🔑 بررسی می‌کنیم که آیا همه انواع سکونت انتخاب شده‌اند یا خیر
+      const isAllSelected = selectedOccTypes.length === 3;
+
+      if (isAllSelected) {
+          // اگر همه انتخاب شده‌اند، به دیتابیس می‌گوییم خودش تسهیم کند تا ساکنین بعدی هم شامل شوند
+          if (im === 'per_unit') { finalDbMethod = 'equal'; totalAmountToSend = amount * targetMembers.length; }
+          else if (im === 'per_meter') { finalDbMethod = 'area'; totalAmountToSend = amount * targetMembers.reduce((s, mem) => s + (Number(mem.unit_area) || 0), 0); }
+          else if (im === 'per_resident') { finalDbMethod = 'residents'; totalAmountToSend = amount * targetMembers.reduce((s, mem) => s + (Number(mem.unit_resident_count) || 0), 0); }
+          else if (im === 'total_equal') { finalDbMethod = 'equal'; totalAmountToSend = amount; }
+          allocations = []; // لیست خالی می‌فرستیم تا دیتابیس خودش محاسبه کند
+      } else {
+          // اگر فقط بخشی از انواع سکونت (مثلاً فقط مستأجر) انتخاب شده‌اند، مجبوریم دستی محاسبه کنیم
+          finalDbMethod = 'manual';
+          if (im === 'per_unit') { totalAmountToSend = amount * targetMembers.length; targetMembers.forEach(mem => allocations.push({ membership_id: mem.membership_id, amount: amount })); }
+          else if (im === 'per_meter') { let total = 0; targetMembers.forEach(mem => { const share = amount * (Number(mem.unit_area) || 0); if(share>0){ allocations.push({ membership_id: mem.membership_id, amount: share }); total += share; } }); totalAmountToSend = total; }
+          else if (im === 'per_resident') { let total = 0; targetMembers.forEach(mem => { const share = amount * (Number(mem.unit_resident_count) || 0); if(share>0){ allocations.push({ membership_id: mem.membership_id, amount: share }); total += share; } }); totalAmountToSend = total; }
+          else if (im === 'total_equal') { const share = amount / (targetMembers.length || 1); targetMembers.forEach(mem => allocations.push({ membership_id: mem.membership_id, amount: share })); }
+      }
 
     } else if (isSplit) {
       const selectedOccTypes = []; $$('.occ-check', m).forEach(cb => { if (cb.checked) selectedOccTypes.push(cb.value); });
@@ -1638,26 +1650,40 @@ function newTransactionModal(bid, members, tx = null) {
         const selectedIds = []; $$('.unit-check', m).forEach(cb => { if (cb.checked) selectedIds.push(cb.value); }); 
         const share = amount / (selectedIds.length || 1);
         selectedIds.forEach(mid => allocations.push({ membership_id: mid, amount: share }));
+        finalDbMethod = 'manual';
       } else {
-        // فیلتر بر اساس نوع سکونت
         const targetMembers = allResidents.filter(x => selectedOccTypes.includes(x.resident_type));
-        
-        if (em === 'per_unit') { totalAmountToSend = amount * targetMembers.length; targetMembers.forEach(mem => allocations.push({ membership_id: mem.membership_id, amount: amount })); }
-        else if (em === 'equal') { const share = amount / (targetMembers.length || 1); targetMembers.forEach(mem => allocations.push({ membership_id: mem.membership_id, amount: share })); }
-        else if (em === 'area') {
-          const totalArea = targetMembers.reduce((s, mem) => s + (Number(mem.unit_area) || 0), 0);
-          if (totalArea === 0) { toastErr('متراژ ثبت نشده است'); return; }
-          targetMembers.forEach(mem => allocations.push({ membership_id: mem.membership_id, amount: amount * ((Number(mem.unit_area) || 0) / totalArea) }));
-        }
-        else if (em === 'residents') {
-          const totalRes = targetMembers.reduce((s, mem) => s + (Number(mem.unit_resident_count) || 0), 0);
-          if (totalRes === 0) { toastErr('تعداد نفرات ثبت نشده است'); return; }
-          targetMembers.forEach(mem => allocations.push({ membership_id: mem.membership_id, amount: amount * ((Number(mem.unit_resident_count) || 0) / totalRes) }));
+        const isAllSelectedExp = selectedOccTypes.length === 3;
+
+        if (isAllSelectedExp && em !== 'per_unit') {
+             // اگر همه انتخاب شده‌اند، دیتابیس خودش تسهیم می‌کند
+             if (em === 'equal') { finalDbMethod = 'equal'; totalAmountToSend = amount; }
+             else if (em === 'area') { finalDbMethod = 'area'; totalAmountToSend = amount; }
+             else if (em === 'residents') { finalDbMethod = 'residents'; totalAmountToSend = amount; }
+             allocations = [];
+        } else {
+             // محاسبه دستی برای موارد خاص
+             finalDbMethod = 'manual';
+             if (em === 'per_unit') { totalAmountToSend = amount * targetMembers.length; targetMembers.forEach(mem => allocations.push({ membership_id: mem.membership_id, amount: amount })); }
+             else if (em === 'equal') { const share = amount / (targetMembers.length || 1); targetMembers.forEach(mem => allocations.push({ membership_id: mem.membership_id, amount: share })); }
+             else if (em === 'area') {
+               const totalArea = targetMembers.reduce((s, mem) => s + (Number(mem.unit_area) || 0), 0);
+               if (totalArea === 0) { toastErr('متراژ ثبت نشده است'); return; }
+               targetMembers.forEach(mem => allocations.push({ membership_id: mem.membership_id, amount: amount * ((Number(mem.unit_area) || 0) / totalArea) }));
+             }
+             else if (em === 'residents') {
+               const totalRes = targetMembers.reduce((s, mem) => s + (Number(mem.unit_resident_count) || 0), 0);
+               if (totalRes === 0) { toastErr('تعداد نفرات ثبت نشده است'); return; }
+               targetMembers.forEach(mem => allocations.push({ membership_id: mem.membership_id, amount: amount * ((Number(mem.unit_resident_count) || 0) / totalRes) }));
+             }
         }
       }
     } else { finalDbMethod = 'none'; }
 
-    if (allocations.length > 0) totalAmountToSend = allocations.reduce((s, a) => s + a.amount, 0);
+    // تنظیم مبلغ کل نهایی
+    if (allocations.length > 0) {
+        totalAmountToSend = allocations.reduce((s, a) => s + a.amount, 0);
+    }
 
     try {
       if (isEdit) await T('app_manager_delete_transaction', { p_id: tx.id });
@@ -1679,7 +1705,6 @@ function newTransactionModal(bid, members, tx = null) {
     } catch (err) { showErr(err); }
   });
 }
-
 async function viewManagerRates(el) {
   const m = currentMembership(); if (!m) return;
   const bid = m.building_id;
