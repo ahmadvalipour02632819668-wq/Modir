@@ -1246,7 +1246,8 @@ async function viewManagerUnits(el) {
 window.deleteTx = async (id) => {
     if (!await confirmDlg('آیا از حذف این تراکنش مطمئن هستید؟')) return;
     toastOk('در نسخه بعدی پیاده‌سازی می‌شود');
-};function function newTransactionModal(bid, members) {
+};
+ function newTransactionModal(bid, members) {
   const incCats = ['شارژ ماهیانه', 'پس‌انداز', 'جریمه', 'سایر'];
   const expCats = ['نظافت', 'سرویس آسانسور', 'تعمیرات', 'قبض آب', 'قبض گاز', 'قبض برق', 'سایر'];
 
