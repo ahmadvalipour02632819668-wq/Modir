@@ -904,7 +904,7 @@ async function viewSuperAdminRequests(el) {
   }));
 }
 async function viewSuperAdminBuildings(el) {
-  const buildings = (await T('app_admin_list_buildings')).buildings;
+  const buildings = (await T('app_admin_list_buildings')).buildings.filter(b => b.building_status !== 'deleted');
   el.innerHTML = `
     <h1>ساختمان‌ها</h1><p class="sub">مدیریت، تعلیق و حذف ساختمان‌ها</p>
     <div class="grid g2">
@@ -950,9 +950,11 @@ async function viewSuperAdminBuildings(el) {
   
   $$('[data-delete]', el).forEach(b => b.addEventListener('click', async () => {
     const bName = b.dataset.name;
-    if (!await confirmDlg(`آیا از حذف کامل ساختمان «${bName}» مطمئن هستید؟`)) return;
+    if (!await confirmDlg(`آیا از حذف کامل ساختمان «${bName}» مطمئن هستید؟ (تاریخچه مالی حفظ می‌شود)`)) return;
     const confirm2 = await promptDlg(`برای تایید نهایی، نام ساختمان را دقیقاً تایپ کنید:`);
     if (confirm2 !== bName) { if (confirm2 !== null) toastErr('نام اشتباه است. عملیات لغو شد.'); return; }
+    
+    // استفاده از تابع به‌روزرسانی‌شده در دیتابیس
     T('app_admin_delete_building', { p_building_id: b.dataset.delete }).then(() => { toastOk('ساختمان حذف شد'); go('sa_buildings'); }).catch(showErr);
   }));
 }
@@ -1228,7 +1230,7 @@ async function viewManagerUnits(el) {
               <div class="sub" style="margin:4px 0">${esc(x.phone || 'بدون موبایل')}</div>
               <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
                 <button class="btn lt sm" data-edit="${x.membership_id}">ویرایش</button>
-                ${(x.membership_status === 'active' && x.access_role !== 'manager') ? `<button class="btn rd sm" data-end="${x.membership_id}">پایان عضویت</button>` : ''}
+                ${(x.membership_status === 'active' && x.access_role !== 'manager') ? `<button class="btn rd sm" data-delete-member="${x.membership_id}">حذف حساب</button>` : ''}
               </div>
             </div>
           `).join('')}
@@ -1243,10 +1245,11 @@ async function viewManagerUnits(el) {
     if (mem) editMemberModal(mem, m.building_id); 
   }));
   
-  $$('[data-end]', el).forEach(b => b.addEventListener('click', async () => { 
-    if (!await confirmDlg('پایان عضویت این ساکن؟ (تاریخچه مالی حفظ می‌شود)')) return; 
-    T('app_manager_end_member_membership', { p_building_id: m.building_id, p_membership_id: b.dataset.end })
-      .then(() => { toastOk('عضویت پایان یافت'); go('m_units'); })
+  // دکمه حذف حساب متصل به تابع جدید
+  $$('[data-delete-member]', el).forEach(b => b.addEventListener('click', async () => { 
+    if (!await confirmDlg('آیا از حذف کامل این حساب مطمئن هستید؟ (تاریخچه تراکنش‌ها حفظ می‌شود)')) return; 
+    T('app_manager_delete_resident_account', { p_building_id: m.building_id, p_membership_id: b.dataset.deleteMember })
+      .then(() => { toastOk('حساب کاربری حذف شد'); go('m_units'); })
       .catch(showErr); 
   }));
 }
