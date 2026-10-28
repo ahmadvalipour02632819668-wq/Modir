@@ -1521,7 +1521,6 @@ function newTransactionModal(bid, members, tx = null) {
   const expCats = ['قبض آب', 'قبض گاز', 'قبض برق', 'نظافت', 'سرویس آسانسور', 'تعمیرات', 'سایر'];
   const isEdit = !!tx;
   
-  // فیلتر کردن لیست ساکنین فعال
   const allResidents = members.filter(x => (x.access_role === 'resident' || x.access_role === 'manager') && x.unit_no && x.membership_status === 'active');
   
   const m = modal(`
@@ -1593,8 +1592,8 @@ function newTransactionModal(bid, members, tx = null) {
     
     if (isInc) {
       const im = incMethodSel.value;
-      amountLabel.textContent = im === 'per_unit' ? 'مبلغ هر واحد' : im === 'per_meter' ? 'مبلغ هر متر' : im === 'per_resident' ? 'مبلغ هر نفر' : 'مبلغ کل';
-      amountHint.textContent = im === 'total_equal' ? 'مبلغ کل بین واحدها مساوی تقسیم می‌شود.' : 'مبلغ به عنوان نرخ محاسبه می‌شود.';
+      amountLabel.textContent = im === 'per_unit' ? 'مبلغ ثابت هر واحد' : im === 'per_meter' ? 'مبلغ هر متر' : im === 'per_resident' ? 'مبلغ هر نفر' : 'مبلغ کل';
+      amountHint.textContent = im === 'total_equal' ? 'مبلغ کل بین واحدها مساوی تقسیم می‌شود.' : 'این مبلغ به عنوان نرخ محاسبه می‌شود.';
     } else if (isSplit) { amountLabel.textContent = 'مبلغ کل'; amountHint.textContent = 'مبلغ کل طبق روش انتخابی تقسیم می‌شود.'; }
     else { amountLabel.textContent = 'مبلغ کل'; amountHint.textContent = 'این مبلغ مستقیماً از صندوق کسر می‌شود.'; }
   };
@@ -1622,19 +1621,16 @@ function newTransactionModal(bid, members, tx = null) {
       const selectedOccTypes = []; $$('.occ-check', m).forEach(cb => { if (cb.checked) selectedOccTypes.push(cb.value); });
       const targetMembers = allResidents.filter(x => selectedOccTypes.includes(x.resident_type));
       const im = incMethodSel.value;
-      
-      // 🔑 بررسی می‌کنیم که آیا همه انواع سکونت انتخاب شده‌اند یا خیر
       const isAllSelected = selectedOccTypes.length === 3;
 
       if (isAllSelected) {
-          // اگر همه انتخاب شده‌اند، به دیتابیس می‌گوییم خودش تسهیم کند تا ساکنین بعدی هم شامل شوند
-          if (im === 'per_unit') { finalDbMethod = 'equal'; totalAmountToSend = amount * targetMembers.length; }
-          else if (im === 'per_meter') { finalDbMethod = 'area'; totalAmountToSend = amount * targetMembers.reduce((s, mem) => s + (Number(mem.unit_area) || 0), 0); }
-          else if (im === 'per_resident') { finalDbMethod = 'residents'; totalAmountToSend = amount * targetMembers.reduce((s, mem) => s + (Number(mem.unit_resident_count) || 0), 0); }
+          // 🔑 استفاده از متدهای پویا (نرخ) به جای مبلغ کل
+          if (im === 'per_unit') { finalDbMethod = 'dynamic_per_unit'; totalAmountToSend = amount; }
+          else if (im === 'per_meter') { finalDbMethod = 'dynamic_per_meter'; totalAmountToSend = amount; }
+          else if (im === 'per_resident') { finalDbMethod = 'dynamic_per_resident'; totalAmountToSend = amount; }
           else if (im === 'total_equal') { finalDbMethod = 'equal'; totalAmountToSend = amount; }
-          allocations = []; // لیست خالی می‌فرستیم تا دیتابیس خودش محاسبه کند
+          allocations = []; // لیست خالی تا دیتابیس خودش محاسبه کند
       } else {
-          // اگر فقط بخشی از انواع سکونت (مثلاً فقط مستأجر) انتخاب شده‌اند، مجبوریم دستی محاسبه کنیم
           finalDbMethod = 'manual';
           if (im === 'per_unit') { totalAmountToSend = amount * targetMembers.length; targetMembers.forEach(mem => allocations.push({ membership_id: mem.membership_id, amount: amount })); }
           else if (im === 'per_meter') { let total = 0; targetMembers.forEach(mem => { const share = amount * (Number(mem.unit_area) || 0); if(share>0){ allocations.push({ membership_id: mem.membership_id, amount: share }); total += share; } }); totalAmountToSend = total; }
@@ -1656,13 +1652,11 @@ function newTransactionModal(bid, members, tx = null) {
         const isAllSelectedExp = selectedOccTypes.length === 3;
 
         if (isAllSelectedExp && em !== 'per_unit') {
-             // اگر همه انتخاب شده‌اند، دیتابیس خودش تسهیم می‌کند
              if (em === 'equal') { finalDbMethod = 'equal'; totalAmountToSend = amount; }
              else if (em === 'area') { finalDbMethod = 'area'; totalAmountToSend = amount; }
              else if (em === 'residents') { finalDbMethod = 'residents'; totalAmountToSend = amount; }
              allocations = [];
         } else {
-             // محاسبه دستی برای موارد خاص
              finalDbMethod = 'manual';
              if (em === 'per_unit') { totalAmountToSend = amount * targetMembers.length; targetMembers.forEach(mem => allocations.push({ membership_id: mem.membership_id, amount: amount })); }
              else if (em === 'equal') { const share = amount / (targetMembers.length || 1); targetMembers.forEach(mem => allocations.push({ membership_id: mem.membership_id, amount: share })); }
@@ -1680,7 +1674,6 @@ function newTransactionModal(bid, members, tx = null) {
       }
     } else { finalDbMethod = 'none'; }
 
-    // تنظیم مبلغ کل نهایی
     if (allocations.length > 0) {
         totalAmountToSend = allocations.reduce((s, a) => s + a.amount, 0);
     }
@@ -1704,8 +1697,7 @@ function newTransactionModal(bid, members, tx = null) {
       go('m_expenses');
     } catch (err) { showErr(err); }
   });
-}
-async function viewManagerRates(el) {
+}async function viewManagerRates(el) {
   const m = currentMembership(); if (!m) return;
   const bid = m.building_id;
   let settings = null;
