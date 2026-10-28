@@ -36,7 +36,7 @@ function num(v){if(v===''||v==null||v===undefined)return null;let n=Number(Strin
 function intval(v){let n=num(v);return n==null?null:parseInt(n);}
 function gregorianToJalali(g){try{return new Date(g).toLocaleDateString('fa-IR')}catch{return g}}
 function jalaliToday(){return new Date().toLocaleDateString('fa-IR')}
-function jalaliToGregorian(){return null}
+function jalaliToGregorian(dateStr) { return null; }
 async function rpc(fn,args){const {data,error}=await sb.rpc(fn,args);if(error)throw error;return data;}
 const SENS_COLS=['password','pass_hash','password_hash','token','secret','token_hash','password_text'];
 // ---- AUTH SCREENS ----
