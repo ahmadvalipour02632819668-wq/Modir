@@ -1164,7 +1164,7 @@ async function viewManagerUnits(el) {
   const m = currentMembership(); if (!m) return;
   const r = await T('app_manager_list_building_members', { p_building_id: m.building_id });
   
-  // ⚠️ تغییر: اضافه کردن مدیر به لیست و اطمینان از داشتن شماره واحد
+  // اضافه کردن مدیر به لیست ساکنین (اگر واحد دارد)
   const members = (r.members || []).filter(x => 
     (x.access_role === 'resident' || x.access_role === 'manager') && x.unit_no
   );
@@ -1176,8 +1176,10 @@ async function viewManagerUnits(el) {
   });
   
   el.innerHTML = `
-    <h1>واحدها و ساکنین</h1>
-    <p class="sub">${fa(Object.keys(byUnit).length)} واحد ثبت‌شده</p>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px">
+      <div><h1 style="margin:0">واحدها و ساکنین</h1><p class="sub" style="margin:0">${fa(Object.keys(byUnit).length)} واحد ثبت‌شده</p></div>
+      <button class="btn" id="add-new-unit">+ افزودن واحد / ساکن</button>
+    </div>
     <div class="grid g2">
       ${Object.entries(byUnit).sort((a, b) => b[0] - a[0]).map(([unit, arr]) => `
         <div class="card">
@@ -1199,7 +1201,9 @@ async function viewManagerUnits(el) {
         </div>
       `).join('') || `<div class="empty"><div class="ico">🏢</div><p>ساکنی ثبت نشده</p></div>`}
     </div>`;
-    
+
+  $('#add-new-unit', el).addEventListener('click', () => addUnitModal(m.building_id));
+  
   $$('[data-edit]', el).forEach(b => b.addEventListener('click', () => { 
     const mem = members.find(x => x.membership_id === b.dataset.edit); 
     if (mem) editMemberModal(mem, m.building_id); 
@@ -1211,6 +1215,242 @@ async function viewManagerUnits(el) {
       .then(() => { toastOk('عضویت پایان یافت'); go('m_units'); })
       .catch(showErr); 
   }));
+}
+
+async function unitDetailsModal(u, bid) {
+  // گرفتن صورتحساب برای تمام اعضای این واحد
+  let memberSummaries = [];
+  for (const mem of u.members) {
+    try {
+      const summary = await T('app_resident_get_financial_summary', { p_building_id: bid, p_membership_id: mem.membership_id });
+      memberSummaries.push({ ...mem, summary });
+    } catch (e) {
+      memberSummaries.push({ ...mem, summary: null });
+    }
+  }
+
+  const m = modal(`
+    <h2>واحد ${fa(u.unit_no)}</h2>
+    <p class="sub">مدیریت مالی و ساکنین</p>
+    
+    ${memberSummaries.map(x => `
+      <div class="card" style="margin-bottom:14px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+          <div>
+            <b>${esc(x.full_name)}</b>
+            <div class="sub" style="margin:0">${RESIDENT_TYPES[x.resident_type] || ''}</div>
+          </div>
+          <span class="chip ${x.summary?.debt_balance > 0 ? 'no' : 'ok'}">
+            ${x.summary?.debt_balance > 0 ? 'بدهکار: ' + fmt(x.summary.debt_balance) : 'تسویه'}
+          </span>
+        </div>
+        
+        ${x.summary?.charges?.length ? `
+          <div style="margin-bottom:10px;font-size:12px;color:var(--muted);line-height:1.8;">
+            اقلام بدهی: ${x.summary.charges.map(c => `${esc(c.description)} (${fmt(c.amount)})`).join(' ، ')}
+          </div>
+        ` : ''}
+
+        ${x.summary?.debt_balance > 0 ? `
+          <button class="btn sf sm" data-pay="${x.membership_id}" style="background:var(--warning);color:#fff">💸 ثبت پرداخت برای این واحد</button>
+        ` : ''}
+      </div>
+    `).join('')}
+  `);
+
+  $$('[data-pay]', m).forEach(btn => {
+    btn.addEventListener('click', () => {
+      m.remove();
+      managerPaymentModal(bid, btn.dataset.pay);
+    });
+  });
+}
+ // ⚠️ تابع افزودن واحد و حساب جدید توسط مدیر
+function addUnitModal(bid) {
+  const m = modal(`
+    <h2>افزودن واحد / ساکن جدید</h2>
+    <p class="sub">شما می‌توانید بدون نیاز به ثبت‌نام ساکن، مستقیماً برای او حساب بسازید.</p>
+    <form id="au-form" class="grid g2" style="gap:14px">
+      <label class="f">شماره واحد<input id="au-unit" type="number" min="1" required></label>
+      <label class="f">متراژ<input id="au-area" type="number" min="1" required></label>
+      <label class="f">تعداد نفرات<input id="au-res" type="number" min="1" required></label>
+      <label class="f">نوع سکونت
+        <select id="au-role">
+          <option value="owner">مالک (غیرساکن)</option>
+          <option value="tenant">مستأجر</option>
+          <option value="owner_resident">مالک ساکن</option>
+        </select>
+      </label>
+      <label class="f" style="grid-column:1/-1">نام و نام خانوادگی<input id="au-name" required></label>
+      <label class="f">موبایل<input id="au-phone" dir="ltr"></label>
+      <label class="f">ایمیل<input id="au-email" type="email" dir="ltr"></label>
+      <label class="f">نام کاربری<input id="au-username" dir="ltr" required></label>
+      <label class="f">رمز عبور<input id="au-pass" type="text" dir="ltr" required></label>
+      <label class="f" style="grid-column:1/-1">تاریخ شروع محاسبه<input id="au-joined" class="date-picker-input" readonly required></label>
+      <button class="btn" type="submit" style="grid-column:1/-1">ایجاد حساب و واحد</button>
+    </form>
+  `);
+  bindDatePickers(m);
+
+  $('#au-form', m).addEventListener('submit', async e => {
+    e.preventDefault();
+    try {
+      await T('app_manager_add_unit_and_resident', {
+        p_building_id: bid,
+        p_unit_no: +$('#au-unit', m).value,
+        p_area: +$('#au-area', m).value,
+        p_resident_count: +$('#au-res', m).value,
+        p_full_name: $('#au-name', m).value,
+        p_username: $('#au-username', m).value,
+        p_password: $('#au-pass', m).value,
+        p_occupancy: $('#au-role', m).value,
+        p_phone: $('#au-phone', m).value || null,
+        p_email: $('#au-email', m).value || null,
+        p_joined_at: $('#au-joined', m).dataset.gregorian || $('#au-joined', m).value
+      });
+      m.remove();
+      toastOk('واحد و حساب با موفقیت ایجاد شد');
+      go('m_units');
+    } catch (err) { showErr(err); }
+  });
+}
+
+// ⚠️ تابع ثبت پرداخت توسط مدیر برای ساکنین
+async function managerPaymentModal(bid, membershipId) {
+  let summary = null;
+  try {
+    summary = await T('app_resident_get_financial_summary', { p_building_id: bid, p_membership_id: membershipId });
+  } catch (e) { showErr(e); return; }
+
+  if (!summary.charges || summary.charges.length === 0) {
+    toastOk('این واحد هیچ بدهی ندارد.');
+    return;
+  }
+
+  const m = modal(`
+    <h2>ثبت پرداخت (توسط مدیر)</h2>
+    <p class="sub">واحد ${fa(summary.unit_no)} · بدهی کل: ${fmt(summary.debt_balance)} تومان</p>
+    <form id="mp-form" class="grid" style="gap:14px">
+      <div id="mp-alloc-list">
+        ${summary.charges.map(c => `
+          <div class="debt-row" data-id="${c.id}" data-type="${c.item_type}">
+            <input type="checkbox" class="mp-check" checked>
+            <span style="flex:1;font-size:13px">${esc(c.description)}</span>
+            <input type="text" class="mp-amount" inputmode="numeric" value="${fmt(c.amount)}">
+          </div>
+        `).join('')}
+      </div>
+      <div class="card" style="background:var(--bg);display:flex;justify-content:space-between;padding:14px">
+        <b>جمع انتخاب‌شده:</b><b id="mp-total" style="color:var(--navy)">0</b>
+      </div>
+      <label class="f">تاریخ پرداخت<input id="mp-date" class="date-picker-input" readonly required></label>
+      <label class="f">توضیحات<input id="mp-desc" placeholder="مثلاً: فیش بانکی"></label>
+      <button class="btn" type="submit">ثبت پرداخت</button>
+    </form>
+  `);
+
+  bindDatePickers(m);
+  $$('.mp-amount', m).forEach(inp => inp.addEventListener('input', e => { const n = toNum(e.target.value); e.target.value = n ? fmt(n) : ''; }));
+
+  const updateTotal = () => {
+    let total = 0;
+    $$('.debt-row', m).forEach(row => { if ($('.mp-check', row).checked) total += toNum($('.mp-amount', row).value); });
+    $('#mp-total', m).textContent = fmt(total) + ' تومان';
+  };
+  $$('.mp-check, .mp-amount', m).forEach(x => x.addEventListener('input', updateTotal));
+  updateTotal();
+
+  $('#mp-form', m).addEventListener('submit', async e => {
+    e.preventDefault();
+    const allocations = [];
+    $$('.debt-row', m).forEach(row => {
+      if (!$('.mp-check', row).checked) return;
+      const amount = toNum($('.mp-amount', row).value);
+      if (amount > 0) allocations.push({ type: row.dataset.type, id: row.dataset.id, amount });
+    });
+
+    if (!allocations.length) { toastErr('حداقل یک آیتم را انتخاب کنید'); return; }
+    const total = allocations.reduce((s, a) => s + a.amount, 0);
+
+    try {
+      await T('app_submit_itemized_payment', {
+        p_building_id: bid,
+        p_membership_id: membershipId, 
+        p_payment_date: $('#mp-date', m).dataset.gregorian || $('#mp-date', m).value,
+        p_description: $('#mp-desc', m).value || null,
+        p_allocations: allocations,
+        p_total_amount: total
+      });
+      m.remove();
+      toastOk('پرداخت ثبت شد و در انتظار تایید است');
+      go('m_dash'); 
+    } catch (err) { showErr(err); }
+  });
+}
+
+// ⚠️ تابع ویرایش ساکن (همراه با تاریخ عضویت)
+function editMemberModal(mem, bid) {
+  let initialJoinDate = mem.joined_at || new Date().toISOString().slice(0, 10);
+  
+  const m = modal(`
+    <h2>ویرایش ساکن</h2>
+    <p class="sub">${esc(mem.full_name)} · واحد ${fa(mem.unit_no)}</p>
+    <form id="em" class="grid" style="gap:14px">
+      <label class="f">نام و نام خانوادگی<input id="em-name" value="${esc(mem.full_name)}" required></label>
+      <label class="f">شماره موبایل<input id="em-phone" dir="ltr" value="${esc(mem.phone || '')}"></label>
+      <label class="f">ایمیل<input id="em-email" type="email" dir="ltr" value="${esc(mem.email || '')}"></label>
+      
+      <label class="f">وضعیت سکونت
+        <select id="em-role">
+          <option value="owner_resident" ${mem.resident_type === 'owner_resident' ? 'selected' : ''}>مالک ساکن</option>
+          <option value="owner" ${mem.resident_type === 'owner' ? 'selected' : ''}>مالک (غیرساکن)</option>
+          <option value="tenant" ${mem.resident_type === 'tenant' ? 'selected' : ''}>مستأجر</option>
+        </select>
+      </label>
+
+      <label class="f">تعداد نفرات ساکن در واحد
+        <input id="em-res-count" type="number" min="0" value="${mem.unit_resident_count || 1}">
+      </label>
+
+      <label class="f">تاریخ شروع محاسبه هزینه‌ها (عضویت)
+        <input id="em-join-date" type="text" class="date-picker-input" readonly value="${initialJoinDate}" required>
+        <small style="font-weight:normal;color:var(--muted);margin-top:4px">با تغییر این تاریخ، بدهی‌های قبلی این واحد مجدداً محاسبه می‌شوند.</small>
+      </label>
+      
+      <button class="btn" type="submit">ذخیره تغییرات</button>
+    </form>
+  `);
+  
+  bindDatePickers(m);
+  
+  const dateInput = $('#em-join-date', m);
+  if (initialJoinDate) {
+      const d = new Date(initialJoinDate);
+      if (!isNaN(d.getTime())) {
+          const j = gregorianToJalali(d.getFullYear(), d.getMonth() + 1, d.getDate());
+          dateInput.value = `${j[0]}/${String(j[1]).padStart(2,'0')}/${String(j[2]).padStart(2,'0')}`;
+          dateInput.dataset.gregorian = initialJoinDate;
+      }
+  }
+  
+  $('#em', m).addEventListener('submit', async e => {
+    e.preventDefault();
+    try {
+      await T('app_manager_update_member_profile', {
+        p_building_id: bid,
+        p_membership_id: mem.membership_id,
+        p_full_name: $('#em-name', m).value,
+        p_phone: $('#em-phone', m).value || null,
+        p_email: $('#em-email', m).value || null,
+        p_resident_type: $('#em-role', m).value,
+        p_resident_count: +$('#em-res-count', m).value,
+        p_joined_at: $('#em-join-date', m).dataset.gregorian || $('#em-join-date', m).value
+      });
+      m.remove();
+      toastOk('ذخیره شد و محاسبات به‌روزرسانی گردید');
+      go('m_units');
+    } catch (err) { showErr(err); }
+  });
 }
 function editMemberModal(mem, bid) {
   // تبدیل تاریخ عضویت فعلی به شمسی برای نمایش در فرم
