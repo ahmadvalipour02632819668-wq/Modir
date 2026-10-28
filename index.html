@@ -1006,7 +1006,7 @@ async function viewSuperAdminBuildings(el) {
    VIEWS: MANAGER
    ============================================================ */
 function allocationLabel(method) { return { area: 'بر اساس متراژ', equal: 'مساوی', residents: 'بر اساس تعداد ساکنین', selected_units: 'واحدهای انتخابی', selected_people: 'افراد انتخابی', manual: 'دستی', fixed: 'مبلغ ثابت', none: 'بدون تسهیم' }[method] || method; }
-async async function viewManagerDash(el) {
+async function viewManagerDash(el) {
   const m = currentMembership(); if (!m) { el.innerHTML = `<div class="empty">عضو فعال پیدا نشد</div>`; return; }
   const bid = m.building_id;
   let fund = null, financeError = null;
