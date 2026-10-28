@@ -1611,6 +1611,7 @@ async function viewManagerReport(el) {
   const m = currentMembership(); if (!m) return;
   const bid = m.building_id;
   const yearOptions = []; for (let y = TODAY.y; y >= TODAY.y - 3; y--) yearOptions.push(y);
+  
   el.innerHTML = `
     <div class="no-print" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; gap:12px; flex-wrap:wrap; width:100%; box-sizing:border-box;">
       <div><h1 style="margin:0; line-height:1.5;">گزارش ماهانه</h1></div>
@@ -1623,18 +1624,24 @@ async function viewManagerReport(el) {
     </div>
     <div id="rp-body"></div>
   `;
+
   const loadReport = async () => {
     const y = +$('#rp-year', el).value, mo = +$('#rp-month', el).value, body = $('#rp-body', el);
     body.innerHTML = '<p class="sub no-print">در حال بارگذاری...</p>';
+    
     try {
       const g = jalaliToGregorian(y, mo, 1);
       const r = await T('app_manager_get_monthly_report', { p_building_id: bid, p_year: g.getFullYear(), p_month: g.getMonth() + 1 });
       const membersRes = await T('app_manager_list_building_members', { p_building_id: bid });
       const members = membersRes.members || [];
+      
+      // دریافت لیست بدهی‌های به‌روز شده (شامل تمام ساکنین جدید و قدیمی)
       const balances = await T('app_manager_get_member_balances', { p_building_id: bid }).catch(()=>null);
       const monthExpenses = r.expenses || [];
+      
       const activeCategories = [];
       const catMap = { charge: 'شارژ ماهیانه', water: 'قبض آب', gas: 'قبض گاز', electric: 'قبض برق', repair: 'بازسازی', parking: 'اجاره پارکینگ' };
+      
       monthExpenses.forEach(e => {
           let cat = 'other';
           if (e.description.includes('شارژ')) cat = 'charge';
@@ -1645,19 +1652,34 @@ async function viewManagerReport(el) {
           else if (e.description.includes('پارکینگ')) cat = 'parking';
           if (!activeCategories.includes(cat) && cat !== 'other') activeCategories.push(cat);
       });
+
       let headerCols = `<th style="background-color:#D9E1F2; border:1px solid #333; padding:8px; color:#000; font-size:20px; font-weight:bold;">واحد</th>`;
       activeCategories.forEach(cat => { headerCols += `<th style="background-color:#D9E1F2; border:1px solid #333; padding:8px; color:#000; font-size:20px; font-weight:bold;">${catMap[cat]}</th>`; });
       headerCols += `<th style="background-color:#D9E1F2; border:1px solid #333; padding:8px; color:#000; font-size:20px; font-weight:bold;">جمع مبلغ<br>قابل پرداخت</th>`;
+
       let tableRows = '';
-      members.filter(x => x.access_role === 'resident' && x.membership_status === 'active').forEach(mem => {
+      
+      // فیلتر ساکنین فعال (شامل ساکنین جدید که هنوز بدهی دارند)
+      const activeMembers = members.filter(x => (x.access_role === 'resident' || x.access_role === 'manager') && x.membership_status === 'active');
+      const memberCount = activeMembers.length || 1;
+
+      activeMembers.forEach(mem => {
           const unitNo = mem.unit_no || '—';
           const rType = RESIDENT_TYPES[mem.resident_type] || '';
+          
+          // پیدا کردن بدهی دقیق این کاربر از لیست بالانس‌ها
           const memBalance = balances?.members?.find(x => x.membership_id === mem.membership_id);
           const remaining = memBalance?.outstanding_debt || 0;
+
           let rowBg = '#ffffff'; let textColor = '#000000';
           if (remaining <= 0) { rowBg = '#00B050'; textColor = '#ffffff'; }
           else if (remaining > 0) { rowBg = '#FFC000'; textColor = '#000000'; }
-          let rowHtml = `<tr style="background-color:${rowBg}; color:${textColor};"><td style="border:1px solid #333; padding:10px; text-align:center; font-size:20px; font-weight:bold;">واحد ${fa(unitNo)}<br><span style="font-size:13px; font-weight:normal; opacity:0.8;">${esc(rType)}</span></td>`;
+
+          let rowHtml = `<tr style="background-color:${rowBg}; color:${textColor};">
+            <td style="border:1px solid #333; padding:10px; text-align:center; font-size:20px; font-weight:bold;">
+              واحد ${fa(unitNo)}<br><span style="font-size:13px; font-weight:normal; opacity:0.8;">${esc(rType)}</span>
+            </td>`;
+
           activeCategories.forEach(cat => {
               const catExpenses = monthExpenses.filter(e => {
                   if (cat === 'charge' && e.description.includes('شارژ')) return true;
@@ -1669,14 +1691,16 @@ async function viewManagerReport(el) {
                   return false;
               });
               const totalCatAmount = catExpenses.reduce((sum, e) => sum + e.amount, 0);
-              const memberCount = members.filter(x => x.access_role === 'resident' && x.membership_status === 'active').length || 1;
               const perUnit = totalCatAmount / memberCount;
               rowHtml += `<td style="border:1px solid #333; padding:10px; text-align:center; font-size:24px; font-weight:bold;">${perUnit > 0 ? fmt(perUnit) : '—'}</td>`;
           });
+
           rowHtml += `<td style="border:1px solid #333; padding:10px; text-align:center; font-size:24px; font-weight:bold;">${remaining <= 0 ? 'تسویه' : fmt(remaining)}</td></tr>`;
           tableRows += rowHtml;
       });
+
       if (!tableRows) tableRows = `<tr><td colspan="${activeCategories.length + 2}" style="text-align:center; padding:20px; font-size:20px; font-weight:bold;">اطلاعاتی برای این دوره وجود ندارد.</td></tr>`;
+
       body.innerHTML = `
         <div id="printable-area" style="border-radius:8px; overflow-x:auto; border:1px solid #333; background:#fff; width:100%; box-sizing:border-box; padding: 4px;">
           <table style="width:100%; border-collapse:collapse; font-size:14px; text-align:center; direction:rtl; border:2px solid #000;">
@@ -1693,6 +1717,7 @@ async function viewManagerReport(el) {
           <div><small class="sub">موجودی صندوق</small><div style="font-weight:900; color:var(--navy)">${fmt(r.fund_balance_to_month_end)} تومان</div></div>
         </div>
       `;
+
       $('#pr-btn', el).addEventListener('click', () => window.print());
       $('#img-btn', el).addEventListener('click', async () => {
         try {
@@ -1701,11 +1726,14 @@ async function viewManagerReport(el) {
           const canvas = await html2canvas(element, { scale: 2, backgroundColor: '#ffffff' });
           const link = document.createElement('a');
           link.download = `گزارش-${MONTHS[mo-1]}-${y}.png`;
-          link.href = canvas.toDataURL('image/png'); link.click();
+          link.href = canvas.toDataURL('image/png');
+          link.click();
         } catch (err) { showErr(new Error('خطا در گرفتن عکس: ' + err.message)); }
       });
+
     } catch (err) { body.innerHTML = `<div class="card" style="color:var(--danger)">خطا در دریافت گزارش: ${esc(err.message)}</div>`; }
   };
+
   $('#rp-year', el).addEventListener('change', loadReport);
   $('#rp-month', el).addEventListener('change', loadReport);
   loadReport();
