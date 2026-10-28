@@ -1354,6 +1354,9 @@ function newTransactionModal(bid, members, tx = null) {
   const expCats = ['نظافت', 'سرویس آسانسور', 'تعمیرات', 'قبض آب', 'قبض گاز', 'قبض برق', 'سایر'];
   const isEdit = !!tx;
 
+  // ⚠️ فیلتر کردن اعضا: فقط کسانی که واحد دارند (مدیر هم اگر واحد دارد شامل می‌شود)
+  const allResidents = members.filter(x => x.unit_no && x.membership_status === 'active');
+
   const m = modal(`
     <h2>${isEdit ? 'ویرایش تراکنش' : 'ثبت تراکنش جدید'}</h2>
     <form id="tx-form" class="grid" style="gap:14px">
@@ -1382,7 +1385,6 @@ function newTransactionModal(bid, members, tx = null) {
         <input id="tx-date" class="date-picker-input" readonly required>
       </label>
 
-      <!-- بخش مخصوص هزینه -->
       <div id="tx-expense-split-wrap" style="display:none; margin-top:8px; padding:12px; background:var(--bg); border-radius:12px; border:1px solid var(--line)">
         <label class="f" style="margin-bottom:8px; color:var(--ink)">آیا این هزینه تسهیمی است؟</label>
         <select id="tx-is-split" style="margin-bottom:10px;">
@@ -1402,7 +1404,6 @@ function newTransactionModal(bid, members, tx = null) {
         </div>
       </div>
 
-      <!-- بخش مخصوص درآمد -->
       <div id="tx-income-methods" style="margin-top:8px; padding:12px; background:var(--bg); border-radius:12px; border:1px solid var(--line)">
         <label class="f" style="margin-bottom:8px; color:var(--ink)">روش محاسبه شارژ:</label>
         <select id="tx-inc-method" style="margin-bottom:10px;">
@@ -1413,7 +1414,6 @@ function newTransactionModal(bid, members, tx = null) {
         </select>
       </div>
 
-      <!-- بخش انتخاب مسئول پرداخت -->
       <div id="tx-alloc-wrap" style="display:none; margin-top:8px; padding:12px; background:var(--bg); border-radius:12px; border:1px solid var(--line); max-height:250px; overflow-y:auto;">
         <label class="f" style="margin-bottom:8px; color:var(--ink)" id="tx-alloc-label">مسئول پرداخت:</label>
         
@@ -1430,7 +1430,7 @@ function newTransactionModal(bid, members, tx = null) {
         </div>
 
         <div id="tx-unit-list" style="display:none; flex-direction:column; gap:10px;">
-          ${members.filter(x => x.access_role === 'resident').map(x => `
+          ${allResidents.map(x => `
             <label style="display:flex; align-items:center; gap:8px; cursor:pointer; padding:4px 0; border-bottom:1px dashed var(--line)">
               <input type="checkbox" class="unit-check" value="${x.membership_id}" checked style="width:20px;height:20px;accent-color:var(--navy)">
               <span style="font-weight:700">واحد ${fa(x.unit_no)}</span>
@@ -1452,7 +1452,6 @@ function newTransactionModal(bid, members, tx = null) {
   const allocWrap = $('#tx-alloc-wrap', m), occList = $('#tx-occ-list', m), unitList = $('#tx-unit-list', m), allocLabel = $('#tx-alloc-label', m);
   const amountHint = $('#tx-amount-hint', m), amountLabel = $('#tx-amount-label', m);
 
-  // مقداردهی اولیه دسته‌بندی در حالت ویرایش
   if (isEdit) {
     setTimeout(() => { if (tx.category) catSel.value = tx.category; }, 50);
   }
@@ -1531,7 +1530,6 @@ function newTransactionModal(bid, members, tx = null) {
 
   $$('#tx-amount', m).forEach(inp => inp.addEventListener('input', e => { const n = toNum(e.target.value); n && (e.target.value = fmt(n)); }));
 
-  // تنظیم تاریخ در حالت ویرایش
   if (isEdit && tx.date) {
       const d = new Date(tx.date);
       const j = gregorianToJalali(d.getFullYear(), d.getMonth() + 1, d.getDate());
@@ -1544,8 +1542,18 @@ function newTransactionModal(bid, members, tx = null) {
     const amount = toNum($('#tx-amount', m).value);
     const type = typeSel.value;
     const isSplit = splitSel.value === 'yes';
+    const txDate = $('#tx-date', m).dataset.gregorian || $('#tx-date', m).value;
     
     if (amount <= 0) { toastErr('مبلغ وارد شده باید بیشتر از صفر باشد'); return; }
+
+    // ⚠️ فیلتر کردن ساکنین بر اساس تاریخ عضویت
+    // کسانی که تاریخ عضویتشان (joined_at) بعد از تاریخ تراکنش است، نباید در لیست باشند
+    const txDateObj = new Date(txDate);
+    const eligibleResidents = allResidents.filter(mem => {
+      if (!mem.joined_at) return true; // اگر تاریخ نداشت، فرض می‌کنیم از اول بوده
+      const joinDateObj = new Date(mem.joined_at);
+      return joinDateObj <= txDateObj;
+    });
 
     let allocations = [];
     let finalDbMethod = 'none';
@@ -1556,8 +1564,8 @@ function newTransactionModal(bid, members, tx = null) {
       $$('.occ-check', m).forEach(cb => { if (cb.checked) selectedOccTypes.push(cb.value); });
       if (selectedOccTypes.length === 0) { toastErr('حداقل یک نوع سکونت را انتخاب کنید'); return; }
       
-      const targetMembers = members.filter(x => x.access_role === 'resident' && selectedOccTypes.includes(x.resident_type));
-      if (targetMembers.length === 0) { toastErr('هیچ ساکنی با این ویژگی‌ها پیدا نشد'); return; }
+      const targetMembers = eligibleResidents.filter(x => selectedOccTypes.includes(x.resident_type));
+      if (targetMembers.length === 0) { toastErr('هیچ ساکنی با این ویژگی‌ها (و تاریخ عضویت معتبر) پیدا نشد'); return; }
 
       const im = incMethodSel.value;
       
@@ -1608,10 +1616,15 @@ function newTransactionModal(bid, members, tx = null) {
         if (selectedUnits.length === 0) { toastErr('حداقل یک واحد را انتخاب کنید'); return; }
         totalAmountToSend = amount;
         finalDbMethod = 'equal';
-        selectedUnits.forEach(mid => allocations.push({ membership_id: mid }));
+        // فقط واحدهای انتخاب شده که در لیست eligible هستند
+        selectedUnits.forEach(mid => {
+          if (eligibleResidents.find(x => x.membership_id === mid)) {
+            allocations.push({ membership_id: mid });
+          }
+        });
       } else {
         if (selectedOccTypes.length === 0) { toastErr('حداقل یک نوع سکونت را انتخاب کنید'); return; }
-        const targetMembers = members.filter(x => x.access_role === 'resident' && selectedOccTypes.includes(x.resident_type));
+        const targetMembers = eligibleResidents.filter(x => selectedOccTypes.includes(x.resident_type));
         if (targetMembers.length === 0) { toastErr('هیچ ساکنی پیدا نشد'); return; }
 
         if (em === 'per_unit') {
@@ -1641,17 +1654,15 @@ function newTransactionModal(bid, members, tx = null) {
     }
 
     try {
-      // اگر در حالت ویرایش بود، اول تراکنش قبلی را حذف می‌کنیم تا اثراتش برگردد
       if (isEdit) {
         await T('app_manager_delete_transaction', { p_id: tx.id });
       }
       
-      // سپس تراکنش جدید را با اطلاعات جدید ثبت می‌کنیم
       await T('app_manager_create_expense', {
         p_building_id: bid,
         p_description: $('#tx-desc', m).value,
         p_amount: totalAmountToSend,
-        p_expense_date: $('#tx-date', m).dataset.gregorian || $('#tx-date', m).value,
+        p_expense_date: txDate,
         p_allocation_method: finalDbMethod,
         p_tx_type: type,
         p_category: catSel.value,
@@ -1663,7 +1674,6 @@ function newTransactionModal(bid, members, tx = null) {
     } catch (err) { showErr(err); }
   });
 }
-
 async function viewManagerRates(el) {
   const m = currentMembership(); if (!m) return;
   const bid = m.building_id;
