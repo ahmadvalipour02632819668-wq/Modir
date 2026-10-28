@@ -790,7 +790,7 @@ function renderHeaderState() {
   const building = currentBuilding();
   const titles = {
     sa_dash: 'داشبورد ادمین اصلی', sa_buildings: 'ساختمان‌ها', sa_requests: 'درخواست مدیران', sa_services: 'خدمات', sa_profile: 'پروفایل',
-    admin_db: 'مدیریت دیتابیس', m_dash: 'داشبورد مدیریت', m_payments: 'تایید پرداخت‌ها', m_requests: 'درخواست‌ها', m_report: 'گزارش ماهانه', m_services: 'خدمات', m_units: 'واحدها و ساکنین', m_expenses: 'هزینه‌ها', m_rates: 'تنظیمات مالی', m_requests_pending: 'تایید ثبت‌نام‌ها', m_transfer: 'انتقال مدیریت',
+    admin_db: 'مدیریت دیتابیس', m_dash: 'داشبورد مدیریت', m_payments: 'تایید پرداخت‌ها', m_requests: 'درخواست‌ها', m_report: 'گزارش ماهانه', m_services: 'خدمات', m_units: 'واحدها و ساکنین', m_expenses: 'تراکنش ها', m_rates: 'تنظیمات مالی', m_requests_pending: 'تایید ثبت‌نام‌ها', m_transfer: 'انتقال مدیریت',
     r_dash: 'خانه', r_pay: 'پرداخت', r_charges: 'صورتحساب', r_requests: 'درخواست‌ها', r_services: 'خدمات', profile: 'پروفایل', services: 'خدمات'
   };
   
@@ -1064,7 +1064,7 @@ async function viewManagerDash(el) {
 
     <div class="sec-title" style="margin-top:20px">دسترسی سریع</div>
     <div class="grid" style="grid-template-columns:repeat(4, 1fr); gap:8px; margin-bottom:24px;">
-      ${[['m_payments', 'تایید پرداخت', '💸'], ['m_expenses', 'هزینه‌ها', '🧾'], ['m_units', 'واحدها', '👥'], ['m_requests_pending', 'ثبت‌نام‌ها', '📝']].map(([k, l, ic]) => `<button class="card" data-go="${k}" style="cursor:pointer;display:flex;flex-direction:column;align-items:center;padding:12px 4px;gap:8px;border:0;text-align:center"><div style="font-size:24px">${ic}</div><b style="font-size:11px;white-space:nowrap">${l}</b></button>`).join('')}
+      ${[['m_payments', 'تایید پرداخت', '💸'], ['m_expenses', 'ت‌راکنش ها', '💳'], ['m_units', 'واحدها', '👥'], ['m_requests_pending', 'ثبت‌نام‌ها', '📝']].map(([k, l, ic]) => `<button class="card" data-go="${k}" style="cursor:pointer;display:flex;flex-direction:column;align-items:center;padding:12px 4px;gap:8px;border:0;text-align:center"><div style="font-size:24px">${ic}</div><b style="font-size:11px;white-space:nowrap">${l}</b></button>`).join('')}
     </div>
     
     <div class="grid g2">
@@ -1838,7 +1838,7 @@ function viewServices(el) {
   const isAdmin = S.me.is_superadmin, mgr = isManager();
   let items = [];
   if (isAdmin) { items = [['sa_buildings', 'ساختمان‌ها', '🏢'], ['sa_requests', 'درخواست مدیران', '👥'], ['sa_profile', 'پروفایل', '👤']]; }
-  else if (mgr) { items = [['m_units', 'واحدها و ساکنین', '👥'], ['m_expenses', 'هزینه‌ها', '💸'], ['m_payments', 'تایید پرداخت', '✅'], ['m_requests_pending', 'تایید ثبت‌نام', '📝'], ['m_transfer', 'انتقال مدیریت', '🔄'], ['m_rates', 'تنظیمات مالی', '⚙️'], ['m_report', 'گزارش ماهانه', '📊'], ['m_requests', 'درخواست‌ها', '💬'], ['profile', 'پروفایل', '👤']]; }
+  else if (mgr) { items = [['m_units', 'واحدها و ساکنین', '👥'], ['m_expenses', 'تراکنش ها', '💸'], ['m_payments', 'تایید پرداخت', '✅'], ['m_requests_pending', 'تایید ثبت‌نام', '📝'], ['m_transfer', 'انتقال مدیریت', '🔄'], ['m_rates', 'تنظیمات مالی', '⚙️'], ['m_report', 'گزارش ماهانه', '📊'], ['m_requests', 'درخواست‌ها', '💬'], ['profile', 'پروفایل', '👤']]; }
   else { items = [['r_charges', 'صورتحساب', '📄'], ['r_pay', 'پرداخت', '💸'], ['r_requests', 'درخواست‌ها', '💬'], ['profile', 'پروفایل', '👤']]; }
   el.innerHTML = `<h1>خدمات</h1><p class="sub">دسترسی سریع به بخش‌های سامانه</p><div class="grid g3">${items.map(([k, l, ic]) => `<button class="card" data-go="${k}" style="cursor:pointer;display:flex;flex-direction:column;align-items:center;padding:20px;gap:10px;border:0;text-align:center"><div style="font-size:32px">${ic}</div><b>${l}</b></button>`).join('')}</div>`;
   $$('[data-go]', el).forEach(b => b.addEventListener('click', () => go(b.dataset.go)));
