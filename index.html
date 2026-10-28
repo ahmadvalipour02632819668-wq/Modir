@@ -1198,7 +1198,8 @@ async function viewManagerPendingSignups(el) {
     const modalBg = modal(`
       <h2>تایید ثبت‌نام</h2>
       <p class="sub">لطفاً مشخص کنید از چه تاریخی این واحد مشمول هزینه‌ها و شارژ می‌شود.</p>
-      <label class="f">تاریخ شروع محاسبه<input id="join-date" class="date-picker-input" readonly required></label>
+      <label class="f">تاریخ شروع سکونت / مسئولیت مالی<input id="join-date" class="date-picker-input" readonly required></label>
+      <label class="f">بدهی قبلی (تومان؛ در صورت نداشتن صفر)<input id="join-opening-debt" inputmode="numeric" value="0"></label>
       <div style="display:flex;gap:10px;margin-top:20px">
         <button class="btn" id="do-approve" style="flex:1">تایید و ثبت</button>
         <button class="btn lt" onclick="this.closest('.modal-bg').remove()">انصراف</button>
@@ -1213,7 +1214,8 @@ async function viewManagerPendingSignups(el) {
         await T('app_manager_review_resident_request', { 
           p_request_id: b.dataset.ok, 
           p_approve: true,
-          p_join_date: joinDate
+          p_join_date: joinDate,
+          p_opening_debt: toNum($('#join-opening-debt', modalBg).value) || 0
         });
         modalBg.remove();
         toastOk('تایید شد');
@@ -1277,10 +1279,18 @@ async function viewManagerUnits(el) {
   }));
   
   $$('[data-delete-member]', el).forEach(b => b.addEventListener('click', async () => { 
-    if (!await confirmDlg('آیا از حذف کامل این حساب مطمئن هستید؟ (تاریخچه تراکنش‌ها حفظ می‌شود)')) return; 
-    T('app_manager_delete_resident_account', { p_building_id: m.building_id, p_membership_id: b.dataset.deleteMember })
-      .then(() => { toastOk('حساب کاربری حذف شد'); go('m_units'); })
-      .catch(showErr); 
+    const member = members.find(x => x.membership_id === b.dataset.deleteMember);
+    if (!member || member.resident_type !== 'tenant') { toastErr('این عملیات فقط برای خروج مستأجر است'); return; }
+    const bg = modal(`<h2>بستن حساب مستأجر</h2><p class="sub">بدهی تسویه‌نشده به مالک منتقل می‌شود و سوابق مالی محفوظ می‌ماند.</p><label class="f">آخرین روز مسئولیت مالی<input id="tenant-end-date" class="date-picker-input" readonly required></label><button class="btn" id="confirm-tenant-close">تأیید خروج و انتقال بدهی</button>`);
+    bindDatePickers(bg);
+    $('#confirm-tenant-close', bg).addEventListener('click', async () => {
+      const endDate = $('#tenant-end-date', bg).dataset.gregorian;
+      if (!endDate) { toastErr('تاریخ خروج را انتخاب کنید'); return; }
+      try {
+        await T('app_financial_v2_close_tenant', { p_building_id:m.building_id, p_membership_id:b.dataset.deleteMember, p_end_date:endDate });
+        bg.remove(); toastOk('حساب مستأجر بسته و بدهی منتقل شد'); go('m_units');
+      } catch(err) { showErr(err); }
+    }); 
   }));
 }
 
@@ -1524,7 +1534,7 @@ function newTransactionModal(bid, members, tx = null) {
         <label class="f" style="margin-bottom:8px; color:var(--ink)" id="tx-alloc-label">مسئول پرداخت:</label>
         <div id="tx-occ-list" style="display:flex; flex-direction:column; gap:10px;">
           <label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" class="occ-check" value="owner" checked><span>مالک</span></label>
-          <label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" class="occ-check" value="tenant" checked><span>مستأجر</span></label>
+          <label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" class="occ-check" value="tenant"><span>مستأجر</span></label>
           <label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" class="occ-check" value="owner_resident" checked><span>مالک ساکن</span></label>
         </div>
         <div id="tx-unit-list" style="display:none; flex-direction:column; gap:10px;">
@@ -1572,6 +1582,10 @@ function newTransactionModal(bid, members, tx = null) {
     else { amountLabel.textContent = 'مبلغ کل'; amountHint.textContent = 'این مبلغ مستقیماً از صندوق کسر می‌شود.'; }
   };
 
+  $$('.occ-check', m).forEach(cb => cb.addEventListener('change', () => {
+    if (cb.checked && cb.value === 'owner') $('.occ-check[value="tenant"]', m).checked = false;
+    if (cb.checked && cb.value === 'tenant') $('.occ-check[value="owner"]', m).checked = false;
+  }));
   typeSel.addEventListener('change', () => { updateCategories(); updateLayout(); });
   splitSel.addEventListener('change', updateLayout);
   incMethodSel.addEventListener('change', updateLayout); 
@@ -1589,82 +1603,48 @@ function newTransactionModal(bid, members, tx = null) {
     
     if (amount <= 0) { toastErr('مبلغ نامعتبر است'); return; }
     
-    let allocations = []; let finalDbMethod = 'manual'; let totalAmountToSend = amount;
-
+    const selectedRoles = $$('.occ-check', m).filter(cb => cb.checked).map(cb => cb.value);
+    if (selectedRoles.includes('owner') && selectedRoles.includes('tenant')) { toastErr('مالک و مستأجر را هم‌زمان انتخاب نکنید'); return; }
+    if ((type === 'درآمد' || isSplit) && !selectedRoles.length) { toastErr('مسئول پرداخت را انتخاب کنید'); return; }
+    let allocations = [];
+    let finalDbMethod = 'none';
     if (type === 'درآمد') {
-      const selectedOccTypes = []; $$('.occ-check', m).forEach(cb => { if (cb.checked) selectedOccTypes.push(cb.value); });
-      const targetMembers = allResidents.filter(x => selectedOccTypes.includes(x.resident_type));
-      const im = incMethodSel.value;
-      
-      const isAllSelected = selectedOccTypes.length === 3;
-
-      if (isAllSelected) {
-          // 🔑 استفاده از متدهای پویا (نرخ) به جای مبلغ کل
-          if (im === 'per_unit') { finalDbMethod = 'dynamic_per_unit'; totalAmountToSend = amount; }
-          else if (im === 'per_meter') { finalDbMethod = 'dynamic_per_meter'; totalAmountToSend = amount; }
-          else if (im === 'per_resident') { finalDbMethod = 'dynamic_per_resident'; totalAmountToSend = amount; }
-          else if (im === 'total_equal') { finalDbMethod = 'equal'; totalAmountToSend = amount; }
-          allocations = []; 
-      } else {
-          finalDbMethod = 'manual';
-          if (im === 'per_unit') { totalAmountToSend = amount * targetMembers.length; targetMembers.forEach(mem => allocations.push({ membership_id: mem.membership_id, amount: amount })); }
-          else if (im === 'per_meter') { let total = 0; targetMembers.forEach(mem => { const share = amount * (Number(mem.unit_area) || 0); if(share>0){ allocations.push({ membership_id: mem.membership_id, amount: share }); total += share; } }); totalAmountToSend = total; }
-          else if (im === 'per_resident') { let total = 0; targetMembers.forEach(mem => { const share = amount * (Number(mem.unit_resident_count) || 0); if(share>0){ allocations.push({ membership_id: mem.membership_id, amount: share }); total += share; } }); totalAmountToSend = total; }
-          else if (im === 'total_equal') { const share = amount / (targetMembers.length || 1); targetMembers.forEach(mem => allocations.push({ membership_id: mem.membership_id, amount: share })); }
-      }
-
+      const methods = { per_unit:'dynamic_per_unit', per_meter:'dynamic_per_meter', per_resident:'dynamic_per_resident', total_equal:'equal' };
+      finalDbMethod = methods[incMethodSel.value];
     } else if (isSplit) {
-      const selectedOccTypes = []; $$('.occ-check', m).forEach(cb => { if (cb.checked) selectedOccTypes.push(cb.value); });
-      const em = expMethodSel.value;
-      
-      if (em === 'selected') { 
-        const selectedIds = []; $$('.unit-check', m).forEach(cb => { if (cb.checked) selectedIds.push(cb.value); }); 
-        const share = amount / (selectedIds.length || 1);
-        selectedIds.forEach(mid => allocations.push({ membership_id: mid, amount: share }));
-        finalDbMethod = 'manual';
-      } else {
-        const targetMembers = allResidents.filter(x => selectedOccTypes.includes(x.resident_type));
-        const isAllSelectedExp = selectedOccTypes.length === 3;
-
-        if (isAllSelectedExp && em !== 'per_unit') {
-             if (em === 'equal') { finalDbMethod = 'equal'; totalAmountToSend = amount; }
-             else if (em === 'area') { finalDbMethod = 'area'; totalAmountToSend = amount; }
-             else if (em === 'residents') { finalDbMethod = 'residents'; totalAmountToSend = amount; }
-             allocations = [];
-        } else {
-             finalDbMethod = 'manual';
-             if (em === 'per_unit') { totalAmountToSend = amount * targetMembers.length; targetMembers.forEach(mem => allocations.push({ membership_id: mem.membership_id, amount: amount })); }
-             else if (em === 'equal') { const share = amount / (targetMembers.length || 1); targetMembers.forEach(mem => allocations.push({ membership_id: mem.membership_id, amount: share })); }
-             else if (em === 'area') {
-               const totalArea = targetMembers.reduce((s, mem) => s + (Number(mem.unit_area) || 0), 0);
-               if (totalArea === 0) { toastErr('متراژ ثبت نشده است'); return; }
-               targetMembers.forEach(mem => allocations.push({ membership_id: mem.membership_id, amount: amount * ((Number(mem.unit_area) || 0) / totalArea) }));
-             }
-             else if (em === 'residents') {
-               const totalRes = targetMembers.reduce((s, mem) => s + (Number(mem.unit_resident_count) || 0), 0);
-               if (totalRes === 0) { toastErr('تعداد نفرات ثبت نشده است'); return; }
-               targetMembers.forEach(mem => allocations.push({ membership_id: mem.membership_id, amount: amount * ((Number(mem.unit_resident_count) || 0) / totalRes) }));
-             }
-        }
+      const methods = { equal:'equal', area:'area', residents:'residents', per_unit:'dynamic_per_unit', selected:'manual' };
+      finalDbMethod = methods[expMethodSel.value];
+      if (expMethodSel.value === 'selected') {
+        const selectedIds = $$('.unit-check', m).filter(cb => cb.checked).map(cb => cb.value);
+        if (!selectedIds.length) { toastErr('حداقل یک واحد انتخاب کنید'); return; }
+        allocations = selectedIds.map(id => ({ membership_id:id, amount:amount/selectedIds.length }));
       }
-    } else { finalDbMethod = 'none'; }
-
-    if (allocations.length > 0) {
-        totalAmountToSend = allocations.reduce((s, a) => s + a.amount, 0);
     }
+    // Monthly charges use the full Gregorian calendar month of the selected date.
+    // For non-monthly transactions, the effective period defaults to the transaction date.
+    let periodStart = txDate, periodEnd = txDate;
+    if (catSel.value === 'شارژ ماهیانه' && txDate) {
+      const [yy,mm] = txDate.split('-').map(Number);
+      periodStart = `${yy}-${String(mm).padStart(2,'0')}-01`;
+      periodEnd = `${yy}-${String(mm).padStart(2,'0')}-${String(new Date(yy,mm,0).getDate()).padStart(2,'0')}`;
+    }
+    if (!txDate) { toastErr('تاریخ تراکنش را انتخاب کنید'); return; }
 
     try {
-      if (isEdit) await T('app_manager_delete_transaction', { p_id: tx.id });
+      if (isEdit) { toastErr('ویرایش تراکنش‌های قبلی تا پیاده‌سازی ویرایش امن غیرفعال است؛ حذف و ایجاد مجدد باعث از بین رفتن تاریخچه می‌شود.'); return; }
       
-      await T('app_manager_create_expense', {
+      await T('app_financial_v2_create_transaction', {
         p_building_id: bid, 
         p_description: $('#tx-desc', m).value, 
-        p_amount: totalAmountToSend, 
+        p_amount: amount, 
         p_expense_date: txDate,
         p_allocation_method: finalDbMethod, 
         p_tx_type: type, 
         p_category: catSel.value,
-        p_allocations: allocations
+        p_allocations: allocations,
+        p_payer_roles: selectedRoles,
+        p_period_start: periodStart,
+        p_period_end: periodEnd
       });
       
       m.remove(); 
