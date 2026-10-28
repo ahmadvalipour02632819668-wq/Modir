@@ -1044,16 +1044,6 @@ async function viewManagerPayments(el) {
     <h1>تایید پرداخت‌ها</h1><p class="sub">${fa(list.length)} پرداخت در انتظار تایید</p>
     ${list.length ? `<div class="grid g2">${list.map(p => `<div class="card"><div style="display:flex;justify-content:space-between;gap:8px;margin-bottom:8px"><b>${esc(p.full_name)}</b><span class="chip pd">در انتظار</span></div><div class="sub" style="margin:0 0 10px">واحد ${fa(p.unit_no)} · ${RESIDENT_TYPES[p.resident_type] || ''}</div><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><span>مبلغ: <b>${fmt(p.amount)}</b> تومان</span><small class="sub">${p.payment_date}</small></div>${p.description ? `<div class="sub" style="margin:0 0 12px">${esc(p.description)}</div>` : ''}<div style="display:flex;gap:8px"><button class="btn sm" data-approve="${p.payment_id}">تایید</button><button class="btn rd sm" data-reject="${p.payment_id}">رد</button></div></div>`).join('')}</div>` : `<div class="empty"><div class="ico">✅</div><p>پرداختی در انتظار تایید نیست</p></div>`}
     ${details?.payments?.length ? `<div class="sec-title" style="margin-top:26px">سابقه این ماه</div><div class="tbl-wrap"><table><thead><tr><th>واحد</th><th>مبلغ</th><th>وضعیت</th><th>تاریخ</th></tr></thead><tbody>${details.payments.map(p => `<tr><td>${p.membership_id ? p.membership_id.slice(0,6) : '—'}</td><td>${fmt(p.amount)}</td><td>${p.status === 'approved' ? '<span class="chip ok">تایید</span>' : p.status === 'pending' ? '<span class="chip pd">در انتظار</span>' : p.status === 'rejected' ? '<span class="chip no">رد</span>' : '<span class="chip ex">' + esc(p.status) + '</span>'}</td><td>${p.payment_date}</td></tr>`).join('')}</tbody></table></div>` : ''}`;
-     ${myDebt > 0 ? `
-    <div class="card" style="background:#fef3c7;border:1px solid #fde68a;margin-bottom:20px">
-      <div style="display:flex;justify-content:space-between;align-items:center">
-        <div>
-          <b style="color:#92400e">بدهی شما به عنوان ساکن</b>
-          <div style="font-size:20px;font-weight:900;color:var(--danger)">${fmt(myDebt)} تومان</div>
-        </div>
-        <button class="btn" onclick="go('r_pay')" style="background:var(--warning);color:#fff">پرداخت بدهی</button>
-      </div>
-    </div>` : ''}
   $$('[data-approve]', el).forEach(b => b.addEventListener('click', () => approvePaymentModal(b.dataset.approve)));
   $$('[data-reject]', el).forEach(b => b.addEventListener('click', async () => { 
     const note = await promptDlg('دلیل رد (اختیاری):'); if (note === null) return; 
