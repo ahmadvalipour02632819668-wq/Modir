@@ -1277,7 +1277,7 @@ function editMemberModal(mem, bid) {
     } catch (err) { showErr(err); }
   });
 }
-  async function viewManagerExpenses(el) {
+ async function viewManagerExpenses(el) {
   const m = currentMembership(); if (!m) return;
   const bid = m.building_id;
   
@@ -1304,7 +1304,7 @@ function editMemberModal(mem, bid) {
           <select id="f-t"><option value="">همه</option><option value="درآمد">درآمد</option><option value="هزینه">هزینه</option></select>
         </label>
         <label class="f">واحد
-          <select id="f-u"><option value="">همه</option><option value="0">ساختمان</option>${members.filter(x => x.access_role === 'resident').map(x => `<option value="${x.unit_no}">واحد ${fa(x.unit_no)}</option>`).join('')}</select>
+          <select id="f-u"><option value="">همه</option><option value="0">ساختمان</option>${members.filter(x => (x.access_role === 'resident' || x.access_role === 'manager') && x.unit_no).map(x => `<option value="${x.unit_no}">واحد ${fa(x.unit_no)}</option>`).join('')}</select>
         </label>
       </div>
     </div>
@@ -1323,18 +1323,18 @@ function editMemberModal(mem, bid) {
     tbody.innerHTML = '<tr><td colspan="8" style="text-align:center">در حال بارگذاری...</td></tr>';
     
     try {
-      // تبدیل سال شمسی به میلادی برای فیلتر دیتابیس (چون دیتابیس تاریخ میلادی ذخیره میکند)
       let gYear = null, gMonth = null;
       if (y) {
          if (m) {
             const g = jalaliToGregorian(+y, +m, 1);
             gYear = g.getFullYear(); gMonth = g.getMonth() + 1;
          } else {
-            gYear = jalaliToGregorian(+y, 1, 1).getFullYear(); // فقط سال
+            gYear = jalaliToGregorian(+y, 1, 1).getFullYear();
          }
       }
 
-      const list = await T('app_manager_get_transactions', { 
+      // دریافت لیست خام از دیتابیس
+      const rawList = await T('app_manager_get_transactions', { 
         p_building_id: bid, 
         p_year: gYear, 
         p_month: gMonth, 
@@ -1342,19 +1342,56 @@ function editMemberModal(mem, bid) {
         p_unit_no: u ? +u : null 
       });
 
-      if (!list || !list.length) {
+      if (!rawList || !rawList.length) {
         tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:20px">تراکنشی یافت نشد</td></tr>';
         return;
       }
 
+      // ⚠️ پردازش و ادغام ردیف‌ها در سمت جاوااسکریپت
+      const grouped = {};
+      rawList.forEach(tx => {
+          if (!grouped[tx.id]) {
+              grouped[tx.id] = {
+                  id: tx.id,
+                  date: tx.date,
+                  description: tx.description,
+                  amount: tx.amount, // مبلغ کل تراکنش
+                  type: tx.type,
+                  category: tx.category,
+                  units: new Set(), // برای ذخیره واحدهایی که در این تراکنش شریکند
+                  occupancies: new Set() // برای ذخیره نوع سکونت مسئولین پرداخت
+              };
+          }
+          if (tx.unit_no) grouped[tx.id].units.add(tx.unit_no);
+          if (tx.occupancy) grouped[tx.id].occupancies.add(tx.occupancy);
+      });
+
+      // تبدیل به آرایه و مرتب‌سازی بر اساس تاریخ
+      const list = Object.values(grouped).sort((a, b) => new Date(b.date) - new Date(a.date));
+
       tbody.innerHTML = list.map(tx => {
         const isInc = tx.type === 'درآمد';
         const badge = isInc ? '<span class="chip ok">درآمد</span>' : '<span class="chip no">هزینه</span>';
-        const unitLabel = tx.unit_no ? `واحد ${fa(tx.unit_no)}` : '<b>ساختمان</b>';
-        const occ = tx.occupancy ? (RESIDENT_TYPES[tx.occupancy] || tx.occupancy) : '—';
+        
         const d = new Date(tx.date);
         const j = gregorianToJalali(d.getFullYear(), d.getMonth() + 1, d.getDate());
         const dateStr = `${fa(j[0])}/${String(j[1]).padStart(2,'0')}/${String(j[2]).padStart(2,'0')}`;
+
+        // ۱. منطق ستون واحد: اگر بیش از یک واحد بود یا واحدی نبود، بنویس «ساختمان»
+        let unitLabel = '';
+        if (tx.units.size === 0) {
+            unitLabel = '<b>ساختمان</b>';
+        } else if (tx.units.size === 1) {
+            unitLabel = `واحد ${fa(Array.from(tx.units)[0])}`;
+        } else {
+            unitLabel = '<b>ساختمان</b>';
+        }
+
+        // ۲. منطق ستون سکونت: نوع سکونت مسئولین پرداخت را نشان بده
+        let occLabel = '—';
+        if (tx.occupancies.size > 0) {
+            occLabel = Array.from(tx.occupancies).map(o => RESIDENT_TYPES[o] || o).join(' ، ');
+        }
 
         return `<tr>
           <td>${dateStr}</td>
@@ -1363,7 +1400,7 @@ function editMemberModal(mem, bid) {
           <td>${esc(tx.category)}</td>
           <td>${esc(tx.description)}</td>
           <td style="font-weight:900;color:${isInc?'var(--success)':'var(--danger)'}">${fmt(tx.amount)}</td>
-          <td>${occ}</td>
+          <td style="font-size:12px">${occLabel}</td>
           <td>
             <div style="display:flex;gap:4px;flex-wrap:nowrap">
               <button class="btn lt sm" onclick="editTx('${tx.id}')">ویرایش</button>
@@ -1386,36 +1423,6 @@ function editMemberModal(mem, bid) {
 
   loadTx();
 }
-
-// تابع حذف تراکنش (اختیاری - فعلا فقط پیام میدهد)
-window.deleteTx = async (id) => {
-    if (!await confirmDlg('آیا از حذف این تراکنش مطمئن هستید؟')) return;
-    toastOk('در نسخه بعدی پیاده‌سازی می‌شود');
-};
- window.deleteTx = async (id) => {
-    if (!await confirmDlg('آیا از حذف این تراکنش مطمئن هستید؟ (اثر آن بر صندوق و بدهی ساکنین به طور کامل برگشت داده می‌شود)')) return;
-    try {
-        await T('app_manager_delete_transaction', { p_id: id });
-        toastOk('تراکنش با موفقیت حذف شد');
-        go('m_expenses');
-    } catch (e) { showErr(e); }
-};
-
-window.editTx = async (id) => {
-    const m = currentMembership(); if (!m) return;
-    try {
-        // دریافت تمام تراکنش‌ها و پیدا کردن تراکنش مورد نظر
-        const list = await T('app_manager_get_transactions', { p_building_id: m.building_id });
-        const tx = list.find(x => x.id === id);
-        
-        if (tx) {
-            const membersRes = await T('app_manager_list_building_members', { p_building_id: m.building_id });
-            newTransactionModal(m.building_id, membersRes.members || [], tx);
-        } else {
-            toastErr('تراکنش پیدا نشد');
-        }
-    } catch (e) { showErr(e); }
-};
 function newTransactionModal(bid, members, tx = null) {
   const incCats = ['شارژ ماهیانه', 'پس‌انداز', 'جریمه', 'سایر'];
   const expCats = ['نظافت', 'سرویس آسانسور', 'تعمیرات', 'قبض آب', 'قبض گاز', 'قبض برق', 'سایر'];
