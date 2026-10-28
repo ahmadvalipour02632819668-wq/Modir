@@ -1402,7 +1402,13 @@ async function viewManagerExpenses(el) {
   $('#f-m', el).addEventListener('change', loadTx);
   $('#f-t', el).addEventListener('change', loadTx);
   $('#f-u', el).addEventListener('change', loadTx);
-  $('#new-tx', el).addEventListener('click', () => newTransactionModal(bid, members));
+  // ⚠️ اصلاح باگ: دریافت مجدد لیست ساکنین در زمان کلیک، برای اعمال تغییرات نقش
+$('#new-tx', el).addEventListener('click', async () => {
+    try {
+        const r = await T('app_manager_list_building_members', { p_building_id: bid });
+        newTransactionModal(bid, r.members || []);
+    } catch (err) { showErr(err); }
+});
   
   $('#export-excel', el).addEventListener('click', () => {
     if (!currentData.length) { toastErr('داده‌ای برای خروجی نیست'); return; }
