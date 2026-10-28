@@ -1323,7 +1323,7 @@ async function viewManagerExpenses(el) {
     </div>
   `;
 
-  let currentData = []; // برای استفاده در خروجی اکسل
+  let currentData = [];
 
   const loadTx = async () => {
     const y = $('#f-y', el).value, m = $('#f-m', el).value, t = $('#f-t', el).value, u = $('#f-u', el).value;
@@ -1367,15 +1367,21 @@ async function viewManagerExpenses(el) {
             statusChip = '<span class="chip ex">فعال</span>';
         }
 
-        // دکمه‌های عملیات (برای واریزی‌ها، دکمه‌های ویرایش و حذف مخفی می‌شوند)
         let actionBtns = '';
-        if (!isPay) {
+        if (isPay) {
+            if (tx.status === 'approved') {
+                actionBtns = `
+                  <button class="btn lt sm" onclick="editPayment('${tx.id}', '${tx.amount}', '${tx.date}', '${esc(tx.description)}')">ویرایش</button>
+                  <button class="btn rd sm" onclick="deletePayment('${tx.id}')">حذف</button>
+                `;
+            } else {
+                actionBtns = `<span style="font-size:12px;color:var(--muted)">در صفحه تایید پرداخت</span>`;
+            }
+        } else {
             actionBtns = `
               <button class="btn lt sm" onclick="editTx('${tx.id}')">ویرایش</button>
               <button class="btn rd sm" onclick="deleteTx('${tx.id}')">حذف</button>
             `;
-        } else {
-            actionBtns = `<span style="font-size:12px;color:var(--muted)">در صفحه تایید پرداخت</span>`;
         }
 
         return `<tr>
@@ -1398,7 +1404,6 @@ async function viewManagerExpenses(el) {
   $('#f-u', el).addEventListener('change', loadTx);
   $('#new-tx', el).addEventListener('click', () => newTransactionModal(bid, members));
   
-  // ⚠️ خروجی اکسل
   $('#export-excel', el).addEventListener('click', () => {
     if (!currentData.length) { toastErr('داده‌ای برای خروجی نیست'); return; }
     const sep = ';'; const q = v => `"${String(v ?? '').replace(/"/g, '""')}"`;
@@ -1413,41 +1418,69 @@ async function viewManagerExpenses(el) {
     toastOk('فایل اکسل دانلود شد');
   });
 
-  // ⚠️ خروجی PDF
   $('#export-pdf', el).addEventListener('click', async () => {
     if (!currentData.length) { toastErr('داده‌ای برای خروجی نیست'); return; }
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF('p', 'pt', 'a4');
-    
-    // عنوان
     doc.setFontSize(16);
     doc.text("Financial Transactions Report", 40, 40);
-    
-    // جدول
     const tableRows = currentData.map(tx => {
         const d = new Date(tx.date); const j = gregorianToJalali(d.getFullYear(), d.getMonth() + 1, d.getDate());
-        return [
-            `${j[0]}/${j[1]}/${j[2]}`,
-            tx.unit_display || '—',
-            tx.type,
-            tx.amount.toLocaleString(),
-            tx.description
-        ];
+        return [`${j[0]}/${j[1]}/${j[2]}`, tx.unit_display || '—', tx.type, tx.amount.toLocaleString(), tx.description];
     });
-
     doc.autoTable({
         head: [['Date', 'Unit', 'Type', 'Amount (Toman)', 'Description']],
         body: tableRows,
         startY: 60,
         styles: { font: 'helvetica', fontSize: 10 }
     });
-
     doc.save('Transactions-Report.pdf');
     toastOk('فایل PDF دانلود شد');
   });
 
   loadTx();
 }
+
+window.deletePayment = async (id) => {
+    if (!await confirmDlg('آیا از حذف این واریزی مطمئن هستید؟ (بدهی ساکن دوباره محاسبه می‌شود)')) return;
+    try {
+        await T('app_manager_delete_payment', { p_payment_id: id });
+        toastOk('واریزی حذف شد');
+        go('m_expenses');
+    } catch (e) { showErr(e); }
+};
+
+window.editPayment = (id, amount, date, description) => {
+    const m = modal(`
+      <h2>ویرایش واریزی</h2>
+      <form id="ep-form" class="grid" style="gap:14px">
+        <label class="f">مبلغ (تومان)<input id="ep-amount" inputmode="numeric" value="${fmt(amount)}" required></label>
+        <label class="f">تاریخ<input id="ep-date" class="date-picker-input" readonly required></label>
+        <label class="f">توضیحات<input id="ep-desc" value="${esc(description)}"></label>
+        <button class="btn" type="submit">ذخیره تغییرات</button>
+      </form>
+    `);
+    bindDatePickers(m);
+    const d = new Date(date); const j = gregorianToJalali(d.getFullYear(), d.getMonth() + 1, d.getDate());
+    $('#ep-date', m).value = `${j[0]}/${String(j[1]).padStart(2,'0')}/${String(j[2]).padStart(2,'0')}`;
+    $('#ep-date', m).dataset.gregorian = date;
+    $$('#ep-amount', m).forEach(inp => inp.addEventListener('input', e => { const n = toNum(e.target.value); n && (e.target.value = fmt(n)); }));
+
+    $('#ep-form', m).addEventListener('submit', async e => {
+        e.preventDefault();
+        try {
+            await T('app_manager_update_payment', {
+                p_payment_id: id,
+                p_amount: toNum($('#ep-amount', m).value),
+                p_payment_date: $('#ep-date', m).dataset.gregorian || $('#ep-date', m).value,
+                p_description: $('#ep-desc', m).value || null
+            });
+            m.remove();
+            toastOk('ویرایش شد');
+            go('m_expenses');
+        } catch (err) { showErr(err); }
+    });
+};
 function newTransactionModal(bid, members, tx = null) {
   const incCats = ['شارژ ماهیانه', 'پس‌انداز', 'جریمه', 'سایر'];
   const expCats = ['قبض آب', 'قبض گاز', 'قبض برق', 'نظافت', 'سرویس آسانسور', 'تعمیرات', 'سایر'];
