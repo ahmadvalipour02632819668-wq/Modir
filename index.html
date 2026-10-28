@@ -1640,7 +1640,19 @@ function newTransactionModal(bid, members, tx = null) {
     if (!txDate) { toastErr('تاریخ تراکنش را انتخاب کنید'); return; }
 
     try {
-      if (isEdit) { toastErr('ویرایش تراکنش‌های قبلی تا پیاده‌سازی ویرایش امن غیرفعال است؛ حذف و ایجاد مجدد باعث از بین رفتن تاریخچه می‌شود.'); return; }
+    if (isEdit) {
+  await T('app_financial_v2_edit_transaction_details', {
+    p_id: tx.id,
+    p_description: $('#tx-desc', m).value,
+    p_category: catSel.value,
+    p_expense_date: txDate
+  });
+
+  m.remove();
+  toastOk('اطلاعات تراکنش ویرایش شد');
+  go('m_expenses');
+  return;
+}
       
       await T('app_financial_v2_create_transaction', {
         p_building_id: bid, 
