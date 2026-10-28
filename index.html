@@ -1253,18 +1253,43 @@ window.deleteTx = async (id) => {
     if (!await confirmDlg('آیا از حذف این تراکنش مطمئن هستید؟')) return;
     toastOk('در نسخه بعدی پیاده‌سازی می‌شود');
 };
- function newTransactionModal(bid, members) {
+ window.deleteTx = async (id) => {
+    if (!await confirmDlg('آیا از حذف این تراکنش مطمئن هستید؟ (اثر آن بر صندوق و بدهی ساکنین به طور کامل برگشت داده می‌شود)')) return;
+    try {
+        await T('app_manager_delete_transaction', { p_id: id });
+        toastOk('تراکنش با موفقیت حذف شد');
+        go('m_expenses');
+    } catch (e) { showErr(e); }
+};
+
+window.editTx = async (id) => {
+    const m = currentMembership(); if (!m) return;
+    try {
+        // دریافت تمام تراکنش‌ها و پیدا کردن تراکنش مورد نظر
+        const list = await T('app_manager_get_transactions', { p_building_id: m.building_id });
+        const tx = list.find(x => x.id === id);
+        
+        if (tx) {
+            const membersRes = await T('app_manager_list_building_members', { p_building_id: m.building_id });
+            newTransactionModal(m.building_id, membersRes.members || [], tx);
+        } else {
+            toastErr('تراکنش پیدا نشد');
+        }
+    } catch (e) { showErr(e); }
+};
+function newTransactionModal(bid, members, tx = null) {
   const incCats = ['شارژ ماهیانه', 'پس‌انداز', 'جریمه', 'سایر'];
   const expCats = ['نظافت', 'سرویس آسانسور', 'تعمیرات', 'قبض آب', 'قبض گاز', 'قبض برق', 'سایر'];
+  const isEdit = !!tx;
 
   const m = modal(`
-    <h2>ثبت تراکنش جدید</h2>
+    <h2>${isEdit ? 'ویرایش تراکنش' : 'ثبت تراکنش جدید'}</h2>
     <form id="tx-form" class="grid" style="gap:14px">
       
       <label class="f">نوع تراکنش
-        <select id="tx-type">
-          <option value="درآمد">درآمد (دریافتنی از ساکنین)</option>
-          <option value="هزینه">هزینه (کسر از صندوق)</option>
+        <select id="tx-type" ${isEdit ? 'disabled' : ''}>
+          <option value="درآمد" ${isEdit && tx.type === 'درآمد' ? 'selected' : ''}>درآمد (دریافتنی از ساکنین)</option>
+          <option value="هزینه" ${isEdit && tx.type === 'هزینه' ? 'selected' : ''}>هزینه (کسر از صندوق)</option>
         </select>
       </label>
 
@@ -1273,11 +1298,11 @@ window.deleteTx = async (id) => {
       </label>
 
       <label class="f">شرح تراکنش
-        <input id="tx-desc" placeholder="مثلاً شارژ آبان یا تعمیر آسانسور" required>
+        <input id="tx-desc" placeholder="مثلاً شارژ آبان یا تعمیر آسانسور" value="${isEdit ? esc(tx.description) : ''}" required>
       </label>
 
       <label class="f"><span id="tx-amount-label">مبلغ (تومان)</span>
-        <input id="tx-amount" inputmode="numeric" required>
+        <input id="tx-amount" inputmode="numeric" value="${isEdit ? fmt(tx.amount) : ''}" required>
         <small id="tx-amount-hint" style="color:var(--muted); font-weight:normal; margin-top:4px;"></small>
       </label>
 
@@ -1343,7 +1368,7 @@ window.deleteTx = async (id) => {
         </div>
       </div>
 
-      <button class="btn" type="submit" style="margin-top:10px">ثبت تراکنش</button>
+      <button class="btn" type="submit" style="margin-top:10px">${isEdit ? 'ذخیره تغییرات' : 'ثبت تراکنش'}</button>
     </form>
   `);
 
@@ -1355,12 +1380,18 @@ window.deleteTx = async (id) => {
   const allocWrap = $('#tx-alloc-wrap', m), occList = $('#tx-occ-list', m), unitList = $('#tx-unit-list', m), allocLabel = $('#tx-alloc-label', m);
   const amountHint = $('#tx-amount-hint', m), amountLabel = $('#tx-amount-label', m);
 
+  // مقداردهی اولیه دسته‌بندی در حالت ویرایش
+  if (isEdit) {
+    setTimeout(() => { if (tx.category) catSel.value = tx.category; }, 50);
+  }
+
   const updateUI = () => {
     const isInc = typeSel.value === 'درآمد';
     const isSplit = splitSel.value === 'yes';
     
     catSel.innerHTML = (isInc ? incCats : expCats).map(c => `<option value="${c}">${c}</option>`).join('');
-    
+    if (isEdit && tx.category) catSel.value = tx.category;
+
     splitWrap.style.display = isInc ? 'none' : 'block';
     incMethodsWrap.style.display = isInc ? 'block' : 'none';
     expMethodsWrap.style.display = (!isInc && isSplit) ? 'block' : 'none';
@@ -1395,28 +1426,28 @@ window.deleteTx = async (id) => {
       const im = incMethodSel.value;
       if (im === 'per_unit') {
         amountLabel.textContent = 'مبلغ به ازای هر واحد (تومان)';
-        amountHint.textContent = 'مبلغی که وارد می‌کنید، سهم هر واحد است. مثال: ۵۰۰,۰۰۰ = هر واحد ۵۰۰,۰۰۰ تومان';
+        amountHint.textContent = 'مبلغی که وارد می‌کنید، سهم هر واحد است.';
       } else if (im === 'per_meter') {
         amountLabel.textContent = 'مبلغ به ازای هر متر مربع (تومان)';
-        amountHint.textContent = 'مبلغی که وارد می‌کنید برای هر متر محاسبه می‌شود. مثال: ۵,۰۰۰ × ۱۰۰ متر = ۵۰۰,۰۰۰ تومان';
+        amountHint.textContent = 'مبلغی که وارد می‌کنید برای هر متر محاسبه می‌شود.';
       } else if (im === 'per_resident') {
         amountLabel.textContent = 'مبلغ به ازای هر نفر (تومان)';
-        amountHint.textContent = 'مبلغی که وارد می‌کنید برای هر نفر محاسبه می‌شود. مثال: ۱۰۰,۰۰۰ × ۳ نفر = ۳۰۰,۰۰۰ تومان';
+        amountHint.textContent = 'مبلغی که وارد می‌کنید برای هر نفر محاسبه می‌شود.';
       } else {
         amountLabel.textContent = 'مبلغ کل (تومان)';
-        amountHint.textContent = 'مبلغی که وارد می‌کنید، بین واحدهای انتخاب‌شده به صورت مساوی تقسیم می‌شود.';
+        amountHint.textContent = 'مبلغی که وارد می‌کنید، بین واحدها مساوی تقسیم می‌شود.';
       }
     } else if (isSplit) {
       const em = expMethodSel.value;
       amountLabel.textContent = 'مبلغ کل (تومان)';
-      if (em === 'equal') amountHint.textContent = 'مبلغ کل، بین واحدهای انتخاب‌شده مساوی تقسیم می‌شود. مثال: قبض ۳۰۰,۰۰۰ ÷ ۳ واحد = ۱۰۰,۰۰۰ هر واحد';
-      else if (em === 'area') amountHint.textContent = 'مبلغ کل، به نسبت متراژ هر واحد تقسیم می‌شود.';
-      else if (em === 'residents') amountHint.textContent = 'مبلغ کل، به نسبت تعداد نفرات هر واحد تقسیم می‌شود. مثال: قبض آب ۱۰۰,۰۰۰ با ۹ نفر → هر نفر ۱۱,۱۱۱';
-      else if (em === 'per_unit') amountHint.textContent = 'مبلغی که وارد می‌کنید، سهم هر واحد است. مثال: نظافت ۵۰۰,۰۰۰ = هر واحد ۵۰۰,۰۰۰ تومان';
+      if (em === 'equal') amountHint.textContent = 'مبلغ کل، بین واحدهای انتخاب‌شده مساوی تقسیم می‌شود.';
+      else if (em === 'area') amountHint.textContent = 'مبلغ کل، به نسبت متراژ تقسیم می‌شود.';
+      else if (em === 'residents') amountHint.textContent = 'مبلغ کل، به نسبت نفرات تقسیم می‌شود.';
+      else if (em === 'per_unit') amountHint.textContent = 'مبلغی که وارد می‌کنید، سهم هر واحد است.';
       else if (em === 'selected') amountHint.textContent = 'مبلغ کل، بین واحدهای انتخاب‌شده مساوی تقسیم می‌شود.';
     } else {
       amountLabel.textContent = 'مبلغ کل (تومان)';
-      amountHint.textContent = 'این مبلغ مستقیماً از صندوق کسر می‌شود و بدهی برای ساکنین ایجاد نمی‌کند.';
+      amountHint.textContent = 'این مبلغ مستقیماً از صندوق کسر می‌شود.';
     }
   };
 
@@ -1427,6 +1458,14 @@ window.deleteTx = async (id) => {
   updateUI();
 
   $$('#tx-amount', m).forEach(inp => inp.addEventListener('input', e => { const n = toNum(e.target.value); n && (e.target.value = fmt(n)); }));
+
+  // تنظیم تاریخ در حالت ویرایش
+  if (isEdit && tx.date) {
+      const d = new Date(tx.date);
+      const j = gregorianToJalali(d.getFullYear(), d.getMonth() + 1, d.getDate());
+      $('#tx-date', m).value = `${j[0]}/${String(j[1]).padStart(2,'0')}/${String(j[2]).padStart(2,'0')}`;
+      $('#tx-date', m).dataset.gregorian = tx.date;
+  }
 
   $('#tx-form', m).addEventListener('submit', async e => {
     e.preventDefault();
@@ -1530,6 +1569,12 @@ window.deleteTx = async (id) => {
     }
 
     try {
+      // اگر در حالت ویرایش بود، اول تراکنش قبلی را حذف می‌کنیم تا اثراتش برگردد
+      if (isEdit) {
+        await T('app_manager_delete_transaction', { p_id: tx.id });
+      }
+      
+      // سپس تراکنش جدید را با اطلاعات جدید ثبت می‌کنیم
       await T('app_manager_create_expense', {
         p_building_id: bid,
         p_description: $('#tx-desc', m).value,
@@ -1541,7 +1586,7 @@ window.deleteTx = async (id) => {
         p_allocations: allocations
       });
       m.remove();
-      toastOk('تراکنش با موفقیت ثبت شد');
+      toastOk(isEdit ? 'تراکنش با موفقیت ویرایش شد' : 'تراکنش با موفقیت ثبت شد');
       go('m_expenses');
     } catch (err) { showErr(err); }
   });
