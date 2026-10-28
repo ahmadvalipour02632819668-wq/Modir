@@ -963,7 +963,6 @@ async function viewSuperAdminBuildings(el) {
    VIEWS: MANAGER
    ============================================================ */
 function allocationLabel(method) { return { area: 'بر اساس متراژ', equal: 'مساوی', residents: 'بر اساس تعداد ساکنین', selected_units: 'واحدهای انتخابی', selected_people: 'افراد انتخابی', manual: 'دستی', fixed: 'مبلغ ثابت', none: 'بدون تسهیم' }[method] || method; }
-
 async function viewManagerDash(el) {
   const m = currentMembership(); if (!m) { el.innerHTML = `<div class="empty">عضو فعال پیدا نشد</div>`; return; }
   const bid = m.building_id;
@@ -1041,14 +1040,39 @@ async function viewManagerDash(el) {
         <span style="font-size:13px;font-weight:900;margin-top:8px;color:${color}">${text}</span>
       </button>`; 
     }).join('')}</div>` : ''}
+
+    <!-- دکمه بازسازی -->
+    <div class="card" style="margin-top:30px; border:1px dashed var(--warning); background:#fffbeb;">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+        <div>
+          <b style="color:#b45309">ابزار مدیریت مالی</b>
+          <div class="sub" style="margin:4px 0 0">اگر ساکنین جدیدی اضافه کرده‌اید و بدهی‌ها را درست نشان نمی‌دهد، از این دکمه استفاده کنید.</div>
+        </div>
+        <button class="btn" id="recalc-btn" style="background:var(--warning); color:#fff;">🔄 بازسازی محاسبات مالی</button>
+      </div>
+    </div>
   `;
   
   $$('[data-go]', el).forEach(b => b.addEventListener('click', () => go(b.dataset.go)));
   $('#go-pay', el)?.addEventListener('click', () => go('m_payments'));
   $('#go-exp', el)?.addEventListener('click', () => go('m_expenses'));
   $$('[data-unit]', el).forEach(b => b.addEventListener('click', () => { const u = unitList.find(x => x.unit_no == b.dataset.unit); if (u) unitDetailsModal(u, bid); }));
-}
 
+  // رویداد کلیک دکمه بازسازی
+  $('#recalc-btn', el)?.addEventListener('click', async () => {
+    if (!await confirmDlg('آیا مطمئن هستید؟ تمام هزینه‌های تسهیمی بر اساس ساکنین و تاریخ‌های عضویت مجدداً محاسبه می‌شوند.')) return;
+    const btn = $('#recalc-btn', el);
+    btn.disabled = true; btn.textContent = 'در حال بازسازی...';
+    try {
+      await T('app_recalculate_expense_allocations', { p_building_id: bid });
+      toastOk('محاسبات با موفقیت بازسازی شد');
+      go('m_dash'); // رفرش صفحه
+    } catch (err) {
+      showErr(err);
+      btn.disabled = false; btn.textContent = '🔄 بازسازی محاسبات مالی';
+    }
+  });
+}
 async function unitDetailsModal(u, bid) {
   let memberSummaries = [];
   for (const mem of u.members) {
