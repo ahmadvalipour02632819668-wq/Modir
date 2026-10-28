@@ -32,24 +32,33 @@ function toastErr(e){let m=e?.message||e?.error_description||JSON.stringify(e);c
 function toastOk(m){const d=document.createElement('div');d.className='ok';d.textContent=m;$('#app').appendChild(d);}
 const tok=()=>sessionStorage.getItem('bm_token');
 const me=()=>{try{return JSON.parse(sessionStorage.getItem('bm_me'))}catch{return null}};
-function num(v){if(v===''||v==null||v===undefined)return null;let n=Number(String(v).replace(/٬|,/g''));return isNaN(n)?null:n;}
+
+// خطای سینتکس اصلی اینجا بود (کاما جا افتاده بود)
+function num(v){
+    if(v===''||v==null||v===undefined)return null;
+    let n=Number(String(v).replace(/[٬,]/g, ''));
+    return isNaN(n)?null:n;
+}
 function intval(v){let n=num(v);return n==null?null:parseInt(n);}
 function gregorianToJalali(g){try{return new Date(g).toLocaleDateString('fa-IR')}catch{return g}}
 function jalaliToday(){return new Date().toLocaleDateString('fa-IR')}
 function jalaliToGregorian(){return null}
 async function rpc(fn,args){const {data,error}=await sb.rpc(fn,args);if(error)throw error;return data;}
+
 const SENS_COLS=['password','pass_hash','password_hash','token','secret','token_hash','password_text'];
+
 // ---- AUTH SCREENS ----
 async function showLogin(){
 $('#bnav').style.display='none';
-$('#app').innerHTML=`<div class=card><h3 style=text-align:center>ورود / ثبت‌نام</h3>
-<label>نام کاربری</label><input id=l_u>
-<label>رمز</label><input id=l_p type=password>
-<button class=main onclick=doLogin()>ورود</button>
-<button class=main style=background:#eee;color:#111 onclick=showRegister()>ثبت‌نام</button>
-<button class=main style=background:#eee;color:#111 onclick=showStatus()>پیگیری وضعیت ثبت‌نام</button>
-<div id=msg></div></div>`;
+$('#app').innerHTML=`<div class="card"><h3 style="text-align:center">ورود / ثبت‌نام</h3>
+<label>نام کاربری</label><input id="l_u">
+<label>رمز</label><input id="l_p" type="password">
+<button class="main" onclick="doLogin()">ورود</button>
+<button class="main" style="background:#eee;color:#111" onclick="showRegister()">ثبت‌نام</button>
+<button class="main" style="background:#eee;color:#111" onclick="showStatus()">پیگیری وضعیت ثبت‌نام</button>
+<div id="msg"></div></div>`;
 }
+
 async function doLogin(){
 try{
 let u=$('#l_u').value.trim(),p=$('#l_p').value;
@@ -59,28 +68,29 @@ sessionStorage.setItem('bm_me',JSON.stringify(d.me));
 afterLogin(d.me);
 }catch(e){toastErr(e)}
 }
+
 async function showRegister(){
 let bl=[];try{bl=await rpc('app_public_buildings',{});}catch(e){}
 if(!Array.isArray(bl)&&bl?.tables)bl=[];
-$('#app').innerHTML=`<div class=card><h3 style=text-align:center>ثبت‌نام</h3>
-<label>نام کاربری</label><input id=r_u>
-<label>رمز</label><input id=r_p type=password>
-<label>نام کامل</label><input id=r_n>
-<label>موبایل</label><input id=r_ph>
-<label>ایمیل</label><input id=r_e>
-<label>نقش درخواستی</label><select id=r_role><option value=resident>ساکن</option><option value=manager>مدیر ساختمان (ساختمان جدید / موجود)</option><option value=super_admin>ادمین</option></select>
-<label>ساختمان (اگر ساکن هستید)</label><select id=r_b><option value=''>-- انتخاب --</option>${(bl||[]).map(b=>`<option value='${b.id}'>${b.name}</option>`).join('')}</select>
-<label>شماره واحد</label><input id=r_un type=number>
-<label>متراژ (مثال 100)</label><input id=r_ar type=number value=100>
-<label>تعداد نفرات ساکن</label><input id=r_rc type=number value=4>
-<label>نام ساختمان جدید (فقط مدیر ساختمان جدید)</label><input id=r_nb>
-<label>تعداد واحد ساختمان جدید</label><input id=r_nbc type=number>
-<button class=main onclick=doRegister()>ثبت‌نام</button>
-<button class=main style=background:#eee;color:#111 onclick=showLogin()>برگشت</button></div>`;
+$('#app').innerHTML=`<div class="card"><h3 style="text-align:center">ثبت‌نام</h3>
+<label>نام کاربری</label><input id="r_u">
+<label>رمز</label><input id="r_p" type="password">
+<label>نام کامل</label><input id="r_n">
+<label>موبایل</label><input id="r_ph">
+<label>ایمیل</label><input id="r_e">
+<label>نقش درخواستی</label><select id="r_role"><option value="resident">ساکن</option><option value="manager">مدیر ساختمان (ساختمان جدید / موجود)</option><option value="super_admin">ادمین</option></select>
+<label>ساختمان (اگر ساکن هستید)</label><select id="r_b"><option value=''>-- انتخاب --</option>${(bl||[]).map(b=>`<option value='${b.id}'>${b.name}</option>`).join('')}</select>
+<label>شماره واحد</label><input id="r_un" type="number">
+<label>متراژ (مثال 100)</label><input id="r_ar" type="number" value="100">
+<label>تعداد نفرات ساکن</label><input id="r_rc" type="number" value="4">
+<label>نام ساختمان جدید (فقط مدیر ساختمان جدید)</label><input id="r_nb">
+<label>تعداد واحد ساختمان جدید</label><input id="r_nbc" type="number">
+<button class="main" onclick="doRegister()">ثبت‌نام</button>
+<button class="main" style="background:#eee;color:#111" onclick="showLogin()">برگشت</button></div>`;
 }
+
 async function doRegister(){
 try{
-// مهم: تبدیل رشته خالی به null تا با uuid/int مچ شود + ترتیب نام پارامتر دقیقاً مثل SQL
 let building_id=$('#r_b').value||null;
 let payload={
 p_username:$('#r_u').value.trim(),
@@ -100,19 +110,23 @@ await rpc('app_submit_registration',payload);
 alert('درخواست ثبت شد، منتظر تایید بمانید');showLogin();
 }catch(e){toastErr(e)}
 }
+
 async function showStatus(){
-$('#app').innerHTML=`<div class=card><label>نام کاربری</label><input id=s_u><button class=main onclick="rpc('app_check_registration_status',{p_username:document.querySelector('#s_u').value}).then(d=>alert(JSON.stringify(d))).catch(e=>toastErr(e))">استعلام</button></div>`;
+$('#app').innerHTML=`<div class="card"><label>نام کاربری</label><input id="s_u"><button class="main" onclick="rpc('app_check_registration_status',{p_username:document.querySelector('#s_u').value}).then(d=>alert(JSON.stringify(d))).catch(e=>toastErr(e))">استعلام</button></div>`;
 }
+
 // ---- SHELL ----
 const DEFAULT_NAV={
 super_admin:['sa_dash','sa_buildings','sa_requests','admin_db','profile'],
 manager:['m_dash','m_payments','m_expenses','m_units','m_requests','m_report','m_transfer','profile'],
 resident:['r_dash','r_pay','r_charges','r_requests','profile']};
-const TITLES={sa_dash:'داشبورد',sa_buildings:'ساختمان‌ها',sa_requests:'درخواست‌ها',admin_db:'دیتابیس',profile:'پروfile',m_dash:'داشبورد مدیر',m_payments:'پرداخت‌ها',m_expenses:'هزینه‌ها',m_units:'واحدها',m_requests:'درخواست‌ها',m_report:'گزارش',m_transfer:'انتقال مدیریت',r_dash:'داشبورد',r_pay:'پرداخت',r_charges:'شارژها',r_requests:'درخواست‌ها',services:'خدمات'};
+const TITLES={sa_dash:'داشبورد',sa_buildings:'ساختمان‌ها',sa_requests:'درخواست‌ها',admin_db:'دیتابیس',profile:'پروفایل',m_dash:'داشبورد مدیر',m_payments:'پرداخت‌ها',m_expenses:'هزینه‌ها',m_units:'واحدها',m_requests:'درخواست‌ها',m_report:'گزارش',m_transfer:'انتقال مدیریت',r_dash:'داشبورد',r_pay:'پرداخت',r_charges:'شارژها',r_requests:'درخواست‌ها',services:'خدمات'};
+
 function afterLogin(m){
-if(m.must_change_password){$('#app').innerHTML=`<div class=card><label>رمز جدید</label><input id=np type=password><button class=main onclick="rpc('app_change_password',{p_token:tok(),p_new_password:document.querySelector('#np').value}).then(()=>location.reload()).catch(e=>toastErr(e))">تغییر رمز</button></div>`;return;}
+if(m.must_change_password){$('#app').innerHTML=`<div class="card"><label>رمز جدید</label><input id="np" type="password"><button class="main" onclick="rpc('app_change_password',{p_token:tok(),p_new_password:document.querySelector('#np').value}).then(()=>location.reload()).catch(e=>toastErr(e))">تغییر رمز</button></div>`;return;}
 renderShell('sa_dash');
 }
+
 function renderShell(view){
 let m=me();let role=m?.role||'resident';
 let navs=DEFAULT_NAV[role]||DEFAULT_NAV.resident;
@@ -120,25 +134,27 @@ $('#bnav').style.display='flex';
 $('#bnav').innerHTML=navs.map(v=>`<button class='${v===view?'on':''}' onclick="renderShell('${v}')">${TITLES[v]||v}</button>`).join('');
 VIEWS[view]();
 }
+
 const VIEWS={
-async sa_dash(){$('#app').innerHTML=`<div class=card>ادمین: ${me()?.username}<div id=c></div></div>`;try{let b=await rpc('app_admin_list_buildings',{p_token:tok()});$('#c').innerHTML='تعداد ساختمان: '+b.length;}catch(e){toastErr(e)}},
-async sa_buildings(){try{let b=await rpc('app_admin_list_buildings',{p_token:tok()});$('#app').innerHTML=`<div class=card><h4>ساختمان‌ها</h4><table>${b.map(x=>`<tr><td>${x.name}</td><td>${x.status}</td></tr>`).join('')}</table></div>`}catch(e){toastErr(e)}},
-async sa_requests(){try{let r=await rpc('app_admin_list_registration_requests',{p_token:tok()});$('#app').innerHTML=`<div class=card><h4>درخواست‌های ثبت‌نام (${r.length})</h4>${r.map(x=>`<div style=border-bottom:1px solid #eee;padding:8px>${x.username} - ${x.requested_role} - ${x.status}<br><button onclick="rpc('app_admin_review_manager_request',{p_token:tok(),p_request_id:'${x.id}',p_approve:true}).then(()=>renderShell('sa_requests')).catch(e=>toastErr(e))">تایید</button> <button onclick="rpc('app_admin_review_manager_request',{p_token:tok(),p_request_id:'${x.id}',p_approve:false}).then(()=>renderShell('sa_requests')).catch(e=>toastErr(e))">رد</button></div>`).join('')}</div>`}catch(e){toastErr(e)}},
-async admin_db(){try{let t=await rpc('app_admin_get_db_tables',{p_token:tok()});$('#app').innerHTML=`<div class=card><h4>جداول</h4>${JSON.stringify(t)}</div>`}catch(e){toastErr(e)}},
-async m_dash(){try{let s=await rpc('app_manager_get_fund_summary',{p_token:tok()});$('#app').innerHTML=`<div class=card><h4>صندوق</h4><div>درآمد: ${s.income}</div><div>هزینه: ${s.expense}</div><div>مانده: ${s.balance}</div><div>امروز شمسی: ${jalaliToday()}</div></div>`}catch(e){toastErr(e)}},
-async m_payments(){try{let p=await rpc('app_manager_list_pending_payments',{p_token:tok()});$('#app').innerHTML=`<div class=card><h4>در انتظار (${p.length})</h4>${p.map(x=>`<div>${x.full_name} - ${x.amount}<button onclick="rpc('app_manager_review_payment',{p_token:tok(),p_payment_id:'${x.id}',p_approve:true}).then(()=>renderShell('m_payments')).catch(e=>toastErr(e))">تایید</button></div>`).join('')}</div>`}catch(e){toastErr(e)}},
-async m_expenses(){$('#app').innerHTML=`<div class=card><h4>ثبت هزینه</h4><label>عنوان</label><input id=e_t><label>مبلغ</label><input id=e_a type=number><label>تاریخ (میلادی YYYY-MM-DD)</label><input id=e_d type=date><button class=main onclick="rpc('app_manager_create_expense',{p_token:tok(),p_title:document.querySelector('#e_t').value,p_amount:Number(document.querySelector('#e_a').value),p_date:document.querySelector('#e_d').value||new Date().toISOString().slice(0,10),p_tx_type:'expense',p_category:'عمومی'}).then(()=>{alert('ثبت شد')}).catch(e=>toastErr(e))">ثبت</button></div>`;try{let t=await rpc('app_manager_get_transactions',{p_token:tok()});$('#app').innerHTML+=`<div class=card><table>${t.map(x=>`<tr><td>${x.title}</td><td>${x.amount}</td><td>${gregorianToJalali(x.date)}</td><td><button onclick="rpc('app_manager_delete_transaction',{p_token:tok(),p_expense_id:'${x.id}'}).then(()=>renderShell('m_expenses')).catch(e=>toastErr(e))">حذف</button></td></tr>`).join('')}</table></div>`}catch(e){}},
-async m_units(){try{let m=await rpc('app_manager_list_building_members',{p_token:tok()});$('#app').innerHTML=`<div class=card><h4>واحدها</h4><table>${m.map(x=>`<tr><td>${x.unit_no}</td><td>${x.full_name}</td><td>${x.unit_area}</td></tr>`).join('')}</table><h4>افزودن واحد + ساکن</h4><input id=u_n placeholder=شماره><input id=u_a placeholder=متراژ><input id=u_r placeholder=نفرات><input id=u_u placeholder=یوزر><input id=u_p placeholder=رمز><input id=u_f placeholder=نام><button class=main onclick="rpc('app_manager_add_unit_and_resident',{p_token:tok(),p_unit_no:Number(document.querySelector('#u_n').value),p_area:Number(document.querySelector('#u_a').value),p_resident_count:Number(document.querySelector('#u_r').value),p_username:document.querySelector('#u_u').value,p_password:document.querySelector('#u_p').value,p_full_name:document.querySelector('#u_f').value}).then(()=>renderShell('m_units')).catch(e=>toastErr(e))">افزودن</button></div>`}catch(e){toastErr(e)}},
-async m_requests(){try{let r=await rpc('app_manager_list_building_requests',{p_token:tok()});$('#app').innerHTML=`<div class=card><h4>درخواست‌های ساختمان</h4>${r.map(x=>`<div>${x.title} - ${x.status}<br><input id=rp_${x.id} placeholder=پاسخ><button onclick="rpc('app_manager_reply_building_request',{p_token:tok(),p_request_id:'${x.id}',p_reply:document.querySelector('#rp_${x.id}').value}).then(()=>renderShell('m_requests')).catch(e=>toastErr(e))">پاسخ</button></div>`).join('')}</div>`}catch(e){toastErr(e)}},
-async m_report(){try{let r=await rpc('app_manager_get_monthly_report',{p_token:tok(),p_year:null,p_month:null});$('#app').innerHTML=`<div class=card id=rep><h4>گزارش</h4><div>هزینه‌ها: ${r.expenses}</div><div>پرداخت‌ها: ${r.payments}</div><button class=main onclick="html2canvas(document.querySelector('#rep')).then(c=>{let a=document.createElement('a');a.href=c.toDataURL();a.download='report.png';a.click()})">خروجی عکس</button></div>`}catch(e){toastErr(e)}},
-async m_transfer(){$('#app').innerHTML=`<div class=card><h4>انتقال مدیریت</h4><input id=t_u placeholder=نام کاربری مدیر جدید><button class=main onclick="rpc('app_manager_transfer_management',{p_token:tok(),p_new_manager_username:document.querySelector('#t_u').value}).then(()=>alert('منتقل شد')).catch(e=>toastErr(e))">انتقال</button></div>`},
-async r_dash(){try{let s=await rpc('app_resident_get_financial_summary',{p_token:tok()});$('#app').innerHTML=`<div class=card><h4>وضعیت مالی</h4><div>بدهی: ${s.debt}</div><div>پرداخت شده: ${s.paid}</div></div>`}catch(e){toastErr(e)}},
-async r_pay(){$('#app').innerHTML=`<div class=card><h4>ثبت پرداخت</h4><input id=p_a type=number placeholder=مبلغ><input id=p_r placeholder=توضیح><button class=main onclick="rpc('app_submit_itemized_payment',{p_token:tok(),p_amount:Number(document.querySelector('#p_a').value),p_receipt_text:document.querySelector('#p_r').value}).then(()=>alert('ثبت شد')).catch(e=>toastErr(e))">ثبت</button></div>`},
-async r_charges(){try{let s=await rpc('app_resident_get_financial_summary',{p_token:tok()});$('#app').innerHTML=`<div class=card>بدهی: ${s.debt} - پرداخت: ${s.paid}</div>`}catch(e){toastErr(e)}},
-async r_requests(){try{let r=await rpc('app_resident_list_building_requests',{p_token:tok()});$('#app').innerHTML=`<div class=card><h4>درخواست‌ها</h4>${r.map(x=>`<div>${x.title} - ${x.reply||x.status}</div>`).join('')}<input id=n_t placeholder=عنوان><input id=n_b placeholder=متن><button class=main onclick="rpc('app_submit_building_request',{p_token:tok(),p_title:document.querySelector('#n_t').value,p_body:document.querySelector('#n_b').value}).then(()=>renderShell('r_requests')).catch(e=>toastErr(e))">ثبت درخواست</button></div>`}catch(e){toastErr(e)}},
-async profile(){let m=me();$('#app').innerHTML=`<div class=card>${m.username}<br><button class=main onclick="rpc('app_logout',{p_token:tok()}).then(()=>{sessionStorage.clear();showLogin()})">خروج</button></div>`},
-async services(){$('#app').innerHTML=`<div class=card>خدمات</div>`}
+async sa_dash(){$('#app').innerHTML=`<div class="card">ادمین: ${me()?.username}<div id="c"></div></div>`;try{let b=await rpc('app_admin_list_buildings',{p_token:tok()});$('#c').innerHTML='تعداد ساختمان: '+b.length;}catch(e){toastErr(e)}},
+async sa_buildings(){try{let b=await rpc('app_admin_list_buildings',{p_token:tok()});$('#app').innerHTML=`<div class="card"><h4>ساختمان‌ها</h4><table>${b.map(x=>`<tr><td>${x.name}</td><td>${x.status}</td></tr>`).join('')}</table></div>`}catch(e){toastErr(e)}},
+async sa_requests(){try{let r=await rpc('app_admin_list_registration_requests',{p_token:tok()});$('#app').innerHTML=`<div class="card"><h4>درخواست‌های ثبت‌نام (${r.length})</h4>${r.map(x=>`<div style="border-bottom:1px solid #eee;padding:8px">${x.username} - ${x.requested_role} - ${x.status}<br><button onclick="rpc('app_admin_review_manager_request',{p_token:tok(),p_request_id:'${x.id}',p_approve:true}).then(()=>renderShell('sa_requests')).catch(e=>toastErr(e))">تایید</button> <button onclick="rpc('app_admin_review_manager_request',{p_token:tok(),p_request_id:'${x.id}',p_approve:false}).then(()=>renderShell('sa_requests')).catch(e=>toastErr(e))">رد</button></div>`).join('')}</div>`}catch(e){toastErr(e)}},
+async admin_db(){try{let t=await rpc('app_admin_get_db_tables',{p_token:tok()});$('#app').innerHTML=`<div class="card"><h4>جداول</h4>${JSON.stringify(t)}</div>`}catch(e){toastErr(e)}},
+async m_dash(){try{let s=await rpc('app_manager_get_fund_summary',{p_token:tok()});$('#app').innerHTML=`<div class="card"><h4>صندوق</h4><div>درآمد: ${s.income}</div><div>هزینه: ${s.expense}</div><div>مانده: ${s.balance}</div><div>امروز شمسی: ${jalaliToday()}</div></div>`}catch(e){toastErr(e)}},
+async m_payments(){try{let p=await rpc('app_manager_list_pending_payments',{p_token:tok()});$('#app').innerHTML=`<div class="card"><h4>در انتظار (${p.length})</h4>${p.map(x=>`<div>${x.full_name} - ${x.amount}<button onclick="rpc('app_manager_review_payment',{p_token:tok(),p_payment_id:'${x.id}',p_approve:true}).then(()=>renderShell('m_payments')).catch(e=>toastErr(e))">تایید</button></div>`).join('')}</div>`}catch(e){toastErr(e)}},
+async m_expenses(){$('#app').innerHTML=`<div class="card"><h4>ثبت هزینه</h4><label>عنوان</label><input id="e_t"><label>مبلغ</label><input id="e_a" type="number"><label>تاریخ (میلادی YYYY-MM-DD)</label><input id="e_d" type="date"><button class="main" onclick="rpc('app_manager_create_expense',{p_token:tok(),p_title:document.querySelector('#e_t').value,p_amount:Number(document.querySelector('#e_a').value),p_date:document.querySelector('#e_d').value||new Date().toISOString().slice(0,10),p_tx_type:'expense',p_category:'عمومی'}).then(()=>{alert('ثبت شد')}).catch(e=>toastErr(e))">ثبت</button></div>`;try{let t=await rpc('app_manager_get_transactions',{p_token:tok()});$('#app').innerHTML+=`<div class="card"><table>${t.map(x=>`<tr><td>${x.title}</td><td>${x.amount}</td><td>${gregorianToJalali(x.date)}</td><td><button onclick="rpc('app_manager_delete_transaction',{p_token:tok(),p_expense_id:'${x.id}'}).then(()=>renderShell('m_expenses')).catch(e=>toastErr(e))">حذف</button></td></tr>`).join('')}</table></div>`}catch(e){}},
+async m_units(){try{let m=await rpc('app_manager_list_building_members',{p_token:tok()});$('#app').innerHTML=`<div class="card"><h4>واحدها</h4><table>${m.map(x=>`<tr><td>${x.unit_no}</td><td>${x.full_name}</td><td>${x.unit_area}</td></tr>`).join('')}</table><h4>افزودن واحد + ساکن</h4><input id="u_n" placeholder="شماره"><input id="u_a" placeholder="متراژ"><input id="u_r" placeholder="نفرات"><input id="u_u" placeholder="یوزر"><input id="u_p" placeholder="رمز"><input id="u_f" placeholder="نام"><button class="main" onclick="rpc('app_manager_add_unit_and_resident',{p_token:tok(),p_unit_no:Number(document.querySelector('#u_n').value),p_area:Number(document.querySelector('#u_a').value),p_resident_count:Number(document.querySelector('#u_r').value),p_username:document.querySelector('#u_u').value,p_password:document.querySelector('#u_p').value,p_full_name:document.querySelector('#u_f').value}).then(()=>renderShell('m_units')).catch(e=>toastErr(e))">افزودن</button></div>`}catch(e){toastErr(e)}},
+async m_requests(){try{let r=await rpc('app_manager_list_building_requests',{p_token:tok()});$('#app').innerHTML=`<div class="card"><h4>درخواست‌های ساختمان</h4>${r.map(x=>`<div>${x.title} - ${x.status}<br><input id="rp_${x.id}" placeholder="پاسخ"><button onclick="rpc('app_manager_reply_building_request',{p_token:tok(),p_request_id:'${x.id}',p_reply:document.querySelector('#rp_${x.id}').value}).then(()=>renderShell('m_requests')).catch(e=>toastErr(e))">پاسخ</button></div>`).join('')}</div>`}catch(e){toastErr(e)}},
+async m_report(){try{let r=await rpc('app_manager_get_monthly_report',{p_token:tok(),p_year:null,p_month:null});$('#app').innerHTML=`<div class="card" id="rep"><h4>گزارش</h4><div>هزینه‌ها: ${r.expenses}</div><div>پرداخت‌ها: ${r.payments}</div><button class="main" onclick="html2canvas(document.querySelector('#rep')).then(c=>{let a=document.createElement('a');a.href=c.toDataURL();a.download='report.png';a.click()})">خروجی عکس</button></div>`}catch(e){toastErr(e)}},
+async m_transfer(){$('#app').innerHTML=`<div class="card"><h4>انتقال مدیریت</h4><input id="t_u" placeholder="نام کاربری مدیر جدید"><button class="main" onclick="rpc('app_manager_transfer_management',{p_token:tok(),p_new_manager_username:document.querySelector('#t_u').value}).then(()=>alert('منتقل شد')).catch(e=>toastErr(e))">انتقال</button></div>`},
+async r_dash(){try{let s=await rpc('app_resident_get_financial_summary',{p_token:tok()});$('#app').innerHTML=`<div class="card"><h4>وضعیت مالی</h4><div>بدهی: ${s.debt}</div><div>پرداخت شده: ${s.paid}</div></div>`}catch(e){toastErr(e)}},
+async r_pay(){$('#app').innerHTML=`<div class="card"><h4>ثبت پرداخت</h4><input id="p_a" type="number" placeholder="مبلغ"><input id="p_r" placeholder="توضیح"><button class="main" onclick="rpc('app_submit_itemized_payment',{p_token:tok(),p_amount:Number(document.querySelector('#p_a').value),p_receipt_text:document.querySelector('#p_r').value}).then(()=>alert('ثبت شد')).catch(e=>toastErr(e))">ثبت</button></div>`},
+async r_charges(){try{let s=await rpc('app_resident_get_financial_summary',{p_token:tok()});$('#app').innerHTML=`<div class="card">بدهی: ${s.debt} - پرداخت: ${s.paid}</div>`}catch(e){toastErr(e)}},
+async r_requests(){try{let r=await rpc('app_resident_list_building_requests',{p_token:tok()});$('#app').innerHTML=`<div class="card"><h4>درخواست‌ها</h4>${r.map(x=>`<div>${x.title} - ${x.reply||x.status}</div>`).join('')}<input id="n_t" placeholder="عنوان"><input id="n_b" placeholder="متن"><button class="main" onclick="rpc('app_submit_building_request',{p_token:tok(),p_title:document.querySelector('#n_t').value,p_body:document.querySelector('#n_b').value}).then(()=>renderShell('r_requests')).catch(e=>toastErr(e))">ثبت درخواست</button></div>`}catch(e){toastErr(e)}},
+async profile(){let m=me();$('#app').innerHTML=`<div class="card">${m.username}<br><button class="main" onclick="rpc('app_logout',{p_token:tok()}).then(()=>{sessionStorage.clear();showLogin()})">خروج</button></div>`},
+async services(){$('#app').innerHTML=`<div class="card">خدمات</div>`}
 };
+
 window.doLogin=doLogin;window.showRegister=showRegister;window.showLogin=showLogin;window.showStatus=showStatus;window.doRegister=doRegister;window.renderShell=renderShell;window.rpc=rpc;window.tok=tok;window.toastErr=toastErr;
 if(tok()&&me()){renderShell((DEFAULT_NAV[me().role]||['r_dash'])[0]);}else{showLogin();}
 </script>
