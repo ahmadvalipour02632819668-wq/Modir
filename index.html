@@ -32,7 +32,7 @@ function toastErr(e){let m=e?.message||e?.error_description||JSON.stringify(e);c
 function toastOk(m){const d=document.createElement('div');d.className='ok';d.textContent=m;$('#app').appendChild(d);}
 const tok=()=>sessionStorage.getItem('bm_token');
 const me=()=>{try{return JSON.parse(sessionStorage.getItem('bm_me'))}catch{return null}};
-function num(v){if(v===''||v==null||v===undefined)return null;let n=Number(String(v).replace(/٬|,/g''));return isNaN(n)?null:n;}
+function num(v){if(v===''||v==null||v===undefined)return null;let n=Number(String(v).replace((/٬|,/g''));return isNaN(n)?null:n;}
 function intval(v){let n=num(v);return n==null?null:parseInt(n);}
 function gregorianToJalali(g){try{return new Date(g).toLocaleDateString('fa-IR')}catch{return g}}
 function jalaliToday(){return new Date().toLocaleDateString('fa-IR')}
