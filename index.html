@@ -1120,11 +1120,45 @@ async function viewManagerPendingSignups(el) {
   const m = currentMembership(); if (!m) return;
   const r = await T('app_manager_list_resident_requests');
   const list = r || [];
+  
   el.innerHTML = `<h1>تایید ثبت‌نام‌ها</h1><p class="sub">${fa(list.length)} درخواست در انتظار بررسی</p>${list.length ? `<div class="grid g2">${list.map(r => `<div class="card"><div style="display:flex;justify-content:space-between;gap:8px;margin-bottom:10px;flex-wrap:wrap"><b>${esc(r.full_name)}</b><span class="chip pd">${RESIDENT_TYPES[r.requested_role] || r.requested_role}</span></div><div class="sub" style="margin:0 0 10px;line-height:1.9">نام کاربری: <b dir="ltr">${esc(r.username)}</b><br>واحد: ${fa(r.unit_no)} · متراژ: ${fa(r.area)}${r.resident_count ? ` · ساکنین: ${fa(r.resident_count)}` : ''}<br>موبایل: ${esc(r.phone || '—')} · ایمیل: ${esc(r.email || '—')}</div><div style="display:flex;gap:8px"><button class="btn sm" data-ok="${r.id}">تایید</button><button class="btn rd sm" data-no="${r.id}">رد</button></div></div>`).join('')}</div>` : `<div class="empty"><div class="ico">📭</div><p>درخواستی وجود ندارد</p></div>`}`;
-  $$('[data-ok]', el).forEach(b => b.addEventListener('click', async () => { if (!await confirmDlg('تایید این ثبت‌نام؟')) return; try { await T('app_manager_review_resident_request', { p_request_id: b.dataset.ok, p_approve: true }); toastOk('تایید شد'); go('m_requests_pending'); } catch (err) { showErr(err); } }));
-  $$('[data-no]', el).forEach(b => b.addEventListener('click', async () => { const note = await promptDlg('دلیل رد (اختیاری):'); if (note === null) return; T('app_manager_review_resident_request', { p_request_id: b.dataset.no, p_approve: false, p_review_note: note || null }).then(() => { toastOk('رد شد'); go('m_requests_pending'); }).catch(showErr); }));
+  
+  $$('[data-ok]', el).forEach(b => b.addEventListener('click', () => {
+    // فرم انتخاب تاریخ
+    const modalBg = modal(`
+      <h2>تایید ثبت‌نام</h2>
+      <p class="sub">لطفاً مشخص کنید از چه تاریخی این واحد مشمول هزینه‌ها و شارژ می‌شود.</p>
+      <label class="f">تاریخ شروع محاسبه<input id="join-date" class="date-picker-input" readonly required></label>
+      <div style="display:flex;gap:10px;margin-top:20px">
+        <button class="btn" id="do-approve" style="flex:1">تایید و ثبت</button>
+        <button class="btn lt" onclick="this.closest('.modal-bg').remove()">انصراف</button>
+      </div>
+    `);
+    bindDatePickers(modalBg);
+    
+    $('#do-approve', modalBg).addEventListener('click', async () => {
+      const joinDate = $('#join-date', modalBg).dataset.gregorian;
+      if (!joinDate) { toastErr('تاریخ را انتخاب کنید'); return; }
+      
+      try {
+        await T('app_manager_review_resident_request', { 
+          p_request_id: b.dataset.ok, 
+          p_approve: true,
+          p_join_date: joinDate
+        });
+        modalBg.remove();
+        toastOk('تایید شد');
+        go('m_requests_pending');
+      } catch (err) { showErr(err); }
+    });
+  }));
+  
+  $$('[data-no]', el).forEach(b => b.addEventListener('click', async () => { 
+    const note = await promptDlg('دلیل رد (اختیاری):'); if (note === null) return; 
+    T('app_manager_review_resident_request', { p_request_id: b.dataset.no, p_approve: false, p_review_note: note || null }).then(() => { toastOk('رد شد'); go('m_requests_pending'); }).catch(showErr); 
+  }));
 }
-async function viewManagerUnits(el) {
+ async function viewManagerUnits(el) {
   const m = currentMembership(); if (!m) return;
   const r = await T('app_manager_list_building_members', { p_building_id: m.building_id });
   const members = (r.members || []).filter(x => x.access_role === 'resident');
