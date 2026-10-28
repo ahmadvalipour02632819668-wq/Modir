@@ -1246,7 +1246,7 @@ async function viewManagerUnits(el) {
 window.deleteTx = async (id) => {
     if (!await confirmDlg('آیا از حذف این تراکنش مطمئن هستید؟')) return;
     toastOk('در نسخه بعدی پیاده‌سازی می‌شود');
-};function newTransactionModal(bid, members) {
+};function function newTransactionModal(bid, members) {
   const incCats = ['شارژ ماهیانه', 'پس‌انداز', 'جریمه', 'سایر'];
   const expCats = ['نظافت', 'سرویس آسانسور', 'تعمیرات', 'قبض آب', 'قبض گاز', 'قبض برق', 'سایر'];
 
@@ -1269,7 +1269,7 @@ window.deleteTx = async (id) => {
         <input id="tx-desc" placeholder="مثلاً شارژ آبان یا تعمیر آسانسور" required>
       </label>
 
-      <label class="f">مبلغ (تومان)
+      <label class="f"><span id="tx-amount-label">مبلغ (تومان)</span>
         <input id="tx-amount" inputmode="numeric" required>
         <small id="tx-amount-hint" style="color:var(--muted); font-weight:normal; margin-top:4px;"></small>
       </label>
@@ -1278,6 +1278,7 @@ window.deleteTx = async (id) => {
         <input id="tx-date" class="date-picker-input" readonly required>
       </label>
 
+      <!-- بخش مخصوص هزینه -->
       <div id="tx-expense-split-wrap" style="display:none; margin-top:8px; padding:12px; background:var(--bg); border-radius:12px; border:1px solid var(--line)">
         <label class="f" style="margin-bottom:8px; color:var(--ink)">آیا این هزینه تسهیمی است؟</label>
         <select id="tx-is-split" style="margin-bottom:10px;">
@@ -1285,17 +1286,30 @@ window.deleteTx = async (id) => {
           <option value="no">خیر، فقط از صندوق کسر شود</option>
         </select>
         
-        <div id="tx-split-methods" style="display:none;">
+        <div id="tx-expense-methods" style="display:none;">
           <label class="f" style="margin-bottom:8px; color:var(--ink)">روش تسهیم:</label>
-          <select id="tx-method" style="margin-bottom:10px;">
-            <option value="fixed">مبلغ ثابت برای هر واحد</option>
-            <option value="area">بر اساس متراژ</option>
-            <option value="residents">بر اساس نفرات</option>
-            <option value="selected">واحدهای خاص (انتخابی)</option>
+          <select id="tx-exp-method" style="margin-bottom:10px;">
+            <option value="equal">مساوی (مبلغ کل ÷ تعداد واحد)</option>
+            <option value="area">بر اساس نسبت متراژ</option>
+            <option value="residents">بر اساس نسبت نفرات</option>
+            <option value="per_unit">مبلغ ثابت برای هر واحد</option>
+            <option value="selected">واحدهای خاص (مساوی)</option>
           </select>
         </div>
       </div>
 
+      <!-- بخش مخصوص درآمد -->
+      <div id="tx-income-methods" style="margin-top:8px; padding:12px; background:var(--bg); border-radius:12px; border:1px solid var(--line)">
+        <label class="f" style="margin-bottom:8px; color:var(--ink)">روش محاسبه شارژ:</label>
+        <select id="tx-inc-method" style="margin-bottom:10px;">
+          <option value="per_unit">مبلغ ثابت برای هر واحد</option>
+          <option value="per_meter">مبلغ به ازای هر متر مربع</option>
+          <option value="per_resident">مبلغ به ازای هر نفر</option>
+          <option value="total_equal">مبلغ کل تقسیم مساوی</option>
+        </select>
+      </div>
+
+      <!-- بخش انتخاب مسئول پرداخت -->
       <div id="tx-alloc-wrap" style="display:none; margin-top:8px; padding:12px; background:var(--bg); border-radius:12px; border:1px solid var(--line); max-height:250px; overflow-y:auto;">
         <label class="f" style="margin-bottom:8px; color:var(--ink)" id="tx-alloc-label">مسئول پرداخت:</label>
         
@@ -1328,31 +1342,33 @@ window.deleteTx = async (id) => {
 
   bindDatePickers(m);
   const typeSel = $('#tx-type', m), catSel = $('#tx-cat', m);
-  const splitWrap = $('#tx-expense-split-wrap', m), splitSel = $('#tx-is-split', m), methodsWrap = $('#tx-split-methods', m), methodSel = $('#tx-method', m);
+  const splitWrap = $('#tx-expense-split-wrap', m), splitSel = $('#tx-is-split', m);
+  const expMethodsWrap = $('#tx-expense-methods', m), expMethodSel = $('#tx-exp-method', m);
+  const incMethodsWrap = $('#tx-income-methods', m), incMethodSel = $('#tx-inc-method', m);
   const allocWrap = $('#tx-alloc-wrap', m), occList = $('#tx-occ-list', m), unitList = $('#tx-unit-list', m), allocLabel = $('#tx-alloc-label', m);
-  const amountHint = $('#tx-amount-hint', m);
+  const amountHint = $('#tx-amount-hint', m), amountLabel = $('#tx-amount-label', m);
 
   const updateUI = () => {
     const isInc = typeSel.value === 'درآمد';
     const isSplit = splitSel.value === 'yes';
-    const method = methodSel.value;
     
     catSel.innerHTML = (isInc ? incCats : expCats).map(c => `<option value="${c}">${c}</option>`).join('');
     
     splitWrap.style.display = isInc ? 'none' : 'block';
-    methodsWrap.style.display = (!isInc && isSplit) ? 'block' : 'none';
+    incMethodsWrap.style.display = isInc ? 'block' : 'none';
+    expMethodsWrap.style.display = (!isInc && isSplit) ? 'block' : 'none';
     
     if (isInc) {
       allocWrap.style.display = 'block';
       occList.style.display = 'flex';
       unitList.style.display = 'none';
       allocLabel.textContent = 'مسئول پرداخت (بر اساس نوع سکونت):';
-    } else if (isSplit && method === 'selected') {
+    } else if (isSplit && expMethodSel.value === 'selected') {
       allocWrap.style.display = 'block';
       occList.style.display = 'none';
       unitList.style.display = 'flex';
       allocLabel.textContent = 'انتخاب واحدهای مشمول هزینه:';
-    } else if (isSplit && method !== 'selected') {
+    } else if (isSplit) {
       allocWrap.style.display = 'block';
       occList.style.display = 'flex';
       unitList.style.display = 'none';
@@ -1367,34 +1383,49 @@ window.deleteTx = async (id) => {
   const updateHint = () => {
     const isInc = typeSel.value === 'درآمد';
     const isSplit = splitSel.value === 'yes';
-    const m = methodSel.value;
     
-    if (!isInc && !isSplit) {
+    if (isInc) {
+      const im = incMethodSel.value;
+      if (im === 'per_unit') {
+        amountLabel.textContent = 'مبلغ به ازای هر واحد (تومان)';
+        amountHint.textContent = 'مبلغی که وارد می‌کنید، سهم هر واحد است. مثال: ۵۰۰,۰۰۰ = هر واحد ۵۰۰,۰۰۰ تومان';
+      } else if (im === 'per_meter') {
+        amountLabel.textContent = 'مبلغ به ازای هر متر مربع (تومان)';
+        amountHint.textContent = 'مبلغی که وارد می‌کنید برای هر متر محاسبه می‌شود. مثال: ۵,۰۰۰ × ۱۰۰ متر = ۵۰۰,۰۰۰ تومان';
+      } else if (im === 'per_resident') {
+        amountLabel.textContent = 'مبلغ به ازای هر نفر (تومان)';
+        amountHint.textContent = 'مبلغی که وارد می‌کنید برای هر نفر محاسبه می‌شود. مثال: ۱۰۰,۰۰۰ × ۳ نفر = ۳۰۰,۰۰۰ تومان';
+      } else {
+        amountLabel.textContent = 'مبلغ کل (تومان)';
+        amountHint.textContent = 'مبلغی که وارد می‌کنید، بین واحدهای انتخاب‌شده به صورت مساوی تقسیم می‌شود.';
+      }
+    } else if (isSplit) {
+      const em = expMethodSel.value;
+      amountLabel.textContent = 'مبلغ کل (تومان)';
+      if (em === 'equal') amountHint.textContent = 'مبلغ کل، بین واحدهای انتخاب‌شده مساوی تقسیم می‌شود. مثال: قبض ۳۰۰,۰۰۰ ÷ ۳ واحد = ۱۰۰,۰۰۰ هر واحد';
+      else if (em === 'area') amountHint.textContent = 'مبلغ کل، به نسبت متراژ هر واحد تقسیم می‌شود.';
+      else if (em === 'residents') amountHint.textContent = 'مبلغ کل، به نسبت تعداد نفرات هر واحد تقسیم می‌شود. مثال: قبض آب ۱۰۰,۰۰۰ با ۹ نفر → هر نفر ۱۱,۱۱۱';
+      else if (em === 'per_unit') amountHint.textContent = 'مبلغی که وارد می‌کنید، سهم هر واحد است. مثال: نظافت ۵۰۰,۰۰۰ = هر واحد ۵۰۰,۰۰۰ تومان';
+      else if (em === 'selected') amountHint.textContent = 'مبلغ کل، بین واحدهای انتخاب‌شده مساوی تقسیم می‌شود.';
+    } else {
+      amountLabel.textContent = 'مبلغ کل (تومان)';
       amountHint.textContent = 'این مبلغ مستقیماً از صندوق کسر می‌شود و بدهی برای ساکنین ایجاد نمی‌کند.';
-    } else if (m === 'fixed') {
-      amountHint.textContent = 'مبلغی که وارد می‌کنید، برای هر واحد به صورت ثابت محاسبه می‌شود.';
-    } else if (m === 'area') {
-      amountHint.textContent = 'مبلغی که وارد می‌کنید، به ازای هر متر مربع محاسبه می‌شود.';
-    } else if (m === 'residents') {
-      amountHint.textContent = 'مبلغی که وارد می‌کنید، به ازای هر نفر ساکن محاسبه می‌شود. (واحدهای بدون سکنه نادیده گرفته می‌شوند)';
-    } else if (m === 'selected') {
-      amountHint.textContent = 'مبلغی که وارد می‌کنید، بین واحدهایی که در پایین انتخاب می‌کنید (به صورت مساوی) تقسیم می‌شود.';
     }
   };
 
   typeSel.addEventListener('change', updateUI);
   splitSel.addEventListener('change', updateUI);
-  methodSel.addEventListener('change', updateUI);
+  incMethodSel.addEventListener('change', updateUI);
+  expMethodSel.addEventListener('change', updateUI);
   updateUI();
 
-  $$('#tx-amount', m).forEach(inp => inp.addEventListener('input', e => { const n = toNum(e.target.value); e.target.value = n ? fmt(n) : ''; }));
+  $$('#tx-amount', m).forEach(inp => inp.addEventListener('input', e => { const n = toNum(e.target.value); n && (e.target.value = fmt(n)); }));
 
   $('#tx-form', m).addEventListener('submit', async e => {
     e.preventDefault();
     const amount = toNum($('#tx-amount', m).value);
     const type = typeSel.value;
     const isSplit = splitSel.value === 'yes';
-    const method = methodSel.value;
     
     if (amount <= 0) { toastErr('مبلغ وارد شده باید بیشتر از صفر باشد'); return; }
 
@@ -1402,54 +1433,93 @@ window.deleteTx = async (id) => {
     let finalDbMethod = 'none';
     let totalAmountToSend = amount;
 
-    if (type === 'درآمد' || (isSplit && method !== 'selected')) {
+    if (type === 'درآمد') {
       const selectedOccTypes = [];
       $$('.occ-check', m).forEach(cb => { if (cb.checked) selectedOccTypes.push(cb.value); });
       if (selectedOccTypes.length === 0) { toastErr('حداقل یک نوع سکونت را انتخاب کنید'); return; }
       
-      let targetMembers = members.filter(x => x.access_role === 'resident' && selectedOccTypes.includes(x.resident_type));
+      const targetMembers = members.filter(x => x.access_role === 'resident' && selectedOccTypes.includes(x.resident_type));
+      if (targetMembers.length === 0) { toastErr('هیچ ساکنی با این ویژگی‌ها پیدا نشد'); return; }
+
+      const im = incMethodSel.value;
       
-      // فیلتر کردن واحدهای بدون نفرات (در صورت انتخاب روش بر اساس نفرات)
-      if (method === 'residents') {
-        targetMembers = targetMembers.filter(mem => Number(mem.unit_resident_count) > 0);
+      if (im === 'per_unit') {
+        totalAmountToSend = amount * targetMembers.length;
+        finalDbMethod = 'manual';
+        targetMembers.forEach(mem => allocations.push({ membership_id: mem.membership_id, amount: amount }));
+      } else if (im === 'per_meter') {
+        let total = 0;
+        targetMembers.forEach(mem => {
+          const area = Number(mem.unit_area) || 0;
+          if (area > 0) {
+            const share = amount * area;
+            allocations.push({ membership_id: mem.membership_id, amount: share });
+            total += share;
+          }
+        });
+        if (total === 0) { toastErr('متراژ برای واحدهای انتخاب‌شده ثبت نشده است'); return; }
+        totalAmountToSend = total;
+        finalDbMethod = 'manual';
+      } else if (im === 'per_resident') {
+        let total = 0;
+        targetMembers.forEach(mem => {
+          const cnt = Number(mem.unit_resident_count) || 0;
+          if (cnt > 0) {
+            const share = amount * cnt;
+            allocations.push({ membership_id: mem.membership_id, amount: share });
+            total += share;
+          }
+        });
+        if (total === 0) { toastErr('تعداد نفرات برای واحدهای انتخاب‌شده ثبت نشده است.'); return; }
+        totalAmountToSend = total;
+        finalDbMethod = 'manual';
+      } else {
+        totalAmountToSend = amount;
+        finalDbMethod = 'equal';
+        targetMembers.forEach(mem => allocations.push({ membership_id: mem.membership_id }));
       }
 
-      if (targetMembers.length === 0) { toastErr('هیچ ساکنی با این ویژگی‌ها و تعداد نفرات معتبر پیدا نشد. لطفاً ابتدا تعداد نفرات را در بخش واحدها وارد کنید.'); return; }
-
-      if (method === 'fixed') {
-        totalAmountToSend = amount * targetMembers.length;
-        finalDbMethod = 'manual'; 
-        targetMembers.forEach(mem => allocations.push({ membership_id: mem.membership_id, amount: amount }));
-      } else if (method === 'area') {
-        totalAmountToSend = targetMembers.reduce((sum, mem) => sum + (amount * (Number(mem.unit_area) || 1)), 0);
-        finalDbMethod = 'area';
-        targetMembers.forEach(mem => allocations.push({ membership_id: mem.membership_id }));
-      } else if (method === 'residents') {
-        totalAmountToSend = targetMembers.reduce((sum, mem) => sum + (amount * Number(mem.unit_resident_count)), 0);
-        finalDbMethod = 'residents';
-        targetMembers.forEach(mem => allocations.push({ membership_id: mem.membership_id }));
-      } else if (type === 'درآمد' && method === 'none') {
-        totalAmountToSend = amount * targetMembers.length;
-        finalDbMethod = 'manual'; 
-        targetMembers.forEach(mem => allocations.push({ membership_id: mem.membership_id, amount: amount }));
-      }
-
-    } else if (isSplit && method === 'selected') {
-      const selectedUnits = [];
-      $$('.unit-check', m).forEach(cb => { if (cb.checked) selectedUnits.push(cb.value); });
-      if (selectedUnits.length === 0) { toastErr('حداقل یک واحد را انتخاب کنید'); return; }
+    } else if (isSplit) {
+      const selectedOccTypes = [];
+      $$('.occ-check', m).forEach(cb => { if (cb.checked) selectedOccTypes.push(cb.value); });
+      const em = expMethodSel.value;
       
+      if (em === 'selected') {
+        const selectedUnits = [];
+        $$('.unit-check', m).forEach(cb => { if (cb.checked) selectedUnits.push(cb.value); });
+        if (selectedUnits.length === 0) { toastErr('حداقل یک واحد را انتخاب کنید'); return; }
+        totalAmountToSend = amount;
+        finalDbMethod = 'equal';
+        selectedUnits.forEach(mid => allocations.push({ membership_id: mid }));
+      } else {
+        if (selectedOccTypes.length === 0) { toastErr('حداقل یک نوع سکونت را انتخاب کنید'); return; }
+        const targetMembers = members.filter(x => x.access_role === 'resident' && selectedOccTypes.includes(x.resident_type));
+        if (targetMembers.length === 0) { toastErr('هیچ ساکنی پیدا نشد'); return; }
+
+        if (em === 'per_unit') {
+          totalAmountToSend = amount * targetMembers.length;
+          finalDbMethod = 'manual';
+          targetMembers.forEach(mem => allocations.push({ membership_id: mem.membership_id, amount: amount }));
+        } else if (em === 'residents') {
+          const totalResidents = targetMembers.reduce((sum, mem) => sum + Number(mem.unit_resident_count || 0), 0);
+          if (totalResidents === 0) { toastErr('تعداد نفرات برای واحدهای انتخاب‌شده ثبت نشده است.'); return; }
+          totalAmountToSend = amount;
+          finalDbMethod = 'residents';
+          targetMembers.forEach(mem => allocations.push({ membership_id: mem.membership_id }));
+        } else if (em === 'area') {
+          totalAmountToSend = amount;
+          finalDbMethod = 'area';
+          targetMembers.forEach(mem => allocations.push({ membership_id: mem.membership_id }));
+        } else {
+          totalAmountToSend = amount;
+          finalDbMethod = 'equal';
+          targetMembers.forEach(mem => allocations.push({ membership_id: mem.membership_id }));
+        }
+      }
+    } else {
       totalAmountToSend = amount;
-      finalDbMethod = 'manual';
-      
-      const perUnit = amount / selectedUnits.length;
-      selectedUnits.forEach(mid => allocations.push({ membership_id: mid, amount: perUnit }));
-    }
-
-    // محافظ نهایی: اگر مبلغ کل صفر شد، به دیتابیس نفرست
-    if (totalAmountToSend <= 0) {
-      toastErr('مبلغ نهایی صفر است. لطفاً بررسی کنید تعداد نفرات یا متراژ واحدها ثبت شده باشد.');
-      return;
+      finalDbMethod = 'none';
+      allocations = [];
     }
 
     try {
