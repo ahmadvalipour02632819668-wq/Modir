@@ -1277,7 +1277,7 @@ function editMemberModal(mem, bid) {
     } catch (err) { showErr(err); }
   });
 }
- async function viewManagerExpenses(el) {
+async function viewManagerExpenses(el) {
   const m = currentMembership(); if (!m) return;
   const bid = m.building_id;
   
@@ -1311,7 +1311,7 @@ function editMemberModal(mem, bid) {
 
     <div class="tbl-wrap">
       <table>
-        <thead><tr><th>تاریخ</th><th>واحد</th><th>نوع</th><th>دسته</th><th>شرح</th><th>مبلغ</th><th>سکونت</th><th>عملیات</th></tr></thead>
+        <thead><tr><th>تاریخ</th><th>واحد</th><th>نوع</th><th>دسته</th><th>شرح</th><th>مبلغ کل</th><th>سکونت</th><th>عملیات</th></tr></thead>
         <tbody id="tx-list"><tr><td colspan="8" style="text-align:center">در حال بارگذاری...</td></tr></tbody>
       </table>
     </div>
@@ -1325,21 +1325,12 @@ function editMemberModal(mem, bid) {
     try {
       let gYear = null, gMonth = null;
       if (y) {
-         if (m) {
-            const g = jalaliToGregorian(+y, +m, 1);
-            gYear = g.getFullYear(); gMonth = g.getMonth() + 1;
-         } else {
-            gYear = jalaliToGregorian(+y, 1, 1).getFullYear();
-         }
+         if (m) { const g = jalaliToGregorian(+y, +m, 1); gYear = g.getFullYear(); gMonth = g.getMonth() + 1; }
+         else { gYear = jalaliToGregorian(+y, 1, 1).getFullYear(); }
       }
 
-      // دریافت لیست خام از دیتابیس
       const rawList = await T('app_manager_get_transactions', { 
-        p_building_id: bid, 
-        p_year: gYear, 
-        p_month: gMonth, 
-        p_type: t || null, 
-        p_unit_no: u ? +u : null 
+        p_building_id: bid, p_year: gYear, p_month: gMonth, p_type: t || null, p_unit_no: u ? +u : null 
       });
 
       if (!rawList || !rawList.length) {
@@ -1347,51 +1338,24 @@ function editMemberModal(mem, bid) {
         return;
       }
 
-      // ⚠️ پردازش و ادغام ردیف‌ها در سمت جاوااسکریپت
+      // ادغام ردیف‌ها
       const grouped = {};
       rawList.forEach(tx => {
-          if (!grouped[tx.id]) {
-              grouped[tx.id] = {
-                  id: tx.id,
-                  date: tx.date,
-                  description: tx.description,
-                  amount: tx.amount, // مبلغ کل تراکنش
-                  type: tx.type,
-                  category: tx.category,
-                  units: new Set(), // برای ذخیره واحدهایی که در این تراکنش شریکند
-                  occupancies: new Set() // برای ذخیره نوع سکونت مسئولین پرداخت
-              };
-          }
+          if (!grouped[tx.id]) grouped[tx.id] = { ...tx, units: new Set(), occupancies: new Set() };
           if (tx.unit_no) grouped[tx.id].units.add(tx.unit_no);
           if (tx.occupancy) grouped[tx.id].occupancies.add(tx.occupancy);
       });
 
-      // تبدیل به آرایه و مرتب‌سازی بر اساس تاریخ
       const list = Object.values(grouped).sort((a, b) => new Date(b.date) - new Date(a.date));
 
       tbody.innerHTML = list.map(tx => {
         const isInc = tx.type === 'درآمد';
         const badge = isInc ? '<span class="chip ok">درآمد</span>' : '<span class="chip no">هزینه</span>';
-        
-        const d = new Date(tx.date);
-        const j = gregorianToJalali(d.getFullYear(), d.getMonth() + 1, d.getDate());
+        const d = new Date(tx.date); const j = gregorianToJalali(d.getFullYear(), d.getMonth() + 1, d.getDate());
         const dateStr = `${fa(j[0])}/${String(j[1]).padStart(2,'0')}/${String(j[2]).padStart(2,'0')}`;
 
-        // ۱. منطق ستون واحد: اگر بیش از یک واحد بود یا واحدی نبود، بنویس «ساختمان»
-        let unitLabel = '';
-        if (tx.units.size === 0) {
-            unitLabel = '<b>ساختمان</b>';
-        } else if (tx.units.size === 1) {
-            unitLabel = `واحد ${fa(Array.from(tx.units)[0])}`;
-        } else {
-            unitLabel = '<b>ساختمان</b>';
-        }
-
-        // ۲. منطق ستون سکونت: نوع سکونت مسئولین پرداخت را نشان بده
-        let occLabel = '—';
-        if (tx.occupancies.size > 0) {
-            occLabel = Array.from(tx.occupancies).map(o => RESIDENT_TYPES[o] || o).join(' ، ');
-        }
+        let unitLabel = tx.units.size === 1 ? `واحد ${fa(Array.from(tx.units)[0])}` : '<b>ساختمان</b>';
+        let occLabel = tx.occupancies.size > 0 ? Array.from(tx.occupancies).map(o => RESIDENT_TYPES[o] || o).join(' ، ') : '—';
 
         return `<tr>
           <td>${dateStr}</td>
@@ -1409,10 +1373,7 @@ function editMemberModal(mem, bid) {
           </td>
         </tr>`;
       }).join('');
-
-    } catch (e) {
-      tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:red">${esc(e.message)}</td></tr>`;
-    }
+    } catch (e) { tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:red">${esc(e.message)}</td></tr>`; }
   };
 
   $('#f-y', el).addEventListener('change', loadTx);
@@ -1420,8 +1381,160 @@ function editMemberModal(mem, bid) {
   $('#f-t', el).addEventListener('change', loadTx);
   $('#f-u', el).addEventListener('change', loadTx);
   $('#new-tx', el).addEventListener('click', () => newTransactionModal(bid, members));
-
   loadTx();
+}
+
+// ⚠️ توابع ویرایش و حذف را دقیقاً همینجا (بیرون از تابع بالا) قرار دهید
+window.deleteTx = async (id) => {
+    if (!await confirmDlg('آیا از حذف این تراکنش مطمئن هستید؟ (اثر آن بر صندوق و بدهی ساکنین به طور کامل برگشت داده می‌شود)')) return;
+    try {
+        await T('app_manager_delete_transaction', { p_id: id });
+        toastOk('تراکنش با موفقیت حذف شد');
+        go('m_expenses');
+    } catch (e) { showErr(e); }
+};
+
+window.editTx = async (id) => {
+    const m = currentMembership(); if (!m) return;
+    try {
+        const list = await T('app_manager_get_transactions', { p_building_id: m.building_id });
+        // چون ممکن است یک تراکنش چند ردیف داشته باشد، اولی را برمی‌داریم
+        const tx = list.find(x => x.id === id);
+        if (tx) {
+            const membersRes = await T('app_manager_list_building_members', { p_building_id: m.building_id });
+            newTransactionModal(m.building_id, membersRes.members || [], tx);
+        } else { toastErr('تراکنش پیدا نشد'); }
+    } catch (e) { showErr(e); }
+};
+
+function newTransactionModal(bid, members, tx = null) {
+  const incCats = ['شارژ ماهیانه', 'پس‌انداز', 'جریمه', 'سایر'];
+  const expCats = ['نظافت', 'سرویس آسانسور', 'تعمیرات', 'قبض آب', 'قبض گاز', 'قبض برق', 'سایر'];
+  const isEdit = !!tx;
+
+  const m = modal(`
+    <h2>${isEdit ? 'ویرایش تراکنش' : 'ثبت تراکنش جدید'}</h2>
+    <form id="tx-form" class="grid" style="gap:14px">
+      <label class="f">نوع تراکنش
+        <select id="tx-type" ${isEdit ? 'disabled' : ''}>
+          <option value="درآمد" ${isEdit && tx.type === 'درآمد' ? 'selected' : ''}>درآمد (دریافتنی از ساکنین)</option>
+          <option value="هزینه" ${isEdit && tx.type === 'هزینه' ? 'selected' : ''}>هزینه (کسر از صندوق)</option>
+        </select>
+      </label>
+      <label class="f">دسته‌بندی<select id="tx-cat"></select></label>
+      <label class="f">شرح تراکنش<input id="tx-desc" value="${isEdit ? esc(tx.description) : ''}" required></label>
+      <label class="f"><span id="tx-amount-label">مبلغ (تومان)</span>
+        <input id="tx-amount" inputmode="numeric" value="${isEdit ? fmt(tx.amount) : ''}" required>
+        <small id="tx-amount-hint" style="color:var(--muted); font-weight:normal; margin-top:4px;"></small>
+      </label>
+      <label class="f">تاریخ<input id="tx-date" class="date-picker-input" readonly required></label>
+
+      <div id="tx-expense-split-wrap" style="display:none; margin-top:8px; padding:12px; background:var(--bg); border-radius:12px; border:1px solid var(--line)">
+        <label class="f" style="margin-bottom:8px; color:var(--ink)">آیا این هزینه تسهیمی است؟</label>
+        <select id="tx-is-split" style="margin-bottom:10px;"><option value="yes">بله</option><option value="no">خیر (فقط از صندوق)</option></select>
+        <div id="tx-expense-methods" style="display:none;">
+          <label class="f" style="margin-bottom:8px; color:var(--ink)">روش تسهیم:</label>
+          <select id="tx-exp-method" style="margin-bottom:10px;">
+            <option value="equal">مساوی</option><option value="area">نسبت متراژ</option><option value="residents">نسبت نفرات</option><option value="per_unit">مبلغ ثابت هر واحد</option><option value="selected">واحدهای خاص</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="tx-income-methods" style="margin-top:8px; padding:12px; background:var(--bg); border-radius:12px; border:1px solid var(--line)">
+        <label class="f" style="margin-bottom:8px; color:var(--ink)">روش محاسبه شارژ:</label>
+        <select id="tx-inc-method" style="margin-bottom:10px;">
+          <option value="per_unit">مبلغ ثابت هر واحد</option><option value="per_meter">مبلغ هر متر</option><option value="per_resident">مبلغ هر نفر</option><option value="total_equal">مبلغ کل مساوی</option>
+        </select>
+      </div>
+
+      <div id="tx-alloc-wrap" style="display:none; margin-top:8px; padding:12px; background:var(--bg); border-radius:12px; border:1px solid var(--line); max-height:250px; overflow-y:auto;">
+        <label class="f" style="margin-bottom:8px; color:var(--ink)" id="tx-alloc-label">مسئول پرداخت:</label>
+        <div id="tx-occ-list" style="display:flex; flex-direction:column; gap:10px;">
+          <label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" class="occ-check" value="owner" checked><span>مالک</span></label>
+          <label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" class="occ-check" value="tenant" checked><span>مستأجر</span></label>
+          <label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" class="occ-check" value="owner_resident" checked><span>مالک ساکن</span></label>
+        </div>
+        <div id="tx-unit-list" style="display:none; flex-direction:column; gap:10px;">
+          ${members.filter(x => x.access_role === 'resident' || x.access_role === 'manager').map(x => `
+            <label style="display:flex; align-items:center; gap:8px; padding:4px 0; border-bottom:1px dashed var(--line)">
+              <input type="checkbox" class="unit-check" value="${x.membership_id}" checked><span>واحد ${fa(x.unit_no)} (${esc(x.full_name)})</span>
+            </label>
+          `).join('')}
+        </div>
+      </div>
+      <button class="btn" type="submit" style="margin-top:10px">${isEdit ? 'ذخیره تغییرات' : 'ثبت تراکنش'}</button>
+    </form>
+  `);
+
+  bindDatePickers(m);
+  const typeSel = $('#tx-type', m), catSel = $('#tx-cat', m), splitWrap = $('#tx-expense-split-wrap', m), splitSel = $('#tx-is-split', m);
+  const expMethodsWrap = $('#tx-expense-methods', m), expMethodSel = $('#tx-exp-method', m), incMethodsWrap = $('#tx-income-methods', m), incMethodSel = $('#tx-inc-method', m);
+  const allocWrap = $('#tx-alloc-wrap', m), occList = $('#tx-occ-list', m), unitList = $('#tx-unit-list', m), allocLabel = $('#tx-alloc-label', m), amountHint = $('#tx-amount-hint', m), amountLabel = $('#tx-amount-label', m);
+
+  if (isEdit && tx.date) {
+      const d = new Date(tx.date); const j = gregorianToJalali(d.getFullYear(), d.getMonth() + 1, d.getDate());
+      $('#tx-date', m).value = `${j[0]}/${String(j[1]).padStart(2,'0')}/${String(j[2]).padStart(2,'0')}`;
+      $('#tx-date', m).dataset.gregorian = tx.date;
+  }
+
+  const updateUI = () => {
+    const isInc = typeSel.value === 'درآمد'; const isSplit = splitSel.value === 'yes';
+    catSel.innerHTML = (isInc ? incCats : expCats).map(c => `<option value="${c}">${c}</option>`).join('');
+    if (isEdit && tx.category) catSel.value = tx.category;
+    splitWrap.style.display = isInc ? 'none' : 'block'; incMethodsWrap.style.display = isInc ? 'block' : 'none'; expMethodsWrap.style.display = (!isInc && isSplit) ? 'block' : 'none';
+    if (isInc) { allocWrap.style.display = 'block'; occList.style.display = 'flex'; unitList.style.display = 'none'; allocLabel.textContent = 'مسئول پرداخت:'; }
+    else if (isSplit && expMethodSel.value === 'selected') { allocWrap.style.display = 'block'; occList.style.display = 'none'; unitList.style.display = 'flex'; allocLabel.textContent = 'انتخاب واحدها:'; }
+    else if (isSplit) { allocWrap.style.display = 'block'; occList.style.display = 'flex'; unitList.style.display = 'none'; allocLabel.textContent = 'مسئول پرداخت:'; }
+    else { allocWrap.style.display = 'none'; }
+    
+    if (isInc) {
+      const im = incMethodSel.value;
+      amountLabel.textContent = im === 'per_unit' ? 'مبلغ هر واحد' : im === 'per_meter' ? 'مبلغ هر متر' : im === 'per_resident' ? 'مبلغ هر نفر' : 'مبلغ کل';
+      amountHint.textContent = im === 'total_equal' ? 'مبلغ کل بین واحدها مساوی تقسیم می‌شود.' : 'مبلغ به عنوان نرخ محاسبه می‌شود.';
+    } else if (isSplit) {
+      amountLabel.textContent = 'مبلغ کل'; amountHint.textContent = 'مبلغ کل طبق روش انتخابی تقسیم می‌شود.';
+    } else { amountLabel.textContent = 'مبلغ کل'; amountHint.textContent = 'این مبلغ مستقیماً از صندوق کسر می‌شود.'; }
+  };
+
+  typeSel.addEventListener('change', updateUI); splitSel.addEventListener('change', updateUI);
+  incMethodSel.addEventListener('change', updateUI); expMethodSel.addEventListener('change', updateUI); updateUI();
+  $$('#tx-amount', m).forEach(inp => inp.addEventListener('input', e => { const n = toNum(e.target.value); n && (e.target.value = fmt(n)); }));
+
+  $('#tx-form', m).addEventListener('submit', async e => {
+    e.preventDefault();
+    const amount = toNum($('#tx-amount', m).value); const type = typeSel.value; const isSplit = splitSel.value === 'yes'; const txDate = $('#tx-date', m).dataset.gregorian;
+    if (amount <= 0) { toastErr('مبلغ نامعتبر است'); return; }
+
+    let allocations = []; let finalDbMethod = 'none'; let totalAmountToSend = amount;
+
+    if (type === 'درآمد') {
+      const selectedOccTypes = []; $$('.occ-check', m).forEach(cb => { if (cb.checked) selectedOccTypes.push(cb.value); });
+      const targetMembers = members.filter(x => selectedOccTypes.includes(x.resident_type));
+      const im = incMethodSel.value;
+      if (im === 'per_unit') { totalAmountToSend = amount * targetMembers.length; finalDbMethod = 'manual'; targetMembers.forEach(mem => allocations.push({ membership_id: mem.membership_id, amount: amount })); }
+      else if (im === 'per_meter') { let total = 0; targetMembers.forEach(mem => { const share = amount * (Number(mem.unit_area) || 0); if(share>0){ allocations.push({ membership_id: mem.membership_id, amount: share }); total += share; } }); totalAmountToSend = total; finalDbMethod = 'manual'; }
+      else if (im === 'per_resident') { let total = 0; targetMembers.forEach(mem => { const share = amount * (Number(mem.unit_resident_count) || 0); if(share>0){ allocations.push({ membership_id: mem.membership_id, amount: share }); total += share; } }); totalAmountToSend = total; finalDbMethod = 'manual'; }
+      else { totalAmountToSend = amount; finalDbMethod = 'equal'; targetMembers.forEach(mem => allocations.push({ membership_id: mem.membership_id })); }
+    } else if (isSplit) {
+      const selectedOccTypes = []; $$('.occ-check', m).forEach(cb => { if (cb.checked) selectedOccTypes.push(cb.value); });
+      const em = expMethodSel.value;
+      if (em === 'selected') { $$('.unit-check', m).forEach(cb => { if (cb.checked) allocations.push({ membership_id: cb.value }); }); finalDbMethod = 'equal'; }
+      else {
+        const targetMembers = members.filter(x => selectedOccTypes.includes(x.resident_type));
+        if (em === 'per_unit') { totalAmountToSend = amount * targetMembers.length; finalDbMethod = 'manual'; targetMembers.forEach(mem => allocations.push({ membership_id: mem.membership_id, amount: amount })); }
+        else { finalDbMethod = em; targetMembers.forEach(mem => allocations.push({ membership_id: mem.membership_id })); }
+      }
+    } else { finalDbMethod = 'none'; }
+
+    try {
+      if (isEdit) await T('app_manager_delete_transaction', { p_id: tx.id });
+      await T('app_manager_create_expense', {
+        p_building_id: bid, p_description: $('#tx-desc', m).value, p_amount: totalAmountToSend, p_expense_date: txDate,
+        p_allocation_method: finalDbMethod, p_tx_type: type, p_category: catSel.value, p_allocations: allocations
+      });
+      m.remove(); toastOk(isEdit ? 'تراکنش ویرایش شد' : 'تراکنش ثبت شد'); go('m_expenses');
+    } catch (err) { showErr(err); }
+  });
 }
 function newTransactionModal(bid, members, tx = null) {
   const incCats = ['شارژ ماهیانه', 'پس‌انداز', 'جریمه', 'سایر'];
