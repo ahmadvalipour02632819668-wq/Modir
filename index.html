@@ -1407,21 +1407,21 @@ window.editTx = async (id) => {
 
 function newTransactionModal(bid, members, tx = null) {
   const incCats = ['شارژ ماهیانه', 'پس‌انداز', 'جریمه', 'سایر'];
-  const expCats = ['نظافت', 'سرویس آسانسور', 'تعمیرات', 'قبض آب', 'قبض گاز', 'قبض برق', 'سایر'];
+  const expCats = ['قبض آب', 'قبض گاز', 'قبض برق', 'نظافت', 'سرویس آسانسور', 'تعمیرات', 'سایر'];
   const isEdit = !!tx;
-  const allResidents = members.filter(x => (x.access_role === 'resident' || x.access_role === 'manager') && x.unit_no);
+  const allResidents = members.filter(x => (x.access_role === 'resident' || x.access_role === 'manager') && x.unit_no && x.membership_status === 'active');
 
   const m = modal(`
     <h2>${isEdit ? 'ویرایش تراکنش' : 'ثبت تراکنش جدید'}</h2>
     <form id="tx-form" class="grid" style="gap:14px">
       <label class="f">نوع تراکنش
         <select id="tx-type" ${isEdit ? 'disabled' : ''}>
-          <option value="درآمد" ${isEdit && tx.type === 'درآمد' ? 'selected' : ''}>درآمد (شارژ)</option>
+          <option value="درآمد" ${isEdit && tx.type === 'درآمد' ? 'selected' : ''}>درآمد (دریافتنی)</option>
           <option value="هزینه" ${isEdit && tx.type === 'هزینه' ? 'selected' : ''}>هزینه (کسر از صندوق)</option>
         </select>
       </label>
       <label class="f">دسته‌بندی<select id="tx-cat"></select></label>
-      <label class="f">شرح<input id="tx-desc" value="${isEdit ? esc(tx.description) : ''}" required></label>
+      <label class="f">شرح تراکنش<input id="tx-desc" placeholder="مثلاً شارژ آبان یا قبض آب" value="${isEdit ? esc(tx.description) : ''}" required></label>
       <label class="f"><span id="tx-amount-label">مبلغ (تومان)</span>
         <input id="tx-amount" inputmode="numeric" value="${isEdit ? fmt(tx.amount) : ''}" required>
         <small id="tx-amount-hint" style="color:var(--muted); font-weight:normal; margin-top:4px;"></small>
@@ -1429,9 +1429,10 @@ function newTransactionModal(bid, members, tx = null) {
       <label class="f">تاریخ<input id="tx-date" class="date-picker-input" readonly required></label>
 
       <div id="tx-expense-split-wrap" style="display:none; margin-top:8px; padding:12px; background:var(--bg); border-radius:12px; border:1px solid var(--line)">
-        <label class="f" style="margin-bottom:8px;">تسهیم هزینه:</label>
-        <select id="tx-is-split" style="margin-bottom:10px;"><option value="yes">بله، بین ساکنین تسهیم شود</option><option value="no">خیر (فقط از صندوق)</option></select>
+        <label class="f" style="margin-bottom:8px; color:var(--ink)">آیا این هزینه تسهیمی است؟</label>
+        <select id="tx-is-split" style="margin-bottom:10px;"><option value="yes">بله</option><option value="no">خیر (فقط از صندوق)</option></select>
         <div id="tx-expense-methods" style="display:none;">
+          <label class="f" style="margin-bottom:8px; color:var(--ink)">روش تسهیم:</label>
           <select id="tx-exp-method" style="margin-bottom:10px;">
             <option value="equal">مساوی</option><option value="area">نسبت متراژ</option><option value="residents">نسبت نفرات</option><option value="per_unit">مبلغ ثابت هر واحد</option><option value="selected">واحدهای خاص</option>
           </select>
@@ -1439,23 +1440,28 @@ function newTransactionModal(bid, members, tx = null) {
       </div>
 
       <div id="tx-income-methods" style="margin-top:8px; padding:12px; background:var(--bg); border-radius:12px; border:1px solid var(--line)">
-        <select id="tx-inc-method">
+        <label class="f" style="margin-bottom:8px; color:var(--ink)">روش محاسبه شارژ:</label>
+        <select id="tx-inc-method" style="margin-bottom:10px;">
           <option value="per_unit">مبلغ ثابت هر واحد</option><option value="per_meter">مبلغ هر متر</option><option value="per_resident">مبلغ هر نفر</option><option value="total_equal">مبلغ کل مساوی</option>
         </select>
       </div>
 
       <div id="tx-alloc-wrap" style="display:none; margin-top:8px; padding:12px; background:var(--bg); border-radius:12px; border:1px solid var(--line); max-height:250px; overflow-y:auto;">
-        <label class="f" id="tx-alloc-label">مسئول پرداخت:</label>
+        <label class="f" style="margin-bottom:8px; color:var(--ink)" id="tx-alloc-label">مسئول پرداخت:</label>
         <div id="tx-occ-list" style="display:flex; flex-direction:column; gap:10px;">
-          <label><input type="checkbox" class="occ-check" value="owner" checked> مالک</label>
-          <label><input type="checkbox" class="occ-check" value="tenant" checked> مستأجر</label>
-          <label><input type="checkbox" class="occ-check" value="owner_resident" checked> مالک ساکن</label>
+          <label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" class="occ-check" value="owner" checked><span>مالک</span></label>
+          <label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" class="occ-check" value="tenant" checked><span>مستأجر</span></label>
+          <label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" class="occ-check" value="owner_resident" checked><span>مالک ساکن</span></label>
         </div>
         <div id="tx-unit-list" style="display:none; flex-direction:column; gap:10px;">
-          ${allResidents.map(x => `<label style="display:flex;gap:8px;padding:4px 0;"><input type="checkbox" class="unit-check" value="${x.membership_id}" checked> واحد ${fa(x.unit_no)} (${esc(x.full_name)})</label>`).join('')}
+          ${allResidents.map(x => `
+            <label style="display:flex; align-items:center; gap:8px; padding:4px 0; border-bottom:1px dashed var(--line)">
+              <input type="checkbox" class="unit-check" value="${x.membership_id}" checked><span>واحد ${fa(x.unit_no)} (${esc(x.full_name)})</span>
+            </label>
+          `).join('')}
         </div>
       </div>
-      <button class="btn" type="submit">${isEdit ? 'ذخیره تغییرات' : 'ثبت'}</button>
+      <button class="btn" type="submit" style="margin-top:10px">${isEdit ? 'ذخیره تغییرات' : 'ثبت تراکنش'}</button>
     </form>
   `);
 
@@ -1470,11 +1476,21 @@ function newTransactionModal(bid, members, tx = null) {
       $('#tx-date', m).dataset.gregorian = tx.date;
   }
 
-  const updateUI = () => {
-    const isInc = typeSel.value === 'درآمد'; const isSplit = splitSel.value === 'yes';
+  // ⚠️ اصلاح باگ: فقط زمانی لیست دسته‌بندی را تغییر بده که نوع تراکنش عوض شود
+  const updateCategories = () => {
+    const isInc = typeSel.value === 'درآمد';
     catSel.innerHTML = (isInc ? incCats : expCats).map(c => `<option value="${c}">${c}</option>`).join('');
     if (isEdit && tx.category) catSel.value = tx.category;
-    splitWrap.style.display = isInc ? 'none' : 'block'; incMethodsWrap.style.display = isInc ? 'block' : 'none'; expMethodsWrap.style.display = (!isInc && isSplit) ? 'block' : 'none';
+  };
+
+  const updateLayout = () => {
+    const isInc = typeSel.value === 'درآمد'; 
+    const isSplit = splitSel.value === 'yes';
+    
+    splitWrap.style.display = isInc ? 'none' : 'block'; 
+    incMethodsWrap.style.display = isInc ? 'block' : 'none'; 
+    expMethodsWrap.style.display = (!isInc && isSplit) ? 'block' : 'none';
+    
     if (isInc) { allocWrap.style.display = 'block'; occList.style.display = 'flex'; unitList.style.display = 'none'; allocLabel.textContent = 'مسئول پرداخت:'; }
     else if (isSplit && expMethodSel.value === 'selected') { allocWrap.style.display = 'block'; occList.style.display = 'none'; unitList.style.display = 'flex'; allocLabel.textContent = 'انتخاب واحدها:'; }
     else if (isSplit) { allocWrap.style.display = 'block'; occList.style.display = 'flex'; unitList.style.display = 'none'; allocLabel.textContent = 'مسئول پرداخت:'; }
@@ -1484,22 +1500,40 @@ function newTransactionModal(bid, members, tx = null) {
       const im = incMethodSel.value;
       amountLabel.textContent = im === 'per_unit' ? 'مبلغ هر واحد' : im === 'per_meter' ? 'مبلغ هر متر' : im === 'per_resident' ? 'مبلغ هر نفر' : 'مبلغ کل';
       amountHint.textContent = im === 'total_equal' ? 'مبلغ کل بین واحدها مساوی تقسیم می‌شود.' : 'مبلغ به عنوان نرخ محاسبه می‌شود.';
-    } else if (isSplit) { amountLabel.textContent = 'مبلغ کل'; amountHint.textContent = 'مبلغ کل طبق روش انتخابی تقسیم می‌شود.'; }
-    else { amountLabel.textContent = 'مبلغ کل'; amountHint.textContent = 'این مبلغ مستقیماً از صندوق کسر می‌شود.'; }
+    } else if (isSplit) { 
+      amountLabel.textContent = 'مبلغ کل'; 
+      amountHint.textContent = 'مبلغ کل طبق روش انتخابی تقسیم می‌شود.'; 
+    } else { 
+      amountLabel.textContent = 'مبلغ کل'; 
+      amountHint.textContent = 'این مبلغ مستقیماً از صندوق کسر می‌شود.'; 
+    }
   };
 
-  typeSel.addEventListener('change', updateUI); splitSel.addEventListener('change', updateUI);
-  incMethodSel.addEventListener('change', updateUI); expMethodSel.addEventListener('change', updateUI); updateUI();
+  // اتصال رویدادها
+  typeSel.addEventListener('change', () => { updateCategories(); updateLayout(); });
+  splitSel.addEventListener('change', updateLayout);
+  incMethodSel.addEventListener('change', updateLayout); 
+  expMethodSel.addEventListener('change', updateLayout); 
+  
+  // اجرای اولیه
+  updateCategories();
+  updateLayout();
+
   $$('#tx-amount', m).forEach(inp => inp.addEventListener('input', e => { const n = toNum(e.target.value); n && (e.target.value = fmt(n)); }));
 
   $('#tx-form', m).addEventListener('submit', async e => {
     e.preventDefault();
-    const amount = toNum($('#tx-amount', m).value); const type = typeSel.value; const isSplit = splitSel.value === 'yes'; const txDate = $('#tx-date', m).dataset.gregorian;
+    const amount = toNum($('#tx-amount', m).value); 
+    const type = typeSel.value; 
+    const isSplit = splitSel.value === 'yes'; 
+    const txDate = $('#tx-date', m).dataset.gregorian;
+    
     if (amount <= 0) { toastErr('مبلغ نامعتبر است'); return; }
 
-    let allocations = []; let finalDbMethod = 'manual'; let totalAmountToSend = amount;
+    let allocations = []; 
+    let finalDbMethod = 'manual'; 
+    let totalAmountToSend = amount;
 
-    // ⚠️ محاسبات دقیق در جاوااسکریپت
     if (type === 'درآمد') {
       const selectedOccTypes = []; $$('.occ-check', m).forEach(cb => { if (cb.checked) selectedOccTypes.push(cb.value); });
       const targetMembers = allResidents.filter(x => selectedOccTypes.includes(x.resident_type));
@@ -1535,16 +1569,26 @@ function newTransactionModal(bid, members, tx = null) {
       }
     } else { finalDbMethod = 'none'; }
 
-    // تنظیم مبلغ کل نهایی (جمع همه سهم‌ها) برای صندوق
     if (allocations.length > 0) totalAmountToSend = allocations.reduce((s, a) => s + a.amount, 0);
 
     try {
       if (isEdit) await T('app_manager_delete_transaction', { p_id: tx.id });
+      
+      // ⚠️ ارسال مقادیر به دیتابیس
       await T('app_manager_create_expense', {
-        p_building_id: bid, p_description: $('#tx-desc', m).value, p_amount: totalAmountToSend, p_expense_date: txDate,
-        p_allocation_method: finalDbMethod, p_tx_type: type, p_category: catSel.value, p_allocations: allocations
+        p_building_id: bid, 
+        p_description: $('#tx-desc', m).value, 
+        p_amount: totalAmountToSend, 
+        p_expense_date: txDate,
+        p_allocation_method: finalDbMethod, 
+        p_tx_type: type, 
+        p_category: catSel.value, // حالا مقدار درست را می‌فرستد
+        p_allocations: allocations
       });
-      m.remove(); toastOk(isEdit ? 'تراکنش ویرایش شد' : 'تراکنش ثبت شد'); go('m_expenses');
+      
+      m.remove(); 
+      toastOk(isEdit ? 'تراکنش ویرایش شد' : 'تراکنش ثبت شد'); 
+      go('m_expenses');
     } catch (err) { showErr(err); }
   });
 }
