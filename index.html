@@ -1210,7 +1210,7 @@ async function viewManagerUnits(el) {
       .catch(showErr); 
   }));
 }
-}function editMemberModal(mem, bid) {
+function editMemberModal(mem, bid) {
   // تبدیل تاریخ عضویت فعلی به شمسی برای نمایش در فرم
   let initialJoinDate = mem.joined_at || new Date().toISOString().slice(0, 10);
   
