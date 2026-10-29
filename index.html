@@ -176,8 +176,8 @@ tr:hover td { background: var(--bg); }
    CORE, HELPERS & CONFIG
    ============================================================ */
 // ⚠️ آدرس و کلید پروژه جدید خود را اینجا قرار دهید
-const SUPABASE_URL = 'https://fvhzshtgtkqzrgmblczh.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_RPqoUxTZxx-pCp06bwh0pg_dGjF5daZ';
+const SUPABASE_URL = 'https://YOUR_PROJECT_ID.supabase.co';
+const SUPABASE_KEY = 'YOUR_ANON_KEY';
 
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: false } });
 
@@ -1640,19 +1640,7 @@ function newTransactionModal(bid, members, tx = null) {
     if (!txDate) { toastErr('تاریخ تراکنش را انتخاب کنید'); return; }
 
     try {
-    if (isEdit) {
-  await T('app_financial_v2_edit_transaction_details', {
-    p_id: tx.id,
-    p_description: $('#tx-desc', m).value,
-    p_category: catSel.value,
-    p_expense_date: txDate
-  });
-
-  m.remove();
-  toastOk('اطلاعات تراکنش ویرایش شد');
-  go('m_expenses');
-  return;
-}
+      if (isEdit) { toastErr('ویرایش تراکنش‌های قبلی تا پیاده‌سازی ویرایش امن غیرفعال است؛ حذف و ایجاد مجدد باعث از بین رفتن تاریخچه می‌شود.'); return; }
       
       await T('app_financial_v2_create_transaction', {
         p_building_id: bid, 
@@ -1699,130 +1687,69 @@ async function viewManagerTransfer(el) {
 async function viewManagerReport(el) {
   const m = currentMembership(); if (!m) return;
   const bid = m.building_id;
-  const yearOptions = []; for (let y = TODAY.y; y >= TODAY.y - 3; y--) yearOptions.push(y);
-  
+  const years = Array.from({length: 5}, (_, i) => TODAY.y - i);
   el.innerHTML = `
-    <div class="no-print" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; gap:12px; flex-wrap:wrap; width:100%; box-sizing:border-box;">
-      <div><h1 style="margin:0; line-height:1.5;">گزارش ماهانه</h1></div>
-      <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-        <select id="rp-year" style="width:100px; min-height:38px; padding:4px 10px;">${yearOptions.map(y => `<option value="${y}" ${y === TODAY.y ? 'selected' : ''}>${fa(y)}</option>`).join('')}</select>
-        <select id="rp-month" style="width:120px; min-height:38px; padding:4px 10px;">${MONTHS.map((n, i) => `<option value="${i+1}" ${i+1 === TODAY.m ? 'selected' : ''}>${n}</option>`).join('')}</select>
-        <button class="btn sf" id="img-btn" style="min-height:38px; padding:0 16px; font-size:12px; border-radius:12px; background:var(--success); color:#fff;">📸 گرفتن عکس</button>
-        <button class="btn lt" id="pr-btn" style="min-height:38px; padding:0 16px; font-size:12px; border-radius:12px;">🖨️ چاپ</button>
+    <div class="no-print" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:18px">
+      <h1 style="margin:0">گزارش ماهانه ساختمان</h1>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <select id="rp-year">${years.map(y=>`<option value="${y}">${fa(y)}</option>`).join('')}</select>
+        <select id="rp-month">${MONTHS.map((name,i)=>`<option value="${i+1}" ${i+1===TODAY.m?'selected':''}>${name}</option>`).join('')}</select>
+        <button class="btn sf" id="rp-photo">📸 عکس گزارش</button>
+        <button class="btn lt" id="rp-print">🖨️ چاپ</button>
       </div>
-    </div>
-    <div id="rp-body"></div>
-  `;
-
-  const loadReport = async () => {
-    const y = +$('#rp-year', el).value, mo = +$('#rp-month', el).value, body = $('#rp-body', el);
-    body.innerHTML = '<p class="sub no-print">در حال بارگذاری...</p>';
-    
+    </div><div id="rp-body"></div>`;
+  const load = async () => {
+    const y=Number($('#rp-year',el).value), mo=Number($('#rp-month',el).value);
+    const body=$('#rp-body',el);
+    body.innerHTML='<p class="sub">در حال دریافت گزارش...</p>';
     try {
-      const g = jalaliToGregorian(y, mo, 1);
-      const r = await T('app_manager_get_monthly_report', { p_building_id: bid, p_year: g.getFullYear(), p_month: g.getMonth() + 1 });
-      const membersRes = await T('app_manager_list_building_members', { p_building_id: bid });
-      const members = membersRes.members || [];
-      
-      const balances = await T('app_manager_get_member_balances', { p_building_id: bid }).catch(()=>null);
-      const monthExpenses = r.expenses || [];
-      
-      const activeCategories = [];
-      const catMap = { charge: 'شارژ ماهیانه', water: 'قبض آب', gas: 'قبض گاز', electric: 'قبض برق', repair: 'بازسازی', parking: 'اجاره پارکینگ' };
-      
-      monthExpenses.forEach(e => {
-          let cat = 'other';
-          if (e.description.includes('شارژ')) cat = 'charge';
-          else if (e.description.includes('آب')) cat = 'water';
-          else if (e.description.includes('گاز')) cat = 'gas';
-          else if (e.description.includes('برق')) cat = 'electric';
-          else if (e.description.includes('بازسازی')) cat = 'repair';
-          else if (e.description.includes('پارکینگ')) cat = 'parking';
-          if (!activeCategories.includes(cat) && cat !== 'other') activeCategories.push(cat);
+      const start=jalaliToGregorian(y,mo,1);
+      const endExclusive=mo===12 ? jalaliToGregorian(y+1,1,1) : jalaliToGregorian(y,mo+1,1);
+      const end=new Date(endExclusive.getFullYear(),endExclusive.getMonth(),endExclusive.getDate()-1);
+      const dateStr=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+      const report=await T('app_manager_report_matrix',{
+        p_building_id:bid,p_start:dateStr(start),p_end:dateStr(end)
       });
-
-      let headerCols = `<th style="background-color:#D9E1F2; border:1px solid #333; padding:8px; color:#000; font-size:20px; font-weight:bold;">واحد</th>`;
-      activeCategories.forEach(cat => { headerCols += `<th style="background-color:#D9E1F2; border:1px solid #333; padding:8px; color:#000; font-size:20px; font-weight:bold;">${catMap[cat]}</th>`; });
-      headerCols += `<th style="background-color:#D9E1F2; border:1px solid #333; padding:8px; color:#000; font-size:20px; font-weight:bold;">جمع مبلغ<br>قابل پرداخت</th>`;
-
-      let tableRows = '';
-      
-      const activeMembers = members.filter(x => (x.access_role === 'resident' || x.access_role === 'manager') && x.membership_status === 'active');
-      const memberCount = activeMembers.length || 1;
-
-      activeMembers.forEach(mem => {
-          const unitNo = mem.unit_no || '—';
-          const rType = RESIDENT_TYPES[mem.resident_type] || '';
-          
-          const memBalance = balances?.members?.find(x => x.membership_id === mem.membership_id);
-          const remaining = memBalance?.outstanding_debt || 0;
-
-          let rowBg = '#ffffff'; let textColor = '#000000';
-          if (remaining <= 0) { rowBg = '#00B050'; textColor = '#ffffff'; }
-          else if (remaining > 0) { rowBg = '#FFC000'; textColor = '#000000'; }
-
-          let rowHtml = `<tr style="background-color:${rowBg}; color:${textColor};">
-            <td style="border:1px solid #333; padding:10px; text-align:center; font-size:20px; font-weight:bold;">
-              واحد ${fa(unitNo)}<br><span style="font-size:13px; font-weight:normal; opacity:0.8;">${esc(rType)}</span>
-            </td>`;
-
-          activeCategories.forEach(cat => {
-              const catExpenses = monthExpenses.filter(e => {
-                  if (cat === 'charge' && e.description.includes('شارژ')) return true;
-                  if (cat === 'water' && e.description.includes('آب')) return true;
-                  if (cat === 'gas' && e.description.includes('گاز')) return true;
-                  if (cat === 'electric' && e.description.includes('برق')) return true;
-                  if (cat === 'repair' && e.description.includes('بازسازی')) return true;
-                  if (cat === 'parking' && e.description.includes('پارکینگ')) return true;
-                  return false;
-              });
-              const totalCatAmount = catExpenses.reduce((sum, e) => sum + e.amount, 0);
-              const perUnit = totalCatAmount / memberCount;
-              rowHtml += `<td style="border:1px solid #333; padding:10px; text-align:center; font-size:24px; font-weight:bold;">${perUnit > 0 ? fmt(perUnit) : '—'}</td>`;
-          });
-
-          rowHtml += `<td style="border:1px solid #333; padding:10px; text-align:center; font-size:24px; font-weight:bold;">${remaining <= 0 ? 'تسویه' : fmt(remaining)}</td></tr>`;
-          tableRows += rowHtml;
-      });
-
-      if (!tableRows) tableRows = `<tr><td colspan="${activeCategories.length + 2}" style="text-align:center; padding:20px; font-size:20px; font-weight:bold;">اطلاعاتی برای این دوره وجود ندارد.</td></tr>`;
-
-      body.innerHTML = `
-        <div id="printable-area" style="border-radius:8px; overflow-x:auto; border:1px solid #333; background:#fff; width:100%; box-sizing:border-box; padding: 4px;">
-          <table style="width:100%; border-collapse:collapse; font-size:14px; text-align:center; direction:rtl; border:2px solid #000;">
-            <thead>
-              <tr><th colspan="${activeCategories.length + 2}" style="background-color:#7A9CBE; color:white; padding:12px; font-size:24px; font-weight:bold; border:1px solid #333;">گزارش ${MONTHS[mo-1]} ماه - ${fa(y)}/${String(mo).padStart(2, '0')}</th></tr>
-              <tr>${headerCols}</tr>
-            </thead>
-            <tbody>${tableRows}</tbody>
+      const transactions=report.transactions||[], rows=report.rows||[];
+      const th='border:1px solid #526171;padding:12px 9px;background:#dce5f5;color:#182335;font-size:16px;white-space:nowrap';
+      const td='border:1px solid #526171;padding:12px 9px;text-align:center;font-size:17px;font-weight:750;white-space:nowrap';
+      const headers=transactions.map(t=>`<th style="${th}">${esc(t.title)}</th>`).join('');
+      const rowHtml=rows.map(r=>{
+        const due=Number(r.due_to_end||0);
+        const bg=due>0?'#ffc107':'#00b050';
+        const type=RESIDENT_TYPES[r.resident_type]||r.resident_type||'';
+        const cols=transactions.map(t=>`<td style="${td}">${fmt(Number((r.charges||{})[t.id]||0))}</td>`).join('');
+        return `<tr style="background:${bg};color:#101820">
+          <td style="${td}">واحد ${fa(r.unit_no)}<div style="font-size:12px;font-weight:500;margin-top:4px">${esc(type)}</div></td>
+          ${cols}<td style="${td}">${fmt(Number(r.previous_debt||0))}</td>
+          <td style="${td}">${due>0?fmt(due):'۰'}</td></tr>`;
+      }).join('');
+      const cols=transactions.length+3;
+      body.innerHTML=`<div style="overflow-x:auto;max-width:100%" id="rp-scroll">
+        <div id="printable-area" style="display:inline-block;min-width:100%;background:#fff;padding:0">
+          <table dir="rtl" style="border-collapse:collapse;width:100%;min-width:max-content;font-family:inherit;text-align:center">
+            <thead><tr><th colspan="${cols}" style="${th};background:#739fc2;color:white;font-size:21px;padding:14px">
+              گزارش ماه ${esc(MONTHS[mo-1])} ${fa(y)} — ${esc(m.building_name||'ساختمان')}
+            </th></tr><tr><th style="${th}">واحد</th>${headers}<th style="${th}">بدهی قبلی</th><th style="${th}">جمع مبلغ<br>قابل پرداخت</th></tr></thead>
+            <tbody>${rowHtml||`<tr><td colspan="${cols}" style="${td}">اطلاعاتی برای این ماه وجود ندارد</td></tr>`}</tbody>
           </table>
         </div>
-        <div class="no-print" style="margin-top:16px; display:flex; justify-content:space-around; text-align:center; flex-wrap:wrap; gap:10px; background: var(--card); padding: 16px; border-radius: 16px;">
-          <div><small class="sub">کل دریافتی ماه</small><div style="font-weight:900; color:var(--success)">${fmt(r.month_income)} تومان</div></div>
-          <div><small class="sub">کل هزینه ماه</small><div style="font-weight:900; color:var(--danger)">${fmt(r.month_expenses)} تومان</div></div>
-          <div><small class="sub">موجودی صندوق</small><div style="font-weight:900; color:var(--navy)">${fmt(r.fund_balance_to_month_end)} تومان</div></div>
-        </div>
-      `;
-
-      $('#pr-btn', el).addEventListener('click', () => window.print());
-      $('#img-btn', el).addEventListener('click', async () => {
+      </div>`;
+      $('#rp-photo',el).onclick=async()=>{
+        const element=$('#printable-area',el);
         try {
-          toastOk('در حال آماده‌سازی عکس...');
-          const element = $('#printable-area', el);
-          const canvas = await html2canvas(element, { scale: 2, backgroundColor: '#ffffff' });
-          const link = document.createElement('a');
-          link.download = `گزارش-${MONTHS[mo-1]}-${y}.png`;
-          link.href = canvas.toDataURL('image/png');
-          link.click();
-        } catch (err) { showErr(new Error('خطا در گرفتن عکس: ' + err.message)); }
-      });
-
-    } catch (err) { body.innerHTML = `<div class="card" style="color:var(--danger)">خطا در دریافت گزارش: ${esc(err.message)}</div>`; }
+          const canvas=await html2canvas(element,{scale:2,backgroundColor:'#ffffff',
+            width:element.scrollWidth,height:element.scrollHeight,windowWidth:Math.max(document.documentElement.clientWidth,element.scrollWidth)});
+          const a=document.createElement('a');a.download=`گزارش-${MONTHS[mo-1]}-${y}.png`;
+          a.href=canvas.toDataURL('image/png');a.click();
+        } catch(err){showErr(new Error('خطا در گرفتن عکس: '+err.message));}
+      };
+      $('#rp-print',el).onclick=()=>window.print();
+    } catch(err){body.innerHTML=`<div class="card" style="color:var(--danger)">خطا در دریافت گزارش: ${esc(err.message)}</div>`;}
   };
-
-  $('#rp-year', el).addEventListener('change', loadReport);
-  $('#rp-month', el).addEventListener('change', loadReport);
-  loadReport();
+  $('#rp-year',el).onchange=load;
+  $('#rp-month',el).onchange=load;
+  await load();
 }
 
 /* ============================================================
