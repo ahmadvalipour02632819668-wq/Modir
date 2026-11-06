@@ -11,7 +11,7 @@
 .login-wrap{min-height:100vh;display:grid;place-items:center;padding:22px;background:linear-gradient(145deg,#151e42,#283769 65%,#3b477c)}
 .login-card{width:min(100%,420px);background:#fff;border-radius:26px;padding:32px;box-shadow:0 24px 70px #090f2c55}.brand{display:flex;align-items:center;gap:13px;margin-bottom:26px}.brand-mark{width:48px;height:48px;border-radius:15px;background:var(--navy);color:var(--gold);display:grid;place-items:center;font-size:25px;font-weight:800}.brand h1{font-size:21px;margin:0}.brand p{margin:3px 0 0;color:var(--muted);font-size:12px}.login-card h2{font-size:19px;margin:0 0 7px}.hint{color:var(--muted);font-size:13px;margin:0 0 22px;line-height:1.8}
 label{display:block;font-size:13px;font-weight:600;margin:15px 0 7px}input{width:100%;border:1px solid var(--line);border-radius:12px;padding:13px 14px;background:#fbfcfe;outline:none}input:focus{border-color:#7584c5;box-shadow:0 0 0 3px #7584c51c}
-.primary{background:var(--navy);color:white;border-radius:12px;padding:12px 18px;font-weight:700}.primary:hover{background:var(--navy2)}.wide{width:100%;margin-top:22px}.msg{font-size:13px;margin-top:13px;line-height:1.8}.msg.error{color:var(--red)}.msg.ok{color:var(--green)}
+.primary{background:var(--navy);color:white;border-radius:12px;padding:12px 18px;font-weight:700}.primary:hover{background:var(--navy2)}.wide{width:100%;margin-top:22px}.msg{font-size:13px;margin-top:13px;line-height:1.8}.msg.error{color:var(--red)}.msg.ok{color:var(--green)}.linkbtn{display:block;background:none;color:var(--navy);font-weight:700;margin:15px auto 0;padding:8px}.register-card{width:min(100%,520px);max-height:92vh;overflow:auto}.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}.form-grid .full{grid-column:1/-1}@media(max-width:520px){.form-grid{grid-template-columns:1fr}.form-grid .full{grid-column:auto}}
 .topbar{background:var(--navy);color:#fff;padding:15px max(20px,calc((100% - 1180px)/2));display:flex;align-items:center;justify-content:space-between;gap:15px}.top-brand{display:flex;align-items:center;gap:11px}.top-brand .brand-mark{background:#fff;color:var(--navy);width:40px;height:40px;border-radius:12px}.top-brand strong{font-size:17px}.top-brand small{display:block;color:#c8cee5;font-size:11px}.logout{background:#ffffff18;border:1px solid #ffffff38;color:#fff;border-radius:10px;padding:8px 13px}
 .container{max-width:1180px;margin:28px auto;padding:0 18px}.welcome{display:flex;align-items:end;justify-content:space-between;gap:12px;margin-bottom:20px}.welcome h2{margin:0;font-size:23px}.welcome p{margin:4px 0 0;color:var(--muted);font-size:13px}
 .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px}.stat,.panel{background:#fff;border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow)}.stat{padding:17px 19px}.stat span{font-size:12px;color:var(--muted)}.stat strong{display:block;font-size:27px;margin-top:4px}
@@ -28,7 +28,26 @@ label{display:block;font-size:13px;font-weight:600;margin:15px 0 7px}input{width
 <label for="username">نام کاربری</label><input id="username" name="username" autocomplete="username" required placeholder="نام کاربری">
 <label for="password">رمز عبور</label><input id="password" name="password" type="password" inputmode="numeric" autocomplete="current-password" required placeholder="رمز عبور">
 <button class="primary wide" id="loginButton" type="submit">ورود به پنل</button><div id="loginMessage" class="msg" role="status"></div>
-</form></section>
+<button type="button" class="linkbtn" id="showRegister">درخواست ایجاد ساختمان جدید</button>
+</form>
+<form id="registerForm" class="login-card register-card hidden">
+<div class="brand"><div class="brand-mark">م</div><div><h1>مدیر</h1><p>ثبت درخواست ایجاد ساختمان</p></div></div>
+<h2>ثبت ساختمان جدید</h2><p class="hint">پس از بررسی و تأیید سوپرادمین، ساختمان و حساب مدیر فعال می‌شود.</p>
+<div class="form-grid">
+<div class="full"><label>نام مجتمع</label><input name="building_name" required maxlength="120" placeholder="نام ساختمان"></div>
+<div class="full"><label>نشانی کامل</label><input name="address" required maxlength="300" placeholder="نشانی ساختمان"></div>
+<div><label>نام و نام خانوادگی مدیر</label><input name="full_name" required maxlength="120"></div>
+<div><label>شماره تماس</label><input name="phone" inputmode="tel" maxlength="30"></div>
+<div><label>نام کاربری انگلیسی</label><input name="username" required pattern="[A-Za-z][A-Za-z0-9_]{2,31}" autocomplete="username"></div>
+<div><label>رمز عبور (۴ تا ۸ رقم)</label><input name="password" type="password" required inputmode="numeric" pattern="[0-9]{4,8}" autocomplete="new-password"></div>
+<div><label>ایمیل (اختیاری)</label><input name="email" type="email"></div>
+<div><label>تعداد واحدها</label><input name="units_count" type="number" min="1" max="99" value="10" required></div>
+</div>
+<button class="primary wide" id="registerButton" type="submit">ارسال درخواست</button>
+<div id="registerMessage" class="msg" role="status"></div>
+<button type="button" class="linkbtn" id="backToLogin">بازگشت به ورود سوپرادمین</button>
+</form>
+</section>
 <div id="appView" class="hidden">
 <header class="topbar"><div class="top-brand"><div class="brand-mark">م</div><div><strong>مدیر</strong><small>پنل مدیریت کل سامانه</small></div></div><button id="logoutButton" class="logout">خروج</button></header>
 <main class="container">
@@ -51,6 +70,9 @@ function message(el,text,type){el.textContent=text;el.className='msg '+(type||''
 function showApp(){ $('loginView').classList.add('hidden');$('appView').classList.remove('hidden');$('adminName').textContent=account?.full_name||'مدیریت ساختمان‌ها و درخواست‌های جدید';}
 function showLogin(){ $('appView').classList.add('hidden');$('loginView').classList.remove('hidden');token=null;account=null;}
 async function rpc(name,args){const {data,error}=await client.rpc(name,args);if(error)throw error;return data;}
+$('showRegister').addEventListener('click',()=>{$('loginForm').classList.add('hidden');$('registerForm').classList.remove('hidden');});
+$('backToLogin').addEventListener('click',()=>{$('registerForm').classList.add('hidden');$('loginForm').classList.remove('hidden');});
+$('registerForm').addEventListener('submit',async e=>{e.preventDefault();const f=new FormData(e.currentTarget),btn=$('registerButton');btn.disabled=true;btn.textContent='در حال ارسال...';message($('registerMessage'),'');try{const result=await rpc('app_submit_registration',{p_building_name:f.get('building_name'),p_address:f.get('address'),p_username:f.get('username'),p_password:f.get('password'),p_full_name:f.get('full_name'),p_phone:f.get('phone'),p_email:f.get('email'),p_units_count:Number(f.get('units_count'))});if(!result?.ok)throw new Error(result?.error||'ثبت درخواست ناموفق بود');message($('registerMessage'),result.message||'درخواست شما ثبت شد و پس از تأیید فعال می‌شود.','ok');$('registerForm').reset();}catch(err){message($('registerMessage'),err.message||'خطا در ثبت درخواست','error');}finally{btn.disabled=false;btn.textContent='ارسال درخواست';}});
 $('loginForm').addEventListener('submit',async e=>{e.preventDefault();const btn=$('loginButton');btn.disabled=true;btn.textContent='در حال ورود...';message($('loginMessage'),'');try{const res=await rpc('app_superadmin_login',{p_login:$('username').value.trim(),p_password:$('password').value});if(!res?.ok)throw new Error(res?.error||'ورود انجام نشد');token=res.token;account=res.account;showApp();await loadAll();}catch(err){message($('loginMessage'),err.message||'خطا در ارتباط با سرور','error');}finally{btn.disabled=false;btn.textContent='ورود به پنل';}});
 async function loadRequests(){ $('requestsList').className='loading';$('requestsList').textContent='در حال دریافت اطلاعات...';try{const data=await rpc('app_superadmin_list_requests',{p_token:token});requests=Array.isArray(data)?data:[];renderRequests();}catch(e){$('requestsList').className='msg error';$('requestsList').textContent=e.message||'دریافت درخواست‌ها ناموفق بود';}}
 async function loadBuildings(){ $('buildingsList').className='loading';$('buildingsList').textContent='در حال دریافت اطلاعات...';try{const data=await rpc('app_superadmin_list_buildings',{p_token:token});buildings=Array.isArray(data)?data:[];renderBuildings();}catch(e){$('buildingsList').className='msg error';$('buildingsList').textContent=e.message||'دریافت ساختمان‌ها ناموفق بود';}}
