@@ -1058,7 +1058,7 @@ async function viewDash(el) {
     u.accounts.push(r);
     if (!u.display_name && r.full_name) u.display_name = r.full_name;
   });
-  const mapUnits = []; for (let i = 1; i <= 10; i++) { mapUnits.push(unitMap[i] || { unit_no: i, remaining: 0, current_due: 0, accounts: [], display_name: '-' }); }
+  const mapUnits = []; for (let i = 1; i <= (S.unitCount || 10); i++) { mapUnits.push(unitMap[i] || { unit_no: i, remaining: 0, current_due: 0, accounts: [], display_name: '-' }); }
   const floors = []; const orderedUnits = [...mapUnits].reverse(); for (let i = 0; i < orderedUnits.length; i += 4) floors.push(orderedUnits.slice(i, i + 4));
   const totalDebt = mapUnits.reduce((s, r) => s + Math.max(0, r.remaining), 0);
   const winBg = r => r.remaining <= 0 ? '#e9f8ef' : r.remaining > r.current_due ? '#fdeeee' : '#fff4e8';
@@ -1506,7 +1506,7 @@ function replyModal(r) {
   const unitSelectHtml = isAdmin ? `
     <label class="f" style="margin-bottom:16px;">انتخاب واحد
       <select id="pm-unit-select">
-        ${Array.from({length: 10}, (_, i) => `<option value="${i+1}" ${selectedUnit === i+1 ? 'selected' : ''}>واحد ${i+1}</option>`).join('')}
+        ${Array.from({length: (S.unitCount || 10)}, (_, i) => `<option value="${i+1}" ${selectedUnit === i+1 ? 'selected' : ''}>واحد ${i+1}</option>`).join('')}
       </select>
     </label>
   ` : '';
