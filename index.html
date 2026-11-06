@@ -1,19 +1,67 @@
 <!doctype html>
 <html lang="fa" dir="rtl">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#101b35">
-  <title>مدیر | مدیریت مجتمع‌های مسکونی</title>
-  <style>
-    *{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;background:#101b35;color:#fff;font-family:Tahoma,Arial,sans-serif}main{text-align:center;padding:32px}h1{font-size:2rem;margin:0 0 12px}p{color:#cbd5e1;line-height:1.9}
-  </style>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#172554"><title>مدیر | پنل سوپرادمین</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--navy:#202b59;--navy2:#303d75;--gold:#f4b477;--bg:#f3f4f8;--ink:#202746;--muted:#78809a;--line:#e8eaf1;--white:#fff;--green:#16845b;--red:#c9474e;--shadow:0 12px 35px rgba(29,42,88,.09)}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:Vazirmatn,Tahoma,sans-serif;min-height:100vh}button,input{font:inherit}button{cursor:pointer;border:0}.hidden{display:none!important}
+.login-wrap{min-height:100vh;display:grid;place-items:center;padding:22px;background:linear-gradient(145deg,#151e42,#283769 65%,#3b477c)}
+.login-card{width:min(100%,420px);background:#fff;border-radius:26px;padding:32px;box-shadow:0 24px 70px #090f2c55}.brand{display:flex;align-items:center;gap:13px;margin-bottom:26px}.brand-mark{width:48px;height:48px;border-radius:15px;background:var(--navy);color:var(--gold);display:grid;place-items:center;font-size:25px;font-weight:800}.brand h1{font-size:21px;margin:0}.brand p{margin:3px 0 0;color:var(--muted);font-size:12px}.login-card h2{font-size:19px;margin:0 0 7px}.hint{color:var(--muted);font-size:13px;margin:0 0 22px;line-height:1.8}
+label{display:block;font-size:13px;font-weight:600;margin:15px 0 7px}input{width:100%;border:1px solid var(--line);border-radius:12px;padding:13px 14px;background:#fbfcfe;outline:none}input:focus{border-color:#7584c5;box-shadow:0 0 0 3px #7584c51c}
+.primary{background:var(--navy);color:white;border-radius:12px;padding:12px 18px;font-weight:700}.primary:hover{background:var(--navy2)}.wide{width:100%;margin-top:22px}.msg{font-size:13px;margin-top:13px;line-height:1.8}.msg.error{color:var(--red)}.msg.ok{color:var(--green)}
+.topbar{background:var(--navy);color:#fff;padding:15px max(20px,calc((100% - 1180px)/2));display:flex;align-items:center;justify-content:space-between;gap:15px}.top-brand{display:flex;align-items:center;gap:11px}.top-brand .brand-mark{background:#fff;color:var(--navy);width:40px;height:40px;border-radius:12px}.top-brand strong{font-size:17px}.top-brand small{display:block;color:#c8cee5;font-size:11px}.logout{background:#ffffff18;border:1px solid #ffffff38;color:#fff;border-radius:10px;padding:8px 13px}
+.container{max-width:1180px;margin:28px auto;padding:0 18px}.welcome{display:flex;align-items:end;justify-content:space-between;gap:12px;margin-bottom:20px}.welcome h2{margin:0;font-size:23px}.welcome p{margin:4px 0 0;color:var(--muted);font-size:13px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px}.stat,.panel{background:#fff;border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow)}.stat{padding:17px 19px}.stat span{font-size:12px;color:var(--muted)}.stat strong{display:block;font-size:27px;margin-top:4px}
+.tabs{display:flex;gap:8px;margin:0 0 14px}.tab{padding:10px 17px;border-radius:11px;background:#e8eaf2;color:#59617d;font-weight:600}.tab.active{background:var(--navy);color:#fff}
+.panel{padding:18px;margin-bottom:18px}.panel-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:13px}.panel h3{margin:0;font-size:16px}.muted{color:var(--muted);font-size:12px}.refresh{background:#f0f2f8;color:var(--navy);border-radius:9px;padding:8px 12px}
+.item{border:1px solid var(--line);border-radius:14px;padding:15px;margin-top:10px;display:flex;justify-content:space-between;gap:16px;align-items:center}.item-main{min-width:0}.item-title{font-weight:700;font-size:14px}.item-meta{font-size:12px;color:var(--muted);line-height:2;margin-top:5px;overflow-wrap:anywhere}.actions{display:flex;gap:7px;flex-wrap:wrap;flex-shrink:0}.btn{padding:8px 12px;border-radius:9px;font-size:12px;font-weight:700}.approve{background:#e5f5ed;color:#14764e}.reject{background:#fff0f0;color:#b53d46}.suspend{background:#fff3e7;color:#a65b1b}.activate{background:#e5f5ed;color:#14764e}.empty,.loading{text-align:center;color:var(--muted);padding:32px 12px;font-size:13px}.status{display:inline-block;border-radius:30px;padding:3px 9px;font-size:11px;background:#edf0f7;color:#58617e;margin-right:7px}.status.active{background:#e5f5ed;color:#14764e}.status.suspended{background:#fff3e7;color:#a65b1b}
+@media(max-width:680px){.stats{grid-template-columns:1fr 1fr}.stat:last-child{grid-column:span 2}.item{align-items:flex-start;flex-direction:column}.actions{width:100%}.actions .btn{flex:1}.container{margin-top:20px}.welcome h2{font-size:19px}}
+</style>
 </head>
 <body>
-  <main>
-    <h1>مدیر</h1>
-    <p>سامانه مدیریت مجتمع‌های مسکونی</p>
-    <p>صفحه اولیه پروژه</p>
-  </main>
-</body>
-</html>
+<section id="loginView" class="login-wrap"><form id="loginForm" class="login-card">
+<div class="brand"><div class="brand-mark">م</div><div><h1>مدیر</h1><p>سامانه مدیریت مجتمع‌های مسکونی</p></div></div>
+<h2>ورود سوپرادمین</h2><p class="hint">برای مدیریت ساختمان‌ها و بررسی درخواست‌های ثبت‌نام وارد شوید.</p>
+<label for="username">نام کاربری</label><input id="username" name="username" autocomplete="username" required placeholder="نام کاربری">
+<label for="password">رمز عبور</label><input id="password" name="password" type="password" inputmode="numeric" autocomplete="current-password" required placeholder="رمز عبور">
+<button class="primary wide" id="loginButton" type="submit">ورود به پنل</button><div id="loginMessage" class="msg" role="status"></div>
+</form></section>
+<div id="appView" class="hidden">
+<header class="topbar"><div class="top-brand"><div class="brand-mark">م</div><div><strong>مدیر</strong><small>پنل مدیریت کل سامانه</small></div></div><button id="logoutButton" class="logout">خروج</button></header>
+<main class="container">
+<div class="welcome"><div><h2>داشبورد سوپرادمین</h2><p id="adminName">مدیریت ساختمان‌ها و درخواست‌های جدید</p></div><span class="muted" id="lastUpdate"></span></div>
+<div class="stats"><div class="stat"><span>تعداد ساختمان‌ها</span><strong id="buildingCount">۰</strong></div><div class="stat"><span>درخواست‌های در انتظار</span><strong id="requestCount">۰</strong></div><div class="stat"><span>ساختمان‌های فعال</span><strong id="activeCount">۰</strong></div></div>
+<nav class="tabs"><button class="tab active" data-tab="requests">درخواست‌های ثبت‌نام</button><button class="tab" data-tab="buildings">ساختمان‌ها</button></nav>
+<section class="panel" id="requestsPanel"><div class="panel-head"><div><h3>درخواست‌های جدید</h3><div class="muted">تأیید یا رد درخواست ایجاد ساختمان</div></div><button class="refresh" id="refreshRequests">بروزرسانی</button></div><div id="requestsList" class="loading">در حال دریافت اطلاعات...</div></section>
+<section class="panel hidden" id="buildingsPanel"><div class="panel-head"><div><h3>فهرست ساختمان‌ها</h3><div class="muted">مشاهده وضعیت و تعداد واحدهای هر ساختمان</div></div><button class="refresh" id="refreshBuildings">بروزرسانی</button></div><div id="buildingsList" class="loading">در حال دریافت اطلاعات...</div></section>
+</main></div>
+<script>
+(function(){
+'use strict';
+const SUPABASE_URL='https://fvhzshtgtkqzrgmblczh.supabase.co';
+const SUPABASE_KEY='sb_publishable_RPqoUxTZxx-pCp06bwh0pg_dGjF5daZ';
+const client=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:false,autoRefreshToken:false}});
+const $=id=>document.getElementById(id);let token=null,account=null,buildings=[],requests=[];
+const fa=n=>Number(n||0).toLocaleString('fa-IR');
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function message(el,text,type){el.textContent=text;el.className='msg '+(type||'');}
+function showApp(){ $('loginView').classList.add('hidden');$('appView').classList.remove('hidden');$('adminName').textContent=account?.full_name||'مدیریت ساختمان‌ها و درخواست‌های جدید';}
+function showLogin(){ $('appView').classList.add('hidden');$('loginView').classList.remove('hidden');token=null;account=null;}
+async function rpc(name,args){const {data,error}=await client.rpc(name,args);if(error)throw error;return data;}
+$('loginForm').addEventListener('submit',async e=>{e.preventDefault();const btn=$('loginButton');btn.disabled=true;btn.textContent='در حال ورود...';message($('loginMessage'),'');try{const res=await rpc('app_superadmin_login',{p_login:$('username').value.trim(),p_password:$('password').value});if(!res?.ok)throw new Error(res?.error||'ورود انجام نشد');token=res.token;account=res.account;showApp();await loadAll();}catch(err){message($('loginMessage'),err.message||'خطا در ارتباط با سرور','error');}finally{btn.disabled=false;btn.textContent='ورود به پنل';}});
+async function loadRequests(){ $('requestsList').className='loading';$('requestsList').textContent='در حال دریافت اطلاعات...';try{const data=await rpc('app_superadmin_list_requests',{p_token:token});requests=Array.isArray(data)?data:[];renderRequests();}catch(e){$('requestsList').className='msg error';$('requestsList').textContent=e.message||'دریافت درخواست‌ها ناموفق بود';}}
+async function loadBuildings(){ $('buildingsList').className='loading';$('buildingsList').textContent='در حال دریافت اطلاعات...';try{const data=await rpc('app_superadmin_list_buildings',{p_token:token});buildings=Array.isArray(data)?data:[];renderBuildings();}catch(e){$('buildingsList').className='msg error';$('buildingsList').textContent=e.message||'دریافت ساختمان‌ها ناموفق بود';}}
+async function loadAll(){await Promise.all([loadRequests(),loadBuildings()]);$('buildingCount').textContent=fa(buildings.length);$('requestCount').textContent=fa(requests.length);$('activeCount').textContent=fa(buildings.filter(b=>b.status==='active').length);$('lastUpdate').textContent='آخرین بروزرسانی: '+new Date().toLocaleTimeString('fa-IR',{hour:'2-digit',minute:'2-digit'});}
+function renderRequests(){const root=$('requestsList');if(!requests.length){root.className='empty';root.textContent='درخواست در انتظار بررسی وجود ندارد.';return;}root.className='';root.innerHTML=requests.map(r=>'<article class="item"><div class="item-main"><div class="item-title">'+esc(r.building_name||'ساختمان بدون نام')+'</div><div class="item-meta">مدیر: '+esc(r.full_name)+' · نام کاربری: '+esc(r.username)+'<br>نشانی: '+esc(r.address||'ثبت نشده')+'<br>تلفن: '+esc(r.phone||'—')+' · ایمیل: '+esc(r.email||'—')+' · تعداد واحد: '+fa(r.units_count)+'<br>تاریخ درخواست: '+(r.created_at?new Date(r.created_at).toLocaleString('fa-IR'):'—')+'</div></div><div class="actions"><button class="btn approve" data-request="'+r.id+'" data-decision="approve">تأیید و ایجاد</button><button class="btn reject" data-request="'+r.id+'" data-decision="reject">رد درخواست</button></div></article>').join('');}
+function renderBuildings(){const root=$('buildingsList');if(!buildings.length){root.className='empty';root.textContent='هنوز ساختمانی ثبت نشده است.';return;}root.className='';root.innerHTML=buildings.map(b=>'<article class="item"><div class="item-main"><div class="item-title">'+esc(b.name)+' <span class="status '+esc(b.status)+'">'+(b.status==='active'?'فعال':b.status==='suspended'?'تعلیق‌شده':'حذف‌شده')+'</span></div><div class="item-meta">شناسه: '+fa(b.id)+' · تعداد واحد: '+fa(b.units_count)+'<br>نشانی: '+esc(b.address||'—')+'<br>مدیر: '+esc(b.manager?.full_name||'تعیین نشده')+' ('+esc(b.manager?.username||'—')+')'+'</div></div><div class="actions">'+(b.status==='active'?'<button class="btn suspend" data-building="'+b.id+'" data-status="suspended">تعلیق</button>':'<button class="btn activate" data-building="'+b.id+'" data-status="active">فعال‌سازی</button>')+'</div></article>').join('');}
+document.addEventListener('click',async e=>{const req=e.target.closest('[data-request]');if(req){const id=Number(req.dataset.request),decision=req.dataset.decision;const label=decision==='approve'?'تأیید و ایجاد این ساختمان؟':'این درخواست رد شود؟';if(!confirm(label))return;req.disabled=true;try{const res=await rpc('app_superadmin_review_registration',{p_token:token,p_request_id:id,p_decision:decision});if(!res?.ok)throw new Error(res?.error||'عملیات ناموفق بود');await loadAll();alert(decision==='approve'?'ساختمان با موفقیت ایجاد شد.':'درخواست رد شد.');}catch(err){alert(err.message||'خطا در انجام عملیات');req.disabled=false;}return;}
+const b=e.target.closest('[data-building]');if(b){const id=Number(b.dataset.building),status=b.dataset.status;if(!confirm(status==='suspended'?'این ساختمان تعلیق شود؟':'این ساختمان دوباره فعال شود؟'))return;b.disabled=true;try{const res=await rpc('app_superadmin_set_building_status',{p_token:token,p_building_id:id,p_status:status});if(!res?.ok)throw new Error(res?.error||'عملیات ناموفق بود');await loadAll();}catch(err){alert(err.message||'خطا در تغییر وضعیت');b.disabled=false;}}});
+document.querySelectorAll('[data-tab]').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('[data-tab]').forEach(x=>x.classList.toggle('active',x===btn));$('requestsPanel').classList.toggle('hidden',btn.dataset.tab!=='requests');$('buildingsPanel').classList.toggle('hidden',btn.dataset.tab!=='buildings');}));
+$('refreshRequests').addEventListener('click',loadAll);$('refreshBuildings').addEventListener('click',loadAll);
+$('logoutButton').addEventListener('click',async()=>{try{if(token)await rpc('app_superadmin_logout',{p_token:token});}catch(e){}showLogin();$('password').value='';});
+})();
+</script>
+</body></html>
