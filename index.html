@@ -751,7 +751,7 @@ async function renderShell() {
   try {
     const account = await T('app_me');
     if (renderId !== S.renderId) return;
-    S.me = account; sessionStorage.setItem('bm_me', JSON.stringify(S.me));
+    S.me = account; S.unitCount = Number(account.units_count || S.unitCount || 10); S.building = account.building_name || S.building; sessionStorage.setItem('bm_me', JSON.stringify(S.me));
   } catch (e) {
     if (e.message === 'AUTH_ERROR') { logout(true); return; }
     if (e.message === 'NETWORK_ERROR') { showConnectionError(); return; }
