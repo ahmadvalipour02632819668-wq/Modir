@@ -1582,7 +1582,7 @@ function replyModal(r) {
         ${accountOptions.map(a => `<option value="${a.account_id}" ${a.account_id === selectedAccountId ? 'selected' : ''}>${esc(a.full_name || 'بدون نام')} · ${esc(a.occupancy || 'نامشخص')} · بدهی: ${fmt(a.total)}</option>`).join('')}
       </select>
     </label>
-    <div class="card" style="margin:-4px 0 16px;padding:12px;background:var(--bg);font-weight:900;text-align:center">جمع بدهی همه حساب‌های واحد: ${fmt(accountOptions.reduce((sum,a)=>sum+(Number(a.total)||0),0))} تومان</div>
+    <div id="pm-unit-total" class="card" style="margin:-4px 0 16px;padding:12px;background:var(--bg);font-weight:900;text-align:center">جمع بدهی همه حساب‌های واحد: ${fmt(accountOptions.reduce((sum,a)=>sum+(Number(a.total)||0),0))} تومان</div>
   ` : '';
 
   const m = modal(`
@@ -1702,6 +1702,7 @@ function replyModal(r) {
       selectedAccountId = null;
       debts = await fetchDebts(selectedUnit);
       $('#pm-account-select', m).innerHTML = accountOptions.map(a => `<option value="${a.account_id}" ${a.account_id === selectedAccountId ? 'selected' : ''}>${esc(a.full_name || 'بدون نام')} · ${esc(a.occupancy || 'نامشخص')} · بدهی: ${fmt(a.total)}</option>`).join('');
+      $('#pm-unit-total', m).textContent = `جمع بدهی همه حساب‌های واحد: ${fmt(accountOptions.reduce((sum,a)=>sum+(Number(a.total)||0),0))} تومان`;
       renderDebts(debts);
     });
     $('#pm-account-select', m).addEventListener('change', e => {
