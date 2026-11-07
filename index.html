@@ -1155,9 +1155,10 @@ async function viewAnnouncements(el) {
 
 async function viewRequests(el) {
   const admin = !!S.me.is_admin;
-  const [list, polls] = await Promise.all([
+  const [list, polls, membershipRegistrations] = await Promise.all([
     T('app_get_requests'),
-    T('app_get_polls')
+    T('app_get_polls'),
+    admin ? T('app_admin_list_membership_registrations') : Promise.resolve([])
   ]);
 
   const statusChip = s => {
@@ -1246,6 +1247,7 @@ async function viewRequests(el) {
   el.innerHTML = `
     <h1>${admin ? 'درخواست‌ها و نظرسنجی‌ها' : 'ارتباط با مدیر'}</h1>
     <p class="sub">${admin ? 'درخواست‌های ساکنان، پاسخ‌گویی و مدیریت نظرسنجی‌ها' : 'ثبت درخواست، ارسال پیام عمومی و شرکت در نظرسنجی‌ها'}</p>
+    ${admin ? `<section class="card" style="margin:18px 0"><h2 style="margin:0 0 12px">درخواست‌های ثبت‌نام و عضویت (${fa((membershipRegistrations||[]).length)})</h2><div class="grid g2">${(membershipRegistrations||[]).map(r=>`<article class="card" style="background:var(--bg)"><h3 style="margin:0 0 8px">${esc(r.full_name)} · ${esc(r.occupancy)}</h3><p class="sub">نام کاربری: ${esc(r.username)} · واحد ${fa(r.unit_no)}</p><p class="sub">موبایل: ${esc(r.phone||'—')} · ایمیل: ${esc(r.email||'—')}</p><p class="sub">متراژ: ${fa(r.area)} متر · تعداد ساکنان: ${r.persons==null?'—':fa(r.persons)}</p><p class="sub">تاریخ شروع: ${esc(r.start_date_jalali)}</p><div style="display:flex;gap:8px"><button class="btn sf sm" data-member-approve="${r.id}">تأیید عضویت</button><button class="btn rd sm" data-member-reject="${r.id}">رد درخواست</button></div></article>`).join('')||'<p class="sub">درخواست عضویت در انتظار بررسی وجود ندارد.</p>'}</div></section>` : ''}
     ${residentForm}
     ${pollCreateForm}
     <section style="margin:20px 0">
@@ -1387,7 +1389,19 @@ async function viewRequests(el) {
       }
     }));
 
-    $$('[data-reply]').forEach(b => {
+    $('[data-member-approve], [data-member-reject]').forEach(b => b.addEventListener('click', async () => {
+      const approve = b.hasAttribute('data-member-approve');
+      const id = Number(approve ? b.dataset.memberApprove : b.dataset.memberReject);
+      if (!approve && !confirm('این درخواست عضویت رد شود؟')) return;
+      b.disabled = true;
+      try {
+        const r = await T('app_admin_review_membership_registration', { p_request_id:id, p_decision:approve?'approve':'reject' });
+        if (!r?.ok) throw new Error(r?.error || 'بررسی درخواست ناموفق بود');
+        toast(approve?'عضویت تأیید و حساب فعال شد':'درخواست رد شد');
+        go('requests');
+      } catch(err) { b.disabled=false; showErr(err); }
+    }));
+    $('[data-reply]').forEach(b => {
       b.addEventListener('click', () => {
         const req = (list || []).find(x => x.id == b.dataset.reply);
         if (req) replyModal(req);
