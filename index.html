@@ -924,7 +924,7 @@ function billCard(r, rep) {
         <span>${(g === 0 || r.ok_gas) ? '<span class="chip ok">پرداخت شده</span>' : '<span class="chip no">پرداخت نشده</span>'}</span>
       </div>
       <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px dashed var(--line)">
-        <span>بازسازی: <b>${money(rep_amt)}</b> تومان</span>
+        <span>پس‌انداز: <b>${money(rep_amt)}</b> تومان</span>
         <span>${(rep_amt === 0 || r.ok_repair) ? '<span class="chip ok">پرداخت شده</span>' : '<span class="chip no">پرداخت نشده</span>'}</span>
       </div>
       ${park > 0 ? `<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px dashed var(--line)"><span>اجاره پارکینگ: <b>${money(park)}</b> تومان</span><span>${r.ok_parking ? '<span class="chip ok">پرداخت شده</span>' : '<span class="chip no">پرداخت نشده</span>'}</span></div>` : ''}
@@ -937,7 +937,7 @@ function billCard(r, rep) {
 }
 function reminderText(r, rep) {
   return `${S.building} - واحد ${r.unit_no}\nصورتحساب ${rep.month_name} ${rep.year}:\n` +
-    `شارژ ${fmt(r.charge)} | آب ${fmt(r.water)} | گاز ${fmt(r.gas)} | بازسازی ${fmt(r.repair)}` +
+    `شارژ ${fmt(r.charge)} | آب ${fmt(r.water)} | گاز ${fmt(r.gas)} | پس‌انداز ${fmt(r.repair)}` +
     (r.parking ? ` | پارکینگ ${fmt(r.parking)}` : '') +
     `\nبدهی قبلی: ${fmt(r.prev_debt)}\nمانده قابل پرداخت: ${fmt(r.remaining)} تومان`;
 }
@@ -1833,7 +1833,7 @@ function txModal(t, units) {
             <option value="gas" ${t.category === 'gas' ? 'selected' : ''}>قبض گاز</option>
             <option value="electric" ${t.category === 'electric' ? 'selected' : ''}>قبض برق</option>
             <option value="parking" ${t.category === 'parking' ? 'selected' : ''}>اجاره پارکینگ</option>
-            <option value="repair" ${t.category === 'repair' ? 'selected' : ''}>دریافت بازسازی</option>
+            <option value="repair" ${t.category === 'repair' ? 'selected' : ''}>دریافت پس‌انداز</option>
             <option value="charge" ${t.category === 'charge' ? 'selected' : ''}>شارژ ماهیانه</option>
             <option value="other" ${t.category === 'other' ? 'selected' : ''}>سایر (درآمد)</option>
           </optgroup>
