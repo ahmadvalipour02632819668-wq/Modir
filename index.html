@@ -2025,7 +2025,7 @@ function addAccountStandalone(units) {
   form.addEventListener('submit',async e=>{
     e.preventDefault();const d=new FormData(form),v=k=>String(d.get(k)||'').trim().replace(/[۰-۹]/g,x=>'۰۱۲۳۴۵۶۷۸۹'.indexOf(x)).replace(/[٠-٩]/g,x=>'٠١٢٣٤٥٦٧٨٩'.indexOf(x));
     const date=v('start_date_jalali');
-    if(!/^\\d{4}\\/(0[1-9]|1[0-2])\\/(0[1-9]|[12]\\d|3[01])$/.test(date)){ $('#manager-add-account-error',m).textContent='تاریخ را به صورت سال/ماه/روز شمسی وارد کنید.';return; }
+    if(!/^[0-9]{4}\\/(0[1-9]|1[0-2])\\/(0[1-9]|[12][0-9]|3[01])$/.test(date)){ $('#manager-add-account-error',m).textContent='تاریخ را به صورت سال/ماه/روز شمسی وارد کنید.';return; }
     const btn=form.querySelector('button[type="submit"]');btn.disabled=true;btn.textContent='در حال ایجاد...';
     try{
       const result=await T('app_admin_create_account',{p_unit_no:Number(v('unit_no')),p_occupancy:v('occupancy'),p_username:v('username'),p_password:v('password'),p_full_name:v('full_name'),p_phone:v('phone'),p_email:v('email'),p_area:Number(v('area')),p_persons:v('occupancy')==='مالک'?null:Number(v('persons')),p_start_date_jalali:date});
