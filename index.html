@@ -2037,7 +2037,7 @@ function addAccountStandalone(units) {
 }
 
 async function archiveAccount(acc) {
-  const newUsername = `deleted_${Date.now()}_${acc.username}`.slice(0, 60);
+  const newUsername = `arch_${String(acc.id).replace(/-/g, '').slice(0, 26)}`;
   await T('app_admin_save_account', { p_id: acc.id, p_unit_no: acc.unit_no, p_username: newUsername, p_full_name: acc.full_name, p_phone: acc.phone, p_occupancy: acc.occupancy, p_is_primary: false, p_is_active: false, p_new_password: null, p_start_ym: acc.start_ym || 140406 });
 }
 
