@@ -1138,7 +1138,7 @@ const m = modal(`
   <div style="margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
     <h2 style="margin:0">صورتحساب واحد ${fa(uData.unit_no)}</h2>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
-      <button class="btn sf sm" id="m-pay">💸 ثبت پرداخت</button> <!-- 👈 دکمه جدید -->
+      <!-- پرداخت برای هر حساب در کارت صورتحساب همان حساب انجام می‌شود. -->
       ${smsHtml}
     </div>
   </div>
@@ -1551,6 +1551,7 @@ function replyModal(r) {
   });
 }async function payModal(targetUnitNo = null, targetAccountId = null) {
   const isAdmin = S.me.is_admin;
+  if (isAdmin && !targetAccountId) { toast('پرداخت را از دکمه همان صورتحساب در داشبورد باز کنید', true); return; }
   let selectedUnit = isAdmin ? (targetUnitNo || 1) : S.me.unit_no;
   let accountOptions = [];
   let selectedAccountId = targetAccountId || null;
@@ -1571,22 +1572,8 @@ function replyModal(r) {
 
   let debts = await fetchDebts(selectedUnit);
 
-  const unitSelectHtml = isAdmin && !targetAccountId ? `
-    <label class="f" style="margin-bottom:16px;">انتخاب واحد
-      <select id="pm-unit-select">
-        ${Array.from({length: (S.unitCount || 10)}, (_, i) => `<option value="${i+1}" ${selectedUnit === i+1 ? 'selected' : ''}>واحد ${i+1}</option>`).join('')}
-      </select>
-    </label>
-  ` : '';
-
-  const accountSelectHtml = isAdmin && !targetAccountId ? `
-    <label class="f" style="margin-bottom:16px;">پرداخت به حساب
-      <select id="pm-account-select">
-        ${accountOptions.map(a => `<option value="${a.account_id}" ${a.account_id === selectedAccountId ? 'selected' : ''}>${esc(a.full_name || 'بدون نام')} · ${esc(a.occupancy || 'نامشخص')} · بدهی: ${fmt(a.total)}</option>`).join('')}
-      </select>
-    </label>
-    <div id="pm-unit-total" class="card" style="margin:-4px 0 16px;padding:12px;background:var(--bg);font-weight:900;text-align:center">جمع بدهی همه حساب‌های واحد: ${fmt(accountOptions.reduce((sum,a)=>sum+(Number(a.total)||0),0))} تومان</div>
-  ` : '';
+  const unitSelectHtml = '';
+  const accountSelectHtml = '';
 
   const m = modal(`
     <h2>ثبت پرداخت</h2>
@@ -1699,22 +1686,7 @@ function replyModal(r) {
     $('#pf-a', m).value = e.target.value;
   });
 
-  if (isAdmin) {
-    $('#pm-unit-select', m).addEventListener('change', async (e) => {
-      selectedUnit = +e.target.value;
-      selectedAccountId = null;
-      debts = await fetchDebts(selectedUnit);
-      $('#pm-account-select', m).innerHTML = accountOptions.map(a => `<option value="${a.account_id}" ${a.account_id === selectedAccountId ? 'selected' : ''}>${esc(a.full_name || 'بدون نام')} · ${esc(a.occupancy || 'نامشخص')} · بدهی: ${fmt(a.total)}</option>`).join('');
-      $('#pm-unit-total', m).textContent = `جمع بدهی همه حساب‌های واحد: ${fmt(accountOptions.reduce((sum,a)=>sum+(Number(a.total)||0),0))} تومان`;
-      renderDebts(debts);
-    });
-    $('#pm-account-select', m).addEventListener('change', e => {
-      selectedAccountId = e.target.value;
-      selectedAccount = accountOptions.find(a => a.account_id === selectedAccountId) || null;
-      debts = selectedAccount?.debts || [];
-      renderDebts(debts);
-    });
-  }
+
 
   $('#pf', m).addEventListener('submit', async e => {
     e.preventDefault();
@@ -1776,7 +1748,7 @@ function replyModal(r) {
 }
   async function viewPay(el) {
   const admin = S.me.is_admin; const list = await T('app_get_payment_requests'); const pending = list.filter(p => p.status === 'pending');
-  el.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;gap:12px;flex-wrap:wrap"><div><h1>${admin ? 'بررسی پرداخت‌ها' : 'پرداخت بدهی'}</h1><p class="sub" style="margin:0">${admin ? 'پرداخت‌های منتظر تایید شما' : 'پرداخت خود را ثبت کنید.'}</p></div><button class="btn sf" id="np">ثبت پرداخت جدید</button></div>${admin ? `<h2>منتظر تایید (${fa(pending.length)})</h2>${reqTable(pending, true)}<h2 style="margin-top:28px">سابقه</h2>${reqTable(list.filter(p => p.status !== 'pending'), true)}` : reqTable(list, false)}`;
+  el.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;gap:12px;flex-wrap:wrap"><div><h1>${admin ? 'بررسی پرداخت‌ها' : 'پرداخت بدهی'}</h1><p class="sub" style="margin:0">${admin ? 'پرداخت‌های منتظر تایید شما' : 'پرداخت خود را ثبت کنید.'}</p></div>${admin ? '' : '<button class="btn sf" id="np">ثبت پرداخت جدید</button>'}</div>${admin ? `<h2>منتظر تایید (${fa(pending.length)})</h2>${reqTable(pending, true)}<h2 style="margin-top:28px">سابقه</h2>${reqTable(list.filter(p => p.status !== 'pending'), true)}` : reqTable(list, false)}`;
   $('#np').addEventListener('click', async () => { let r = null; if (!admin) { const rep = await T('app_report', { p_year: S.y, p_month: S.m }); r = rep.rows[0]; } payModal(r); });
   $$('[data-ap]').forEach(b => b.addEventListener('click', () => approveModal(list.find(p => p.id == b.dataset.ap))));
 }
