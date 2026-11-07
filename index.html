@@ -2140,15 +2140,56 @@ async function settleAccountModal(acc){
  }catch(e){showErr(e);}finally{b.disabled=false;b.textContent='محاسبه پیش‌نمایش';}});
 }
 
+function openingBalanceModal(acc) {
+  const td=jalaliToday();
+  const today=td.y+'/'+String(td.m).padStart(2,'0')+'/'+String(td.d).padStart(2,'0');
+  const m=modal(`<h2>ثبت مانده اولیه</h2>
+    <p class="sub">${esc(acc.full_name||'—')} · واحد ${fa(acc.unit_no)} · ${esc(acc.occupancy)}</p>
+    <div class="card" style="background:var(--bg);margin-bottom:14px;font-size:12px">این سند مربوط به بدهی یا بستانکاری قبل از ثبت حساب در سامانه است و در موجودی صندوق ساختمان اثر ندارد. برای هر حساب فقط یک بار قابل ثبت است.</div>
+    <form id="opening-balance-form" class="grid g2">
+      <label class="f">نوع مانده
+        <select name="balance_type" required><option value="debit">بدهکار (مبلغ به بدهی اضافه می‌شود)</option><option value="credit">بستانکار (از بدهی کسر می‌شود)</option></select>
+      </label>
+      <label class="f">مبلغ (تومان)<input name="amount" inputmode="numeric" required placeholder="مثلاً ۵۰۰۰۰۰"></label>
+      <label class="f" style="grid-column:1/-1">تاریخ مربوط به مانده (شمسی)<input name="date" dir="ltr" value="${today}" required placeholder="۱۴۰۵/۰۸/۰۱"></label>
+      <label class="f" style="grid-column:1/-1">بابت / توضیحات<input name="note" maxlength="250" placeholder="مثلاً بدهی شارژ ماه‌های قبل"></label>
+      <div style="grid-column:1/-1;display:flex;gap:8px;justify-content:flex-end"><button type="button" class="btn lt" data-opening-close>انصراف</button><button type="submit" class="btn sf">ثبت مانده</button></div>
+      <p id="opening-balance-error" class="sub" style="grid-column:1/-1;color:var(--danger)"></p>
+    </form>`);
+  const form=$('#opening-balance-form',m);
+  attachNumericInputIn(m,'[name="amount"]');
+  $('[data-opening-close]',m).addEventListener('click',()=>closeModal(m));
+  form.addEventListener('submit',async e=>{
+    e.preventDefault();
+    const date=normalizeJalaliDigits(form.elements.date.value);
+    if(!/^[0-9]{4}\\/(0[1-9]|1[0-2])\\/(0[1-9]|[12][0-9]|3[01])$/.test(date)){
+      $('#opening-balance-error',m).textContent='تاریخ را به صورت سال/ماه/روز شمسی وارد کنید.';return;
+    }
+    const parts=date.split('/').map(Number),amount=toNum(form.elements.amount.value);
+    if(amount<=0){$('#opening-balance-error',m).textContent='مبلغ باید بیشتر از صفر باشد.';return;}
+    const btn=form.querySelector('button[type="submit"]');btn.disabled=true;btn.textContent='در حال ثبت...';
+    try{
+      const r=await T('app_admin_register_opening_balance',{
+        p_account_id:acc.id,p_balance_type:form.elements.balance_type.value,p_amount:amount,
+        p_year:parts[0],p_month:parts[1],p_day:parts[2],p_note:form.elements.note.value.trim()||null
+      });
+      if(!r?.ok)throw new Error(r?.error||'ثبت مانده اولیه ناموفق بود');
+      closeModal(m);toast('مانده اولیه ثبت شد؛ صندوق ساختمان تغییری نکرد');go('units');
+    }catch(err){$('#opening-balance-error',m).textContent=err.message||'خطا در ثبت مانده اولیه';}
+    finally{btn.disabled=false;btn.textContent='ثبت مانده';}
+  });
+}
+
 function unitModal(u) {
   const activeAccounts = u.accounts.filter(a => a.is_active !== false); const archivedAccounts = u.accounts.filter(a => a.is_active === false);
-  const m = modal(`<h2>واحد ${fa(u.unit_no)}</h2><div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap"><button class="btn sf" id="quick-change">🔄 تغییر وضعیت واحد</button></div><h3 style="margin:24px 0 12px;font-size:16px">حساب‌های فعال (${fa(activeAccounts.length)})</h3><div id="active-acc">${activeAccounts.map(a => `<form class="acc grid g3" data-id="${a.id}" data-name="${esc(a.full_name)}" data-occ="${esc(a.occupancy)}" style="background:var(--bg);padding:16px;border-radius:12px;margin-bottom:12px"><label class="f">نام<input name="full_name" value="${esc(a.full_name || '')}" required></label><label class="f">موبایل<input name="phone" dir="ltr" value="${esc(a.phone || '')}"></label><label class="f">تاریخ شروع محاسبات<input name="start_date_jalali" dir="ltr" value="${esc(a.start_date_jalali || '')}" placeholder="۱۴۰۵/۰۸/۱۵" required pattern="[0-9۰-۹]{4}/[0-9۰-۹]{2}/[0-9۰-۹]{2}"></label><label class="f">سکونت<select name="occupancy">${OCC.map(o => `<option ${a.occupancy === o ? 'selected' : ''}>${o}</option>`).join('')}</select></label><label class="f">نام کاربری<input name="username" dir="ltr" value="${esc(a.username || '')}"></label><label class="f">رمز جدید<input name="pass" type="text" placeholder="بدون تغییر"></label><div style="align-self:end;display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm" type="submit">ذخیره</button><button type="button" class="btn lt sm" data-reset="${a.id}">ریست رمز</button><button type="button" class="btn rd sm" data-archive="${a.id}">آرشیو</button></div></form>`).join('') || '<p class="sub">حسابی برای این واحد ثبت نشده.</p>'}</div>${archivedAccounts.length ? `<details style="margin-top:20px"><summary style="cursor:pointer;color:var(--muted);font-size:13px;padding:8px 0">📦 سابقه (${fa(archivedAccounts.length)} حساب آرشیو شده — دائمی)</summary><div style="margin-top:12px;opacity:.7"><p style="font-size:11px;color:var(--muted);margin:0 0 8px;background:#fef3c7;padding:6px 10px;border-radius:6px">⚠️ این حساب‌ها غیرفعال دائمی هستند. تراکنش‌هایشان حفظ شده، ولی دسترسی ورود ندارند.</p>${archivedAccounts.map(a => `<div style="background:var(--bg);padding:12px;border-radius:8px;margin-bottom:8px;font-size:13px"><b>${esc(a.full_name || '—')}</b> · ${esc(a.occupancy)} · ${esc(a.phone || '—')}<div style="font-size:12px;color:var(--muted);margin-top:4px">شروع محاسبات: ${esc(a.start_date_jalali || 'ثبت نشده')} · تاریخ خروج: ${esc(a.exit_date_jalali || '—')}</div><span class="chip ex" style="margin-right:8px">آرشیو</span></div>`).join('')}</div></details>` : ''}`);
+  const m = modal(`<h2>واحد ${fa(u.unit_no)}</h2><div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap"><button class="btn sf" id="quick-change">🔄 تغییر وضعیت واحد</button></div><h3 style="margin:24px 0 12px;font-size:16px">حساب‌های فعال (${fa(activeAccounts.length)})</h3><div id="active-acc">${activeAccounts.map(a => `<form class="acc grid g3" data-id="${a.id}" data-name="${esc(a.full_name)}" data-occ="${esc(a.occupancy)}" style="background:var(--bg);padding:16px;border-radius:12px;margin-bottom:12px"><label class="f">نام<input name="full_name" value="${esc(a.full_name || '')}" required></label><label class="f">موبایل<input name="phone" dir="ltr" value="${esc(a.phone || '')}"></label><label class="f">تاریخ شروع محاسبات<input name="start_date_jalali" dir="ltr" value="${esc(a.start_date_jalali || '')}" placeholder="۱۴۰۵/۰۸/۱۵" required pattern="[0-9۰-۹]{4}/[0-9۰-۹]{2}/[0-9۰-۹]{2}"></label><label class="f">سکونت<select name="occupancy">${OCC.map(o => `<option ${a.occupancy === o ? 'selected' : ''}>${o}</option>`).join('')}</select></label><label class="f">نام کاربری<input name="username" dir="ltr" value="${esc(a.username || '')}"></label><label class="f">رمز جدید<input name="pass" type="text" placeholder="بدون تغییر"></label><div style="align-self:end;display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm" type="submit">ذخیره</button><button type="button" class="btn lt sm" data-reset="${a.id}">ریست رمز</button><button type="button" class="btn lt sm" data-opening="${a.id}">ثبت مانده اولیه</button><button type="button" class="btn rd sm" data-archive="${a.id}">آرشیو</button></div></form>`).join('') || '<p class="sub">حسابی برای این واحد ثبت نشده.</p>'}</div>${archivedAccounts.length ? `<details style="margin-top:20px"><summary style="cursor:pointer;color:var(--muted);font-size:13px;padding:8px 0">📦 سابقه (${fa(archivedAccounts.length)} حساب آرشیو شده — دائمی)</summary><div style="margin-top:12px;opacity:.7"><p style="font-size:11px;color:var(--muted);margin:0 0 8px;background:#fef3c7;padding:6px 10px;border-radius:6px">⚠️ این حساب‌ها غیرفعال دائمی هستند. تراکنش‌هایشان حفظ شده، ولی دسترسی ورود ندارند.</p>${archivedAccounts.map(a => `<div style="background:var(--bg);padding:12px;border-radius:8px;margin-bottom:8px;font-size:13px"><b>${esc(a.full_name || '—')}</b> · ${esc(a.occupancy)} · ${esc(a.phone || '—')}<div style="font-size:12px;color:var(--muted);margin-top:4px">شروع محاسبات: ${esc(a.start_date_jalali || 'ثبت نشده')} · تاریخ خروج: ${esc(a.exit_date_jalali || '—')}</div><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px"><span class="chip ex">آرشیو</span><button type="button" class="btn lt sm" data-opening="${a.id}">ثبت مانده اولیه</button></div></div>`).join('')}</div></details>` : ''}`);
 
   $$('form.acc', m).forEach(f => {
     f.addEventListener('submit', async e => { e.preventDefault(); try { const startDate=normalizeJalaliDigits(f.elements.start_date_jalali.value); const dateParts=startDate.split('/'); if(dateParts.length!==3 || dateParts[0].length!==4 || dateParts[1].length!==2 || dateParts[2].length!==2 || dateParts.some(part=>!/^[0-9]+$/.test(part)) || Number(dateParts[1])<1 || Number(dateParts[1])>12 || Number(dateParts[2])<1 || Number(dateParts[2])>31) throw new Error('تاریخ شروع را به صورت سال/ماه/روز شمسی وارد کنید'); const startYm=Number(dateParts[0]+dateParts[1]); await T('app_admin_save_account', { p_id: f.dataset.id, p_unit_no: u.unit_no, p_username: f.elements.username.value, p_full_name: f.elements.full_name.value, p_phone: f.elements.phone.value, p_occupancy: f.elements.occupancy.value, p_is_primary: true, p_is_active: true, p_new_password: f.elements.pass.value || null, p_start_ym: startYm, p_start_date_jalali: startDate }); toast('اطلاعات و تاریخ شروع محاسبات ذخیره شد'); go('units'); } catch (err) { showErr(err); } });
     $('[data-reset]', f)?.addEventListener('click', async () => { if (!confirm('رمز عبور این کاربر بازنشانی شود؟')) return; try { const newPass = await T('app_admin_reset_password', { p_id: f.dataset.id }); alert('رمز جدید: ' + newPass + '\n\nلطفاً به ساکن اطلاع دهید.'); toast('رمز بازنشانی شد'); } catch (err) { showErr(err); } });
     $('[data-archive]', f)?.addEventListener('click', async () => { const acc = activeAccounts.find(a => a.id == f.dataset.id); if (acc) await settleAccountModal(acc); });
   });
+  $('[data-opening]', m).forEach(b => b.addEventListener('click', () => { const acc=u.accounts.find(a=>a.id===b.dataset.opening); if(acc) openingBalanceModal(acc); }));
   $('#quick-change', m)?.addEventListener('click', () => quickChangeModal(u, activeAccounts));
 }
 
