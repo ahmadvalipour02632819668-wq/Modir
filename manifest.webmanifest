@@ -1,11 +1,11 @@
 {
-  "id": "/",
+  "id": "./",
   "name": "مدیر | مدیریت مجتمع‌های مسکونی",
   "short_name": "مدیر",
   "lang": "fa",
   "dir": "rtl",
-  "start_url": "/",
-  "scope": "/",
+  "start_url": "./",
+  "scope": "./",
   "display": "standalone",
   "display_override": [
     "standalone",
@@ -15,7 +15,7 @@
   "theme_color": "#2d3463",
   "icons": [
     {
-      "src": "/icon.svg",
+      "src": "./icon.svg",
       "sizes": "512x512",
       "type": "image/svg+xml",
       "purpose": "any maskable"
