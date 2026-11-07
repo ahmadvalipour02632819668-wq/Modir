@@ -9,8 +9,8 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%232d3463'/><path d='M20 80 L20 30 L50 10 L80 30 L80 80 Z' fill='white'/><rect x='40' y='60' width='20' height='20' fill='%23f7ae74'/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;700;900&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" onerror="this.onerror=null;this.src='https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js'"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js" onerror="this.onerror=null;this.src='https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js'"></script>
 <style>
 /* ---------- Theme Variables ---------- */
 :root {
@@ -281,6 +281,10 @@ if (savedTheme !== 'default') document.documentElement.setAttribute('data-theme'
 
 const SUPABASE_URL = 'https://fvhzshtgtkqzrgmblczh.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_RPqoUxTZxx-pCp06bwh0pg_dGjF5daZ';
+if (!window.supabase || typeof window.supabase.createClient !== 'function') {
+  document.getElementById('app').innerHTML = '<div style="max-width:560px;margin:12vh auto;padding:24px;text-align:center;background:#fff;border-radius:18px;color:#23264a;font-family:Vazirmatn,sans-serif"><h2>خطا در بارگذاری کتابخانه اتصال</h2><p>ارتباط با سرور کتابخانه برقرار نشد. اینترنت یا دسترسی به CDN را بررسی و صفحه را دوباره بارگذاری کنید.</p><button onclick="location.reload()" style="padding:10px 20px;border:0;border-radius:10px;background:#2d3463;color:#fff">تلاش مجدد</button></div>';
+  throw new Error('Supabase client library failed to load from primary and fallback CDNs');
+}
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: false } });
 
 // Register the PWA service worker on every normal visit, not only when push notifications are enabled.
