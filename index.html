@@ -982,9 +982,6 @@ function billCard(r, rep) {
   const repairBalance = applyCredit(rep_amt);
   const parkingBalance = applyCredit(park);
   extraExpenses.forEach(x => applyCredit(x.amount));
-  const waterStatus = w === 0 ? '—' :
-    waterBalance.applied >= w ? 'از بستانکاری/پرداختی کسر شد' :
-    waterBalance.applied > 0 ? 'بخشی از بستانکاری کسر شد' : 'در انتظار پرداخت';
 
   return `
   <div class="card" style="padding:0;overflow:hidden">
