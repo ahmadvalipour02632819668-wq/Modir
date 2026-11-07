@@ -9,7 +9,49 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%232d3463'/><path d='M20 80 L20 30 L50 10 L80 30 L80 80 Z' fill='white'/><rect x='40' y='60' width='20' height='20' fill='%23f7ae74'/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;700;900&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" onerror="this.onerror=null;this.src='https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js'"></script>
+<script>
+// Lightweight local Supabase client: this app uses only RPC and Edge Function calls.
+window.supabase = window.supabase || {
+  createClient: function (baseUrl, anonKey) {
+    const headers = { apikey: anonKey, Authorization: 'Bearer ' + anonKey };
+    async function request(url, options) {
+      try {
+        const response = await fetch(url, options);
+        const raw = await response.text();
+        let payload = null;
+        try { payload = raw ? JSON.parse(raw) : null; } catch (_) { payload = raw; }
+        if (!response.ok) {
+          const detail = payload && typeof payload === 'object' ? payload : {};
+          return { data: null, error: { message: detail.message || detail.msg || detail.error || ('HTTP ' + response.status), code: detail.code, details: detail.details, hint: detail.hint, status: response.status } };
+        }
+        return { data: payload, error: null };
+      } catch (error) {
+        return { data: null, error: { message: error.message || 'Network request failed', name: error.name || 'NetworkError' } };
+      }
+    }
+    return {
+      rpc: function (name, args) {
+        return request(baseUrl.replace(/\\/$/, '') + '/rest/v1/rpc/' + encodeURIComponent(name), {
+          method: 'POST',
+          headers: Object.assign({}, headers, { 'Content-Type': 'application/json', Accept: 'application/json' }),
+          body: JSON.stringify(args || {})
+        });
+      },
+      functions: {
+        invoke: function (name, options) {
+          const opts = options || {};
+          const extra = opts.headers || {};
+          return request(baseUrl.replace(/\\/$/, '') + '/functions/v1/' + encodeURIComponent(name), {
+            method: opts.method || 'POST',
+            headers: Object.assign({}, headers, extra, { 'Content-Type': 'application/json' }),
+            body: opts.body === undefined ? undefined : JSON.stringify(opts.body)
+          });
+        }
+      }
+    };
+  }
+};
+</script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js" onerror="this.onerror=null;this.src='https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js'"></script>
 <style>
 /* ---------- Theme Variables ---------- */
