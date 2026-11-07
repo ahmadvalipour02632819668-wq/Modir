@@ -662,7 +662,7 @@ async function renderLogin() {
     if(!e.target.matches('[data-jyear],[data-jmonth],[data-jday]'))return;
     const wrap=e.target.closest('[data-jalali-date]');if(!wrap)return;
     const y=wrap.querySelector('[data-jyear]'),m=wrap.querySelector('[data-jmonth]'),d=wrap.querySelector('[data-jday]'),hidden=wrap.parentElement.querySelector('input[type="hidden"]');
-    const max=Number(m.value)===12?29:Number(m.value)>=7?30:31;
+    const max=Number(m.value)>=7?30:31;
     const oldDay=Number(d.value);d.innerHTML='<option value="">روز</option>'+Array.from({length:max},(_,i)=>'<option value="'+(i+1)+'">'+(i+1)+'</option>').join('');
     if(oldDay>0&&oldDay<=max)d.value=String(oldDay);
     hidden.value=y.value&&m.value&&d.value?y.value+'/'+String(m.value).padStart(2,'0')+'/'+String(d.value).padStart(2,'0'):'';
