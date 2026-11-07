@@ -966,6 +966,26 @@ function billCard(r, rep) {
   const paid = Number(r.paid_this_month) || 0;
   const rem = Number(r.remaining) || 0;
 
+  // Keep gross obligations visible; apply prior credit and this month's
+  // payments to them in the same oldest-first order used by the debt ledger.
+  const priorDebt = Math.max(0, prev);
+  const currentPaymentForObligations = Math.max(0, paid - priorDebt);
+  let availableCredit = Math.max(0, -prev) + currentPaymentForObligations;
+  const applyCredit = amount => {
+    const applied = Math.min(Math.max(0, Number(amount) || 0), availableCredit);
+    availableCredit -= applied;
+    return { applied, remaining: Math.max(0, (Number(amount) || 0) - applied) };
+  };
+  applyCredit(chg);
+  const waterBalance = applyCredit(w);
+  const gasBalance = applyCredit(g);
+  const repairBalance = applyCredit(rep_amt);
+  const parkingBalance = applyCredit(park);
+  extraExpenses.forEach(x => applyCredit(x.amount));
+  const waterStatus = w === 0 ? '—' :
+    waterBalance.applied >= w ? 'از بستانکاری/پرداختی کسر شد' :
+    waterBalance.applied > 0 ? 'بخشی از بستانکاری کسر شد' : 'در انتظار پرداخت';
+
   return `
   <div class="card" style="padding:0;overflow:hidden">
     <div class="bank-card" style="border-radius:20px 20px 0 0;box-shadow:none"><i class="shine"></i>
@@ -987,8 +1007,10 @@ function billCard(r, rep) {
         <span>${(chg === 0 || (r.ok_charge && chargeExpense === 0)) ? '<span class="chip ok">پرداخت شده</span>' : '<span class="chip no">پرداخت نشده</span>'}</span>
       </div>
       <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px dashed var(--line)">
-        <span>سهم قبض آب: <b>${money(w)}</b> تومان</span>
-        <span>${(w === 0 || (r.ok_water && waterExpense === 0)) ? '<span class="chip ok">پرداخت شده</span>' : '<span class="chip no">پرداخت نشده</span>'}</span>
+        <span>سهم قبض آب: <b>${money(w)}</b> تومان
+          ${waterBalance.applied > 0 ? `<small style="display:block;color:var(--muted);font-size:11px;margin-top:4px">کسر از بستانکاری/پرداختی: ${money(waterBalance.applied)} تومان · مانده آب: ${money(waterBalance.remaining)} تومان</small>` : ''}
+        </span>
+        <span>${w === 0 ? '' : waterBalance.remaining === 0 ? '<span class="chip ok">تسویه از محل بستانکاری/پرداختی</span>' : waterBalance.applied > 0 ? '<span class="chip pd">بخشی کسر شد</span>' : '<span class="chip no">پرداخت نشده</span>'}</span>
       </div>
       <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px dashed var(--line)">
         <span>سهم قبض گاز: <b>${money(g)}</b> تومان</span>
