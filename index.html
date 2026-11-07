@@ -634,7 +634,7 @@ async function renderLogin() {
 
   const specific=$('#reg-specific'), type=$('#reg-type');
   const input=(label,name,attrs)=>'<label class="f">'+label+'<input name="'+name+'" '+(attrs||'')+'></label>';
-  const date=(label,name)=>input(label,name,'required inputmode="numeric" placeholder="۱۴۰۵/۰۸/۱۵" pattern="[0-9]{4}/(0[1-9]|1[0-2])/([0-2][0-9]|3[01])" maxlength="10" dir="ltr"');
+  const date=(label,name)=>input(label,name,'required inputmode="numeric" placeholder="1405/08/15" pattern="[0-9]{4}/(0[1-9]|1[0-2])/([0-2][0-9]|3[01])" maxlength="10" dir="ltr"');
   let buildings=[];
   const loadBuildings=async()=>{
     const info=await api('app_public_info'); buildings=Array.isArray(info?.buildings)?info.buildings:[];
@@ -675,7 +675,7 @@ async function renderLogin() {
   $('#registration-form').addEventListener('submit',async e=>{
     e.preventDefault();const form=e.currentTarget,data=new FormData(form),v=type.value,btn=$('#register-submit'),msg=$('#register-message');
     if(!v){msg.textContent='ماهیت ثبت‌نام را انتخاب کنید';return;}
-    const val=k=>String(data.get(k)||'').trim();btn.disabled=true;btn.textContent='در حال ارسال...';msg.textContent='';msg.style.color='var(--muted)';
+    const val=k=>String(data.get(k)||'').trim().replace(/[۰-۹]/g,d=>'۰۱۲۳۴۵۶۷۸۹'.indexOf(d)).replace(/[٠-٩]/g,d=>'٠١٢٣٤٥٦٧٨٩'.indexOf(d));btn.disabled=true;btn.textContent='در حال ارسال...';msg.textContent='';msg.style.color='var(--muted)';
     try{
       let r;
       if(v==='manager'){
