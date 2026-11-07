@@ -976,12 +976,22 @@ function billCard(r, rep) {
     availableCredit -= applied;
     return { applied, remaining: Math.max(0, (Number(amount) || 0) - applied) };
   };
-  applyCredit(chg);
-  const waterBalance = applyCredit(w);
-  const gasBalance = applyCredit(g);
-  const repairBalance = applyCredit(rep_amt);
-  const parkingBalance = applyCredit(park);
-  extraExpenses.forEach(x => applyCredit(x.amount));
+  // Recurring obligations are settled first in category order. Shared
+  // expenses (including the water bill) follow in their recorded order.
+  applyCredit(Number(r.charge) || 0);
+  const baseWaterOffset = applyCredit(Number(r.water) || 0).applied;
+  applyCredit(Number(r.gas) || 0);
+  applyCredit(Number(r.repair) || 0);
+  applyCredit(Number(r.parking) || 0);
+  let waterExpenseOffset = 0;
+  expenseItems.forEach(x => {
+    const applied = applyCredit(x.amount).applied;
+    if (isExpenseFor(x, 'water', ['آب'])) waterExpenseOffset += applied;
+  });
+  const waterBalance = {
+    applied: baseWaterOffset + waterExpenseOffset,
+    remaining: Math.max(0, w - baseWaterOffset - waterExpenseOffset)
+  };
 
   return `
   <div class="card" style="padding:0;overflow:hidden">
