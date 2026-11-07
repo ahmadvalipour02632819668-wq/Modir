@@ -1810,7 +1810,7 @@ function replyModal(r) {
       submitBtn.disabled = false;
       submitBtn.textContent = 'ثبت پرداخت';
     }
-  });;
+  });
 }
   async function viewPay(el) {
   const admin = S.me.is_admin; const list = await T('app_get_payment_requests'); const pending = list.filter(p => p.status === 'pending');
