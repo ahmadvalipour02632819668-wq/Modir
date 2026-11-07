@@ -161,9 +161,9 @@ tr:hover td{background:var(--bg)}
 .login .form .card{width:100%;max-width:420px}
 
 /* ---------- Modal (bottom sheet on mobile) ---------- */
-.modal-bg{position:fixed;inset:0;background:rgba(25,28,60,.55);backdrop-filter:blur(5px);display:flex;align-items:center;justify-content:center;padding:20px;z-index:60;animation:fadeIn .25s ease}
+.modal-bg{position:fixed;inset:0;background:rgba(25,28,60,.55);backdrop-filter:blur(5px);display:flex;align-items:center;justify-content:center;padding:20px;z-index:60;animation:fadeIn .25s ease;overscroll-behavior:contain}
 @keyframes fadeIn{from{opacity:0}}
-.modal{background:var(--bg);border-radius:28px;width:100%;max-width:720px;padding:30px 22px 24px;box-shadow:var(--shadow-lg);max-height:90vh;overflow-y:auto;position:relative;animation:up .4s var(--ease)}
+.modal{background:var(--bg);border-radius:28px;width:100%;max-width:720px;padding:30px 22px 24px;box-shadow:var(--shadow-lg);max-height:90vh;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;position:relative;animation:up .4s var(--ease)}
 .modal::before{content:"";position:absolute;top:10px;left:50%;transform:translateX(-50%);width:44px;height:5px;border-radius:99px;background:var(--line)}
 @media(max-width:640px){.modal-bg{align-items:flex-end;padding:0}.modal{border-radius:28px 28px 0 0;max-height:92vh}}
 .modal .x{position:absolute;top:18px;left:18px;background:var(--card);border:0;width:34px;height:34px;border-radius:50%;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--ink);box-shadow:var(--shadow)}
@@ -233,9 +233,9 @@ tr:hover td{background:var(--bg)}
 @media(prefers-reduced-motion:reduce){.fly-payment{display:none!important}}
 
 /* Compact dashboard, four unit tiles per row */
-html{overflow-y:auto!important;overflow-x:hidden;overscroll-behavior-y:auto!important;height:auto!important}
-body{overflow-y:visible!important;overflow-x:hidden;overscroll-behavior-y:auto!important;height:auto!important;min-height:100vh;touch-action:pan-y!important}
-#app,main#view{height:auto!important;max-height:none!important;overflow-y:visible!important;touch-action:pan-y!important}
+html{overflow-x:hidden;overflow-y:auto;overscroll-behavior-y:contain;min-height:100%}
+body{overflow-x:hidden;min-height:100vh;overscroll-behavior-y:contain;touch-action:pan-y}
+#app,main#view{height:auto;max-height:none;touch-action:pan-y}
 .dashboard-money-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
 .dashboard-money-grid > .bank-card:first-child{grid-column:1 / -1;min-height:0}
 .dashboard-money-grid > .bank-card:not(:first-child){grid-column:auto}
@@ -530,11 +530,19 @@ function bindPeriod(cb) {
 }
 function periodPicker() { return `<div style="display:flex;gap:10px;margin-bottom:20px"><select id="pk-m" style="width:120px">${monthOptions(S.m)}</select><select id="pk-y" style="width:100px">${yearOptions(S.y)}</select></div>`; }
 
+function closeModal(bg) {
+  if (!bg?.isConnected) return;
+  if (history.state?.modal) history.back();
+  else bg.remove();
+}
+
 function modal(html) {
   const bg = document.createElement('div'); bg.className = 'modal-bg';
   bg.innerHTML = `<div class="modal"><button class="x" aria-label="بستن">×</button>${html}</div>`;
-  bg.addEventListener('click', e => { if (e.target === bg || e.target.classList.contains('x')) bg.remove(); });
-  document.body.appendChild(bg); return bg;
+  bg.addEventListener('click', e => { if (e.target === bg || e.target.classList.contains('x')) closeModal(bg); });
+  document.body.appendChild(bg);
+  history.pushState({ ...(history.state || {}), app: true, modal: true, view: S.view || 'dash' }, '', '#modal');
+  return bg;
 }
 
 function smsLink(phone, text) {
@@ -701,7 +709,7 @@ async function renderLogin() {
 
   $('#forgot-pass').addEventListener('click',e=>{
     e.preventDefault();const m=modal('<h2>فراموشی گذرواژه</h2><form id="fp-form" class="grid g2"><label class="f">نام کاربری<input id="fp-user" dir="ltr" required></label><label class="f">شماره موبایل<input id="fp-phone" dir="ltr" required></label><label class="f" style="grid-column:1/-1">گذرواژه جدید<input id="fp-pass" type="password" dir="ltr" required pattern="[0-9]{4,8}" minlength="4" maxlength="8"></label><button class="btn sf" style="grid-column:1/-1">تغییر گذرواژه</button></form>');
-    $('#fp-form',m).addEventListener('submit',async e=>{e.preventDefault();try{const r=await api('app_reset_password',{p_username:$('#fp-user',m).value,p_phone:$('#fp-phone',m).value,p_new_password:$('#fp-pass',m).value});if(!r.ok){toast(r.error,true);return;}m.remove();toast('گذرواژه تغییر کرد. وارد شوید.');}catch(err){showErr(err);}});
+    $('#fp-form',m).addEventListener('submit',async e=>{e.preventDefault();try{const r=await api('app_reset_password',{p_username:$('#fp-user',m).value,p_phone:$('#fp-phone',m).value,p_new_password:$('#fp-pass',m).value});if(!r.ok){toast(r.error,true);return;}closeModal(m);toast('گذرواژه تغییر کرد. وارد شوید.');}catch(err){showErr(err);}});
   });
 }
 async function logout(silent = false) {
@@ -807,7 +815,7 @@ async function renderShell() {
   $('#go-prof').addEventListener('click', () => { $('#who-pop').classList.remove('show'); go('profile'); });
   $('#go-req').addEventListener('click', () => go('requests'));
   $$('.bnav-items button').forEach(b => b.addEventListener('click', () => go(b.dataset.v)));
-  window.addEventListener('resize', debounce(renderShellHeaderState, 100));
+  window.addEventListener('resize', debounce(() => renderShellHeaderState(false), 100));
   if ('serviceWorker' in navigator && window.isSecureContext) getPushServiceWorker().catch(err => console.warn('Service worker registration failed:', err));
   go(S.view);
   setTimeout(maybeAskForPushPermission, 500);
@@ -839,7 +847,7 @@ function go(v, isBackNavigation = false) {
   }
 }
 
-function renderShellHeaderState() {
+function renderShellHeaderState(resetScroll = true) {
   const all = [...getMenuItems(), ['services', 'خدمات']];
   const current = all.find(t => t[0] === S.view);
   const t = $('#appbar-title');
@@ -857,7 +865,7 @@ function renderShellHeaderState() {
     $('span', dia).innerHTML = (LINE_ICONS[key] || ico(key));
     dia.classList.remove('bump'); void dia.offsetWidth; dia.classList.add('bump');
   }
-  window.scrollTo(0, 0);
+  if (resetScroll) window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
 }
 
 function showConnectionError() {
@@ -1139,7 +1147,7 @@ const m = modal(`
 
 // بعد از تعریف مودال، به دکمه ثبت پرداخت وصل کن
 $('#m-pay', m)?.addEventListener('click', () => {
-  m.remove();
+  closeModal(m);
   payModal(uData.unit_no); // 👈 ارسال شماره واحد به فرم پرداخت
 });  }));
 }
@@ -1535,7 +1543,7 @@ function replyModal(r) {
         `💬 پاسخ مدیر:\n${reply}`
       );
 
-      m.remove();
+      closeModal(m);
       toast('پاسخ ثبت و به بله ارسال شد');
       go('requests');
     } catch (err) { showErr(err); }
@@ -1725,7 +1733,7 @@ function replyModal(r) {
         notifyBale(`💸 پرداخت جدید (مبلغ دلخواه):\n\n👤 واحد ${selectedUnit} - ${S.me.full_name}\n💰 مبلغ: ${fmt(totalAmount)} تومان`);
       }
 
-      m.remove();
+      closeModal(m);
       toast('پرداخت با موفقیت ثبت شد و منتظر تایید است');
       go(S.view);
     } catch (err) { showErr(err); }
@@ -1741,12 +1749,12 @@ function replyModal(r) {
 function approveModal(p) {
   const m = modal(`<h2>تایید پرداخت واحد ${fa(p.unit_no)}</h2><p class="sub">${esc(p.full_name || '')} · بابت ${esc(CATS[p.category] || p.category)} · ${MONTHS[p.month-1]} ${fa(p.year)}</p>${p.receipt_image ? `<div style="margin-bottom:16px;text-align:center"><img src="${p.receipt_image}" style="max-width:100%;max-height:300px;border-radius:12px;border:1px solid var(--line)"></div>` : `<div class="card" style="background:var(--bg);margin-bottom:16px;text-align:center;color:var(--muted)">تصویری بارگذاری نشده است</div>`}<div class="grid g2"><label class="f">مبلغ تاییدی (تومان)<input id="ap-a" value="${fmt(p.amount)}" inputmode="numeric"></label><label class="f">یادداشت<input id="ap-n"></label></div><div style="margin-top:20px;display:flex;gap:10px"><button class="btn" id="ap-go" style="flex:1">تایید و ثبت</button><button class="btn rd" id="ap-rj">رد کردن</button></div>`);
   attachNumericInputIn(m, '#ap-a');
-  $('#ap-rj', m).addEventListener('click', async () => { const note = prompt('دلیل رد:') ?? null; if (note === null) return; try { await T('app_admin_review_payment', { p_id: p.id, p_approve: false, p_admin_note: note }); m.remove(); toast('رد شد'); go('pay'); } catch (e) { showErr(e); } });
+  $('#ap-rj', m).addEventListener('click', async () => { const note = prompt('دلیل رد:') ?? null; if (note === null) return; try { await T('app_admin_review_payment', { p_id: p.id, p_approve: false, p_admin_note: note }); closeModal(m); toast('رد شد'); go('pay'); } catch (e) { showErr(e); } });
   $('#ap-go', m).addEventListener('click', async () => {
     try {
       await T('app_admin_review_payment', { p_id: p.id, p_approve: true, p_amount: toNum($('#ap-a', m).value), p_admin_note: $('#ap-n', m).value });
       notifyBale(`✅ پرداخت تایید شد:\n\n👤 واحد ${p.unit_no} - ${p.full_name}\n💰 مبلغ: ${fmt(p.amount)} تومان\n📅 بابت: ${CATS[p.category] || p.category} - ${MONTHS[p.month-1]} ${p.year}`);
-      m.remove(); toast('تایید شد'); go('pay');
+      closeModal(m); toast('تایید شد'); go('pay');
     } catch (e) { showErr(e); }
   });
 }
@@ -1929,7 +1937,7 @@ function txModal(t, units) {
 
       notifyBale(`${isNew ? '📝 تراکنش جدید' : '✏️ ویرایش تراکنش'}:\n\n🔹 نوع: ${txType}\n🏢 واحد: ${unitNo ? 'واحد ' + unitNo : 'ساختمان'}\n💰 مبلغ: ${fmt(amount)} تومان\n📄 بابت: ${CATS[category] || category}`);
 
-      m.remove(); 
+      closeModal(m); 
       toast(isNew ? 'ثبت شد' : 'ویرایش شد'); 
       go('tx');
     } catch (e) { showErr(e); }
@@ -2021,7 +2029,7 @@ function addAccountStandalone(units) {
   const form=$('#manager-add-account-form',m), occ=form.elements.occupancy, personsWrap=$('#manager-add-persons-wrap',m), dateLabel=$('#manager-add-date-label',m);
   const sync=()=>{const owner=occ.value==='مالک';personsWrap.classList.toggle('hidden',owner);form.elements.persons.required=!owner;if(owner)form.elements.persons.value='';dateLabel.textContent=owner?'تاریخ خرید ملک':occ.value==='مستأجر'?'تاریخ شروع قرارداد اجاره':'تاریخ شروع پرداخت هزینه‌های ساختمان';};
   occ.addEventListener('change',sync); sync();
-  $('[data-close-modal]',m).addEventListener('click',()=>m.remove());
+  $('[data-close-modal]',m).addEventListener('click',()=>closeModal(m));
   form.addEventListener('submit',async e=>{
     e.preventDefault();const d=new FormData(form),v=k=>String(d.get(k)||'').trim().replace(/[۰-۹]/g,x=>'۰۱۲۳۴۵۶۷۸۹'.indexOf(x)).replace(/[٠-٩]/g,x=>'٠١٢٣٤٥٦٧٨٩'.indexOf(x));
     const date=v('start_date_jalali');
@@ -2030,7 +2038,7 @@ function addAccountStandalone(units) {
     try{
       const result=await T('app_admin_create_account',{p_unit_no:Number(v('unit_no')),p_occupancy:v('occupancy'),p_username:v('username'),p_password:v('password'),p_full_name:v('full_name'),p_phone:v('phone'),p_email:v('email'),p_area:Number(v('area')),p_persons:v('occupancy')==='مالک'?null:Number(v('persons')),p_start_date_jalali:date});
       if(!result?.ok)throw new Error(result?.error||'ایجاد حساب ناموفق بود');
-      m.remove();toast('حساب با موفقیت ایجاد شد');go('units');
+      closeModal(m);toast('حساب با موفقیت ایجاد شد');go('units');
     }catch(err){$('#manager-add-account-error',m).textContent=err.message||'خطا در ایجاد حساب';}
     finally{btn.disabled=false;btn.textContent='ایجاد حساب';}
   });
@@ -2057,7 +2065,7 @@ function addAccountForm(m, u) {
   const list = $('#active-acc', m); const form = document.createElement('form');
   form.className = 'acc grid g3'; form.style.cssText = 'background:var(--bg);padding:16px;border-radius:12px;margin-bottom:12px;border:2px dashed var(--accent)';
   form.innerHTML = `<label class="f">نام<input name="full_name" required></label><label class="f">موبایل<input name="phone" dir="ltr" required></label><label class="f">سکونت<select name="occupancy">${OCC.map(o => `<option>${o}</option>`).join('')}</select></label><label class="f">نام کاربری<input name="username" dir="ltr" required></label><label class="f">رمز اولیه<input name="pass" type="text" required></label><div style="align-self:end;display:flex;gap:8px"><button class="btn sm" type="submit">ایجاد</button><button type="button" class="btn lt sm" data-cancel>انصراف</button></div>`;
-  list.appendChild(form); form.querySelector('[data-cancel]').onclick = () => form.remove();
+  list.appendChild(form); form.querySelector('[data-cancel]').onclick = () => forcloseModal(m);
   form.addEventListener('submit', async e => { e.preventDefault(); try { await T('app_admin_save_account', { p_id: null, p_unit_no: u.unit_no, p_username: form.elements.username.value, p_full_name: form.elements.full_name.value, p_phone: form.elements.phone.value, p_occupancy: form.elements.occupancy.value, p_is_primary: true, p_is_active: true, p_new_password: form.elements.pass.value, p_start_ym: 140406 }); toast('حساب ایجاد شد'); go('units'); } catch (err) { showErr(err); } });
 }
 
@@ -2071,19 +2079,19 @@ function renderScenarioForm(scenario, m, u, activeAccounts) {
   const container = $('#sc-form', m); const tenant = activeAccounts.find(a => a.occupancy === 'مستأجر'); const owner = activeAccounts.find(a => a.occupancy === 'مالک'); const ownerResident = activeAccounts.find(a => a.occupancy === 'مالک ساکن');
   if (scenario === 'remove-tenant') {
     container.innerHTML = `<div class="card" style="background:#fef3c7;margin-bottom:16px;font-size:13px"><b>📋 خلاصه:</b><ul style="margin:8px 0 0;padding-right:20px"><li>حساب «${esc(tenant?.full_name || 'مستأجر')}» آرشیو می‌شود (دائمی)</li><li>«${esc(owner?.full_name || 'مالک')}» به «مالک ساکن» تغییر می‌کند</li><li>✅ همه تراکنش‌های قبلی حفظ می‌شوند</li></ul></div><button class="btn sf" id="apply-btn">✅ تایید و اعمال</button>`;
-    $('#apply-btn', container)?.addEventListener('click', async () => { try { if (tenant) await archiveAccount(tenant); if (owner) { await T('app_admin_save_account', { p_id: owner.id, p_unit_no: u.unit_no, p_username: owner.username, p_full_name: owner.full_name, p_phone: owner.phone, p_occupancy: 'مالک ساکن', p_is_primary: true, p_is_active: true, p_new_password: null, p_start_ym: owner.start_ym || 140406 }); } m.remove(); toast('تغییرات اعمال شد'); go('units'); } catch (err) { showErr(err); } });
+    $('#apply-btn', container)?.addEventListener('click', async () => { try { if (tenant) await archiveAccount(tenant); if (owner) { await T('app_admin_save_account', { p_id: owner.id, p_unit_no: u.unit_no, p_username: owner.username, p_full_name: owner.full_name, p_phone: owner.phone, p_occupancy: 'مالک ساکن', p_is_primary: true, p_is_active: true, p_new_password: null, p_start_ym: owner.start_ym || 140406 }); } closeModal(m); toast('تغییرات اعمال شد'); go('units'); } catch (err) { showErr(err); } });
   } else if (scenario === 'owner-to-absent') {
     container.innerHTML = `<div class="card" style="background:#fef3c7;margin-bottom:16px;font-size:13px"><b>📋 خلاصه:</b><ul style="margin:8px 0 0;padding-right:20px"><li>«${esc(ownerResident?.full_name || 'مالک ساکن')}» به «مالک» تغییر می‌کند</li><li>مستأجر جدید با فرم زیر اضافه می‌شود</li></ul></div><form id="sc-f" class="grid g2"><label class="f">نام مستأجر<input name="tenant_name" required></label><label class="f">موبایل<input name="tenant_phone" dir="ltr" required></label><label class="f">نام کاربری<input name="tenant_username" dir="ltr" required></label><label class="f">رمز اولیه<input name="tenant_pass" type="text" required></label><button class="btn sf" style="grid-column:1/-1" type="submit">✅ اعمال</button></form>`;
-    $('#sc-f', container).addEventListener('submit', async e => { e.preventDefault(); try { if (ownerResident) { await T('app_admin_save_account', { p_id: ownerResident.id, p_unit_no: u.unit_no, p_username: ownerResident.username, p_full_name: ownerResident.full_name, p_phone: ownerResident.phone, p_occupancy: 'مالک', p_is_primary: false, p_is_active: true, p_new_password: null, p_start_ym: ownerResident.start_ym || 140406 }); } await T('app_admin_save_account', { p_id: null, p_unit_no: u.unit_no, p_username: e.target.tenant_username.value, p_full_name: e.target.tenant_name.value, p_phone: e.target.tenant_phone.value, p_occupancy: 'مستأجر', p_is_primary: true, p_is_active: true, p_new_password: e.target.tenant_pass.value, p_start_ym: 140406 }); m.remove(); toast('تغییرات اعمال شد'); go('units'); } catch (err) { showErr(err); } });
+    $('#sc-f', container).addEventListener('submit', async e => { e.preventDefault(); try { if (ownerResident) { await T('app_admin_save_account', { p_id: ownerResident.id, p_unit_no: u.unit_no, p_username: ownerResident.username, p_full_name: ownerResident.full_name, p_phone: ownerResident.phone, p_occupancy: 'مالک', p_is_primary: false, p_is_active: true, p_new_password: null, p_start_ym: ownerResident.start_ym || 140406 }); } await T('app_admin_save_account', { p_id: null, p_unit_no: u.unit_no, p_username: e.target.tenant_username.value, p_full_name: e.target.tenant_name.value, p_phone: e.target.tenant_phone.value, p_occupancy: 'مستأجر', p_is_primary: true, p_is_active: true, p_new_password: e.target.tenant_pass.value, p_start_ym: 140406 }); closeModal(m); toast('تغییرات اعمال شد'); go('units'); } catch (err) { showErr(err); } });
   } else if (scenario === 'replace-tenant') {
     container.innerHTML = `<div class="card" style="background:#fef3c7;margin-bottom:16px;font-size:13px"><b>📋 خلاصه:</b><ul style="margin:8px 0 0;padding-right:20px"><li>مستأجر فعلی «${esc(tenant?.full_name || '—')}» آرشیو می‌شود (دائمی)</li><li>مستأجر جدید با یوزر/پس جدید اضافه می‌شود</li></ul></div><form id="sc-f" class="grid g2"><label class="f">نام مستأجر جدید<input name="tenant_name" required></label><label class="f">موبایل<input name="tenant_phone" dir="ltr" required></label><label class="f">نام کاربری<input name="tenant_username" dir="ltr" required></label><label class="f">رمز اولیه<input name="tenant_pass" type="text" required></label><button class="btn sf" style="grid-column:1/-1" type="submit">✅ اعمال</button></form>`;
-    $('#sc-f', container).addEventListener('submit', async e => { e.preventDefault(); try { if (tenant) await archiveAccount(tenant); await T('app_admin_save_account', { p_id: null, p_unit_no: u.unit_no, p_username: e.target.tenant_username.value, p_full_name: e.target.tenant_name.value, p_phone: e.target.tenant_phone.value, p_occupancy: 'مستأجر', p_is_primary: true, p_is_active: true, p_new_password: e.target.tenant_pass.value, p_start_ym: 140406 }); m.remove(); toast('مستأجر تعویض شد'); go('units'); } catch (err) { showErr(err); } });
+    $('#sc-f', container).addEventListener('submit', async e => { e.preventDefault(); try { if (tenant) await archiveAccount(tenant); await T('app_admin_save_account', { p_id: null, p_unit_no: u.unit_no, p_username: e.target.tenant_username.value, p_full_name: e.target.tenant_name.value, p_phone: e.target.tenant_phone.value, p_occupancy: 'مستأجر', p_is_primary: true, p_is_active: true, p_new_password: e.target.tenant_pass.value, p_start_ym: 140406 }); closeModal(m); toast('مستأجر تعویض شد'); go('units'); } catch (err) { showErr(err); } });
   } else if (scenario === 'replace-all') {
     container.innerHTML = `<div class="card" style="background:#fee2e2;margin-bottom:16px;font-size:13px"><b>⚠️ هشدار:</b><ul style="margin:8px 0 0;padding-right:20px"><li>همه‌ی ${fa(activeAccounts.length)} حساب فعال آرشیو می‌شوند (دائمی)</li><li>✅ تراکنش‌های قبلی حفظ می‌شوند</li></ul></div><form id="sc-f" class="grid g2"><label class="f">نام<input name="name" required></label><label class="f">موبایل<input name="phone" dir="ltr" required></label><label class="f">سکونت<select name="occupancy">${OCC.map(o => `<option>${o}</option>`).join('')}</select></label><label class="f">نام کاربری<input name="username" dir="ltr" required></label><label class="f">رمز اولیه<input name="pass" type="text" required></label><button class="btn rd" style="grid-column:1/-1" type="submit">⚠️ آرشیو همه و ساخت جدید</button></form>`;
-    $('#sc-f', container).addEventListener('submit', async e => { e.preventDefault(); if (!confirm('مطمئنید؟ همه حساب‌ها آرشیو می‌شوند (دائمی).')) return; try { for (const acc of activeAccounts) await archiveAccount(acc); await T('app_admin_save_account', { p_id: null, p_unit_no: u.unit_no, p_username: e.target.username.value, p_full_name: e.target.name.value, p_phone: e.target.phone.value, p_occupancy: e.target.occupancy.value, p_is_primary: true, p_is_active: true, p_new_password: e.target.pass.value, p_start_ym: 140406 }); m.remove(); toast('تغییرات اعمال شد'); go('units'); } catch (err) { showErr(err); } });
+    $('#sc-f', container).addEventListener('submit', async e => { e.preventDefault(); if (!confirm('مطمئنید؟ همه حساب‌ها آرشیو می‌شوند (دائمی).')) return; try { for (const acc of activeAccounts) await archiveAccount(acc); await T('app_admin_save_account', { p_id: null, p_unit_no: u.unit_no, p_username: e.target.username.value, p_full_name: e.target.name.value, p_phone: e.target.phone.value, p_occupancy: e.target.occupancy.value, p_is_primary: true, p_is_active: true, p_new_password: e.target.pass.value, p_start_ym: 140406 }); closeModal(m); toast('تغییرات اعمال شد'); go('units'); } catch (err) { showErr(err); } });
   } else if (scenario === 'vacant') {
     container.innerHTML = `<div class="card" style="background:#fee2e2;margin-bottom:16px;font-size:13px"><b>⚠️ همه‌ی حساب‌های این واحد آرشیو می‌شوند (دائمی).</b><p style="margin:8px 0 0">تراکنش‌های قبلی حفظ می‌شوند.</p></div><button class="btn rd" id="apply-vacant">🗑️ تایید خالی شدن</button>`;
-    $('#apply-vacant', container)?.addEventListener('click', async () => { if (!confirm('مطمئنید؟ همه حساب‌های این واحد آرشیو می‌شوند (دائمی).')) return; try { for (const acc of activeAccounts) await archiveAccount(acc); m.remove(); toast('واحد خالی شد'); go('units'); } catch (err) { showErr(err); } });
+    $('#apply-vacant', container)?.addEventListener('click', async () => { if (!confirm('مطمئنید؟ همه حساب‌های این واحد آرشیو می‌شوند (دائمی).')) return; try { for (const acc of activeAccounts) await archiveAccount(acc); closeModal(m); toast('واحد خالی شد'); go('units'); } catch (err) { showErr(err); } });
   }
 }
 
@@ -2276,7 +2284,10 @@ function ensureAppHistory() {
 }
 function rearmHistoryGuard() { history.pushState({ app: true, view: S.view || 'dash', guard: true }, '', '#app'); }
 
-function handleBackNavigation() {
+function handleBackNavigation(event) {
+  const openModals = document.querySelectorAll('.modal-bg');
+  if (openModals.length) { openModals[openModals.length - 1].remove(); return; }
+  if (event?.state?.modal) { rearmHistoryGuard(); return; }
   if (!appHistoryReady) { ensureAppHistory(); return; }
   if (S.me && S.view !== 'dash') {
     resetBackPress(); go('dash', true);
