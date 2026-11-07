@@ -634,7 +634,7 @@ async function renderLogin() {
 
   const specific=$('#reg-specific'), type=$('#reg-type');
   const input=(label,name,attrs)=>'<label class="f">'+label+'<input name="'+name+'" '+(attrs||'')+'></label>';
-  const date=(label,name)=>input(label,name,'required inputmode="numeric" placeholder="1405/08/15" pattern="[0-9]{4}/(0[1-9]|1[0-2])/([0-2][0-9]|3[01])" maxlength="10" dir="ltr"');
+  const date=(label,name)=>'<label class="f">'+label+'<div class="grid g3" data-jalali-date="'+name+'"><select data-jyear required><option value="">سال</option>'+Array.from({length:116},(_,i)=>'<option value="'+(1300+i)+'" '+(1300+i===1405?'selected':'')+'>'+(1300+i)+'</option>').join('')+'</select><select data-jmonth required><option value="">ماه</option>'+['فروردین','اردیبهشت','خرداد','تیر','مرداد','شهریور','مهر','آبان','آذر','دی','بهمن','اسفند'].map((m,i)=>'<option value="'+(i+1)+'">'+m+'</option>').join('')+'</select><select data-jday required><option value="">روز</option>'+Array.from({length:31},(_,i)=>'<option value="'+(i+1)+'">'+(i+1)+'</option>').join('')+'</select></div><input type="hidden" name="'+name+'"></label>';
   let buildings=[];
   const loadBuildings=async()=>{
     const info=await api('app_public_info'); buildings=Array.isArray(info?.buildings)?info.buildings:[];
@@ -658,6 +658,15 @@ async function renderLogin() {
       loadBuildings().catch(()=>{const sel=specific.querySelector('[name="building_id"]');if(sel)sel.innerHTML='<option value="">خطا در دریافت ساختمان‌ها</option>';});
     } else specific.innerHTML='';
   };
+  specific.addEventListener('change',e=>{
+    if(!e.target.matches('[data-jyear],[data-jmonth],[data-jday]'))return;
+    const wrap=e.target.closest('[data-jalali-date]');if(!wrap)return;
+    const y=wrap.querySelector('[data-jyear]'),m=wrap.querySelector('[data-jmonth]'),d=wrap.querySelector('[data-jday]'),hidden=wrap.parentElement.querySelector('input[type="hidden"]');
+    const max=Number(m.value)===12?29:Number(m.value)>=7?30:31;
+    const oldDay=Number(d.value);d.innerHTML='<option value="">روز</option>'+Array.from({length:max},(_,i)=>'<option value="'+(i+1)+'">'+(i+1)+'</option>').join('');
+    if(oldDay>0&&oldDay<=max)d.value=String(oldDay);
+    hidden.value=y.value&&m.value&&d.value?y.value+'/'+String(m.value).padStart(2,'0')+'/'+String(d.value).padStart(2,'0'):'';
+  });
   type.addEventListener('change',draw);
   $('#tab-login').addEventListener('click',()=>{$('#login-panel').classList.remove('hidden');$('#register-panel').classList.add('hidden');$('#tab-login').className='btn sf';$('#tab-register').className='btn lt';});
   $('#tab-register').addEventListener('click',()=>{$('#login-panel').classList.add('hidden');$('#register-panel').classList.remove('hidden');$('#tab-login').className='btn lt';$('#tab-register').className='btn sf';});
