@@ -1674,7 +1674,7 @@ function replyModal(r) {
   $('#tab-debts', m).addEventListener('click', () => {
     currentTab = 'debts';
     $('#tab-debts', m).className = 'btn sf'; $('#tab-debts', m).style.flex = '1';
-    $('#tab-custom', m).className = 'btn lt'; $('#tab-custom', m).style.flex = '1';
+    if (!isAdmin) { $('#tab-custom', m).className = 'btn lt'; $('#tab-custom', m).style.flex = '1'; }
     $('#sec-debts', m).classList.remove('hidden');
     $('#sec-custom', m).classList.add('hidden');
     $('#wrap-custom-amount', m).classList.add('hidden');
