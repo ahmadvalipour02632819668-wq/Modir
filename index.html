@@ -1164,11 +1164,19 @@ async function viewAnnouncements(el) {
 
 async function viewRequests(el) {
   const admin = !!S.me.is_admin;
-  const [list, polls, membershipRegistrations] = await Promise.all([
-    T('app_get_requests'),
-    T('app_get_polls'),
-    admin ? T('app_admin_list_membership_registrations') : Promise.resolve([])
-  ]);
+  // Keep registration requests independent from other request/poll endpoints.
+  let list = [], polls = [], membershipRegistrations = [];
+  const safeLoad = async (name, fallback) => {
+    try { const value = await T(name); return value ?? fallback; }
+    catch (err) { console.error(name + ' failed:', err); return fallback; }
+  };
+  const loads = [
+    safeLoad('app_get_requests', []).then(v => { list = Array.isArray(v) ? v : []; }),
+    safeLoad('app_get_polls', []).then(v => { polls = Array.isArray(v) ? v : []; })
+  ];
+  if (admin) loads.push(safeLoad('app_admin_list_membership_registrations', [])
+    .then(v => { membershipRegistrations = Array.isArray(v) ? v : []; }));
+  await Promise.all(loads);
 
   const statusChip = s => {
     if (s === 'done') return '<span class="chip ok">✅ انجام شد</span>';
