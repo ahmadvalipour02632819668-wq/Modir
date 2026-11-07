@@ -886,11 +886,29 @@ function showConnectionError() {
 const mustChangeBanner = () => S.me?.must_change_password ? `<div class="card" style="background:#fef3c7;color:#92400e;margin-bottom:20px">رمز عبور شما هنوز پیش‌فرض است. از بخش <a href="#" id="go-profile">پروفایل</a> آن را تغییر دهید.</div>` : '';
 
 function billCard(r, rep) {
-  const chg = Number(r.charge) || 0;
-  const w = Number(r.water) || 0;
-  const g = Number(r.gas) || 0;
-  const rep_amt = Number(r.repair) || 0;
-  const park = Number(r.parking) || 0;
+  const expenseItems = Array.isArray(r.expenses) ? r.expenses : [];
+  const isExpenseFor = (x, category, words) =>
+    x.category_name === category || words.some(word => String(x.description || '').includes(word));
+  const sumExpense = (category, words) => expenseItems
+    .filter(x => isExpenseFor(x, category, words))
+    .reduce((sum, x) => sum + (Number(x.amount) || 0), 0);
+  const chargeExpense = sumExpense('charge', ['شارژ']);
+  const waterExpense = sumExpense('water', ['آب']);
+  const gasExpense = sumExpense('gas', ['گاز']);
+  const repairExpense = sumExpense('repair', ['پس‌انداز', 'تعمیر']);
+  const parkingExpense = sumExpense('parking', ['پارکینگ']);
+  const chg = (Number(r.charge) || 0) + chargeExpense;
+  const w = (Number(r.water) || 0) + waterExpense;
+  const g = (Number(r.gas) || 0) + gasExpense;
+  const rep_amt = (Number(r.repair) || 0) + repairExpense;
+  const park = (Number(r.parking) || 0) + parkingExpense;
+  const extraExpenses = expenseItems.filter(x =>
+    !isExpenseFor(x, 'charge', ['شارژ']) &&
+    !isExpenseFor(x, 'water', ['آب']) &&
+    !isExpenseFor(x, 'gas', ['گاز']) &&
+    !isExpenseFor(x, 'repair', ['پس‌انداز', 'تعمیر']) &&
+    !isExpenseFor(x, 'parking', ['پارکینگ'])
+  );
   const prev = Number(r.prev_debt) || 0;
   const paid = Number(r.paid_this_month) || 0;
   const rem = Number(r.remaining) || 0;
@@ -913,22 +931,22 @@ function billCard(r, rep) {
     <div style="padding:10px 24px">
       <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px dashed var(--line)">
         <span>شارژ ماهانه: <b>${money(chg)}</b> تومان</span>
-        <span>${(chg === 0 || r.ok_charge) ? '<span class="chip ok">پرداخت شده</span>' : '<span class="chip no">پرداخت نشده</span>'}</span>
+        <span>${(chg === 0 || (r.ok_charge && chargeExpense === 0)) ? '<span class="chip ok">پرداخت شده</span>' : '<span class="chip no">پرداخت نشده</span>'}</span>
       </div>
       <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px dashed var(--line)">
         <span>سهم قبض آب: <b>${money(w)}</b> تومان</span>
-        <span>${(w === 0 || r.ok_water) ? '<span class="chip ok">پرداخت شده</span>' : '<span class="chip no">پرداخت نشده</span>'}</span>
+        <span>${(w === 0 || (r.ok_water && waterExpense === 0)) ? '<span class="chip ok">پرداخت شده</span>' : '<span class="chip no">پرداخت نشده</span>'}</span>
       </div>
       <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px dashed var(--line)">
         <span>سهم قبض گاز: <b>${money(g)}</b> تومان</span>
-        <span>${(g === 0 || r.ok_gas) ? '<span class="chip ok">پرداخت شده</span>' : '<span class="chip no">پرداخت نشده</span>'}</span>
+        <span>${(g === 0 || (r.ok_gas && gasExpense === 0)) ? '<span class="chip ok">پرداخت شده</span>' : '<span class="chip no">پرداخت نشده</span>'}</span>
       </div>
       <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px dashed var(--line)">
         <span>پس‌انداز: <b>${money(rep_amt)}</b> تومان</span>
-        <span>${(rep_amt === 0 || r.ok_repair) ? '<span class="chip ok">پرداخت شده</span>' : '<span class="chip no">پرداخت نشده</span>'}</span>
+        <span>${(rep_amt === 0 || (r.ok_repair && repairExpense === 0)) ? '<span class="chip ok">پرداخت شده</span>' : '<span class="chip no">پرداخت نشده</span>'}</span>
       </div>
-      ${park > 0 ? `<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px dashed var(--line)"><span>اجاره پارکینگ: <b>${money(park)}</b> تومان</span><span>${r.ok_parking ? '<span class="chip ok">پرداخت شده</span>' : '<span class="chip no">پرداخت نشده</span>'}</span></div>` : ''}
-      ${(r.expenses || []).map(x => `<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 0;border-bottom:1px dashed var(--line)"><span>${esc(x.description || x.category_name || 'هزینه تسهیمی')}: <b>${money(x.amount)}</b> تومان</span><span>${Number(x.amount)>0 ? '<span class="chip no">پرداخت نشده</span>' : '<span class="chip ok">پرداخت شده</span>'}</span></div>`).join('')}
+      ${park > 0 ? `<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px dashed var(--line)"><span>اجاره پارکینگ: <b>${money(park)}</b> تومان</span><span>${r.ok_parking && parkingExpense === 0 ? '<span class="chip ok">پرداخت شده</span>' : '<span class="chip no">پرداخت نشده</span>'}</span></div>` : ''}
+      ${extraExpenses.map(x => `<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 0;border-bottom:1px dashed var(--line)"><span>${esc(x.description || x.category_name || 'هزینه تسهیمی')}: <b>${money(x.amount)}</b> تومان</span><span><span class="chip no">پرداخت نشده</span></span></div>`).join('')}
     </div>
     <div style="background:var(--bg);padding:20px 24px;display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:16px;border-top:1px solid var(--line)";color:#000">
       <div><small style="color:var(--muted);display:block">بدهی قبلی</small><b style="color:#000">${money(prev)}</b> <span style="color:#000">تومان</span></div>
