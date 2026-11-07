@@ -31,7 +31,7 @@ window.supabase = window.supabase || {
     }
     return {
       rpc: function (name, args) {
-        return request(baseUrl.replace(/\\/$/, '') + '/rest/v1/rpc/' + encodeURIComponent(name), {
+        return request((baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl) + '/rest/v1/rpc/' + encodeURIComponent(name), {
           method: 'POST',
           headers: Object.assign({}, headers, { 'Content-Type': 'application/json', Accept: 'application/json' }),
           body: JSON.stringify(args || {})
@@ -41,7 +41,7 @@ window.supabase = window.supabase || {
         invoke: function (name, options) {
           const opts = options || {};
           const extra = opts.headers || {};
-          return request(baseUrl.replace(/\\/$/, '') + '/functions/v1/' + encodeURIComponent(name), {
+          return request((baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl) + '/functions/v1/' + encodeURIComponent(name), {
             method: opts.method || 'POST',
             headers: Object.assign({}, headers, extra, { 'Content-Type': 'application/json' }),
             body: opts.body === undefined ? undefined : JSON.stringify(opts.body)
