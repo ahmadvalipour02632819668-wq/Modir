@@ -946,7 +946,8 @@ function billCard(r, rep) {
     .filter(x => isExpenseFor(x, category, words))
     .reduce((sum, x) => sum + (Number(x.amount) || 0), 0);
   const chargeExpense = sumExpense('charge', ['شارژ']);
-  const waterExpense = Number(r.water_expense ?? sumExpense('water', ['آب'])) || 0;
+  // Use both report sources defensively: a zero/missing dedicated field must not hide a valid water share in expenses.
+  const waterExpense = Math.max(Number(r.water_expense) || 0, sumExpense('water', ['آب']));
   const gasExpense = sumExpense('gas', ['گاز']);
   const repairExpense = sumExpense('repair', ['پس‌انداز', 'تعمیر']);
   const parkingExpense = sumExpense('parking', ['پارکینگ']);
