@@ -1647,6 +1647,7 @@ function replyModal(r) {
       </div>
     </div>
 
+    <div id="pf-error" class="hidden" role="alert" style="margin:0 0 14px;padding:12px 14px;border:1px solid #e0a1a1;border-radius:12px;background:#fff0f0;color:#a11;font-size:13px;line-height:1.9;font-weight:700"></div>
     <form id="pf" class="grid g2">
       <label class="f" style="grid-column:1/-1">مبلغ کل (تومان)<input id="pf-a" inputmode="numeric" readonly style="background:var(--bg);font-weight:900;font-size:20px;text-align:center;color:var(--navy)"></label>
       <label class="f hidden" id="wrap-custom-amount" style="grid-column:1/-1; margin-top:8px;">مبلغ دلخواه خود را وارد کنید
@@ -1743,13 +1744,19 @@ function replyModal(r) {
 
   $('#pf', m).addEventListener('submit', async e => {
     e.preventDefault();
-    const fileInput = $('#pf-img', m);
-    let base64Image = null;
-    if (fileInput.files.length > 0) base64Image = await compressImage(fileInput.files[0]);
-
+    const submitBtn = $('#pf-submit', m);
+    const errorBox = $('#pf-error', m);
+    errorBox.classList.add('hidden');
+    errorBox.textContent = '';
+    if (submitBtn.disabled) return;
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'در حال بررسی و ارسال...';
     try {
+      const fileInput = $('#pf-img', m);
+      let base64Image = null;
+      if (fileInput.files.length > 0) base64Image = await compressImage(fileInput.files[0]);
       const totalAmount = toNum($('#pf-a', m).value);
-      if (totalAmount <= 0) { toast('مبلغ باید بیشتر از صفر باشد', true); return; }
+      if (totalAmount <= 0) throw new Error('مبلغ باید بیشتر از صفر باشد');
 
       if (currentTab === 'debts') {
         const selectedDebts = [];
@@ -1757,12 +1764,9 @@ function replyModal(r) {
           const cb = $('.debt-check', row);
           const amtInp = $('.debt-amount', row);
           const amount = toNum(amtInp.value);
-          if (cb.checked && amount > 0) {
-            selectedDebts.push({ ym: cb.value, category: cb.dataset.category, amount: amount });
-          }
+          if (cb.checked && amount > 0) selectedDebts.push({ ym: cb.value, category: cb.dataset.category, amount });
         });
-
-        if (selectedDebts.length === 0) { toast('لطفاً حداقل یک بدهی را انتخاب کنید', true); return; }
+        if (selectedDebts.length === 0) throw new Error('لطفاً حداقل یک بدهی را انتخاب کنید');
 
         for (const debt of selectedDebts) {
           const year = Math.floor(debt.ym / 100);
@@ -1782,7 +1786,6 @@ function replyModal(r) {
           }
         }
         notifyBale(`💸 پرداخت جدید (بر اساس بدهی):\n\n👤 واحد ${selectedUnit} - ${isAdmin ? (selectedAccount?.full_name || selectedAccount?.occupancy || '') : S.me.full_name}\n💰 مبلغ: ${fmt(totalAmount)} تومان`);
-
       } else {
         const res = await T('app_process_payment_fifo', {
           p_total_amount: totalAmount, p_pay_date: $('#pf-d', m).value, p_ref_code: $('#pf-r', m).value,
@@ -1792,12 +1795,22 @@ function replyModal(r) {
         if (!res.ok) throw new Error(res.error);
         notifyBale(`💸 پرداخت جدید (مبلغ دلخواه):\n\n👤 واحد ${selectedUnit} - ${S.me.full_name}\n💰 مبلغ: ${fmt(totalAmount)} تومان`);
       }
-
       closeModal(m);
       toast('پرداخت با موفقیت ثبت شد و منتظر تایید است');
       go(S.view);
-    } catch (err) { showErr(err); }
-  });
+    } catch (err) {
+      const raw = String(err?.message || '');
+      const duplicatePending = /در انتظار بررسی|در انتظار تایید|duplicate key|trg_prevent_duplicate_pending_payment|payment_requests_one_pending_per_account_period_category_uidx/i.test(raw);
+      errorBox.textContent = duplicatePending
+        ? 'شما برای این مورد یک درخواست پرداختِ در انتظار بررسی دارید. تا زمانی که مدیر درخواست قبلی را تأیید یا رد نکند، امکان ثبت درخواست جدید وجود ندارد.'
+        : (raw === 'NETWORK_ERROR' ? 'ارتباط با سرور برقرار نشد. لطفاً اتصال اینترنت را بررسی و دوباره تلاش کنید.' : (raw || 'ثبت درخواست پرداخت ناموفق بود.'));
+      errorBox.classList.remove('hidden');
+      errorBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'ثبت پرداخت';
+    }
+  });;
 }
   async function viewPay(el) {
   const admin = S.me.is_admin; const list = await T('app_get_payment_requests'); const pending = list.filter(p => p.status === 'pending');
