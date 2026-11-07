@@ -1559,7 +1559,9 @@ function replyModal(r) {
   const fetchDebts = async (unitNo) => {
     if (isAdmin) {
       accountOptions = await T('app_get_unit_account_debts_for_admin', { p_unit_no: unitNo, p_today_ym: S.y * 100 + S.m });
-      selectedAccount = accountOptions.find(a => a.account_id === selectedAccountId) || accountOptions[0] || null;
+      selectedAccount = selectedAccountId
+        ? (accountOptions.find(a => a.account_id === selectedAccountId) || null)
+        : (accountOptions[0] || null);
       selectedAccountId = selectedAccount?.account_id || null;
       return selectedAccount?.debts || [];
     } else {
