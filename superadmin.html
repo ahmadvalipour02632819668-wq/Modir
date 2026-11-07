@@ -22,32 +22,7 @@ label{display:block;font-size:13px;font-weight:600;margin:15px 0 7px}input{width
 </style>
 </head>
 <body>
-<section id="loginView" class="login-wrap"><form id="loginForm" class="login-card">
-<div class="brand"><div class="brand-mark">م</div><div><h1>مدیر</h1><p>سامانه مدیریت مجتمع‌های مسکونی</p></div></div>
-<h2>ورود سوپرادمین</h2><p class="hint">برای مدیریت ساختمان‌ها و بررسی درخواست‌های ثبت‌نام وارد شوید.</p>
-<label for="username">نام کاربری</label><input id="username" name="username" autocomplete="username" required placeholder="نام کاربری">
-<label for="password">رمز عبور</label><input id="password" name="password" type="password" inputmode="numeric" autocomplete="current-password" required placeholder="رمز عبور">
-<button class="primary wide" id="loginButton" type="submit">ورود به پنل</button><div id="loginMessage" class="msg" role="status"></div>
-<button type="button" class="linkbtn" id="showRegister">درخواست ایجاد ساختمان جدید</button>
-</form>
-<form id="registerForm" class="login-card register-card hidden">
-<div class="brand"><div class="brand-mark">م</div><div><h1>مدیر</h1><p>ثبت درخواست ایجاد ساختمان</p></div></div>
-<h2>ثبت ساختمان جدید</h2><p class="hint">پس از بررسی و تأیید سوپرادمین، ساختمان و حساب مدیر فعال می‌شود.</p>
-<div class="form-grid">
-<div class="full"><label>نام مجتمع</label><input name="building_name" required maxlength="120" placeholder="نام ساختمان"></div>
-<div class="full"><label>نشانی کامل</label><input name="address" required maxlength="300" placeholder="نشانی ساختمان"></div>
-<div><label>نام و نام خانوادگی مدیر</label><input name="full_name" required maxlength="120"></div>
-<div><label>شماره تماس</label><input name="phone" inputmode="tel" maxlength="30"></div>
-<div><label>نام کاربری انگلیسی</label><input name="username" required pattern="[A-Za-z][A-Za-z0-9_]{2,31}" autocomplete="username"></div>
-<div><label>رمز عبور (۴ تا ۸ رقم)</label><input name="password" type="password" required inputmode="numeric" pattern="[0-9]{4,8}" autocomplete="new-password"></div>
-<div><label>ایمیل (اختیاری)</label><input name="email" type="email"></div>
-<div><label>تعداد واحدها</label><input name="units_count" type="number" min="1" max="99" value="10" required></div>
-</div>
-<button class="primary wide" id="registerButton" type="submit">ارسال درخواست</button>
-<div id="registerMessage" class="msg" role="status"></div>
-<button type="button" class="linkbtn" id="backToLogin">بازگشت به ورود سوپرادمین</button>
-</form>
-</section>
+<section id="loginView" class="hidden" aria-hidden="true"></section>
 <div id="appView" class="hidden">
 <header class="topbar"><div class="top-brand"><div class="brand-mark">م</div><div><strong>مدیر</strong><small>پنل مدیریت کل سامانه</small></div></div><button id="logoutButton" class="logout">خروج</button></header>
 <main class="container">
@@ -68,12 +43,8 @@ const fa=n=>Number(n||0).toLocaleString('fa-IR');
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function message(el,text,type){el.textContent=text;el.className='msg '+(type||'');}
 function showApp(){ $('loginView').classList.add('hidden');$('appView').classList.remove('hidden');$('adminName').textContent=account?.full_name||'مدیریت ساختمان‌ها و درخواست‌های جدید';}
-function showLogin(){ $('appView').classList.add('hidden');$('loginView').classList.remove('hidden');token=null;account=null;}
+function showLogin(){ sessionStorage.removeItem('bm_superadmin_token');sessionStorage.removeItem('bm_superadmin_account');token=null;account=null;window.location.replace('index.html');}
 async function rpc(name,args){const {data,error}=await client.rpc(name,args);if(error)throw error;return data;}
-$('showRegister').addEventListener('click',()=>{$('loginForm').classList.add('hidden');$('registerForm').classList.remove('hidden');});
-$('backToLogin').addEventListener('click',()=>{$('registerForm').classList.add('hidden');$('loginForm').classList.remove('hidden');});
-$('registerForm').addEventListener('submit',async e=>{e.preventDefault();const f=new FormData(e.currentTarget),btn=$('registerButton');btn.disabled=true;btn.textContent='در حال ارسال...';message($('registerMessage'),'');try{const result=await rpc('app_submit_registration',{p_building_name:f.get('building_name'),p_address:f.get('address'),p_username:f.get('username'),p_password:f.get('password'),p_full_name:f.get('full_name'),p_phone:f.get('phone'),p_email:f.get('email'),p_units_count:Number(f.get('units_count'))});if(!result?.ok)throw new Error(result?.error||'ثبت درخواست ناموفق بود');message($('registerMessage'),result.message||'درخواست شما ثبت شد و پس از تأیید فعال می‌شود.','ok');$('registerForm').reset();}catch(err){message($('registerMessage'),err.message||'خطا در ثبت درخواست','error');}finally{btn.disabled=false;btn.textContent='ارسال درخواست';}});
-$('loginForm').addEventListener('submit',async e=>{e.preventDefault();const btn=$('loginButton');btn.disabled=true;btn.textContent='در حال ورود...';message($('loginMessage'),'');try{const res=await rpc('app_superadmin_login',{p_login:$('username').value.trim(),p_password:$('password').value});if(!res?.ok)throw new Error(res?.error||'ورود انجام نشد');token=res.token;account=res.account;showApp();await loadAll();}catch(err){message($('loginMessage'),err.message||'خطا در ارتباط با سرور','error');}finally{btn.disabled=false;btn.textContent='ورود به پنل';}});
 async function loadRequests(){ $('requestsList').className='loading';$('requestsList').textContent='در حال دریافت اطلاعات...';try{const data=await rpc('app_superadmin_list_requests',{p_token:token});requests=Array.isArray(data)?data:[];renderRequests();}catch(e){$('requestsList').className='msg error';$('requestsList').textContent=e.message||'دریافت درخواست‌ها ناموفق بود';}}
 async function loadBuildings(){ $('buildingsList').className='loading';$('buildingsList').textContent='در حال دریافت اطلاعات...';try{const data=await rpc('app_superadmin_list_buildings',{p_token:token});buildings=Array.isArray(data)?data:[];renderBuildings();}catch(e){$('buildingsList').className='msg error';$('buildingsList').textContent=e.message||'دریافت ساختمان‌ها ناموفق بود';}}
 async function loadAll(){await Promise.all([loadRequests(),loadBuildings()]);$('buildingCount').textContent=fa(buildings.length);$('requestCount').textContent=fa(requests.length);$('activeCount').textContent=fa(buildings.filter(b=>b.status==='active').length);$('lastUpdate').textContent='آخرین بروزرسانی: '+new Date().toLocaleTimeString('fa-IR',{hour:'2-digit',minute:'2-digit'});}
@@ -83,7 +54,11 @@ document.addEventListener('click',async e=>{const req=e.target.closest('[data-re
 const b=e.target.closest('[data-building]');if(b){const id=Number(b.dataset.building),status=b.dataset.status;if(!confirm(status==='suspended'?'این ساختمان تعلیق شود؟':'این ساختمان دوباره فعال شود؟'))return;b.disabled=true;try{const res=await rpc('app_superadmin_set_building_status',{p_token:token,p_building_id:id,p_status:status});if(!res?.ok)throw new Error(res?.error||'عملیات ناموفق بود');await loadAll();}catch(err){alert(err.message||'خطا در تغییر وضعیت');b.disabled=false;}}});
 document.querySelectorAll('[data-tab]').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('[data-tab]').forEach(x=>x.classList.toggle('active',x===btn));$('requestsPanel').classList.toggle('hidden',btn.dataset.tab!=='requests');$('buildingsPanel').classList.toggle('hidden',btn.dataset.tab!=='buildings');}));
 $('refreshRequests').addEventListener('click',loadAll);$('refreshBuildings').addEventListener('click',loadAll);
-$('logoutButton').addEventListener('click',async()=>{try{if(token)await rpc('app_superadmin_logout',{p_token:token});}catch(e){}showLogin();$('password').value='';});
+$('logoutButton').addEventListener('click',async()=>{try{if(token)await rpc('app_superadmin_logout',{p_token:token});}catch(e){}showLogin();});
+token=sessionStorage.getItem('bm_superadmin_token');
+try{account=JSON.parse(sessionStorage.getItem('bm_superadmin_account')||'{}');}catch(e){account={};}
+if(!token){window.location.replace('index.html');return;}
+showApp();loadAll();
 })();
 </script>
 </body></html>
