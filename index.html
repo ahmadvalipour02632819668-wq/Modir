@@ -1146,11 +1146,7 @@ const m = modal(`
   <div style="margin-top:20px"><button class="btn lt sm" id="m-tx">تراکنش‌های این واحد</button></div>
 `);
 
-// بعد از تعریف مودال، به دکمه ثبت پرداخت وصل کن
-$('#m-pay', m)?.addEventListener('click', () => {
-  closeModal(m);
-  payModal(uData.unit_no); // 👈 ارسال شماره واحد به فرم پرداخت
-});  }));
+// پرداخت از دکمه مستقل هر کارت صورتحساب انجام می‌شود.  }));
 }
 
 async function viewAnnouncements(el) {
@@ -1749,7 +1745,7 @@ function replyModal(r) {
   async function viewPay(el) {
   const admin = S.me.is_admin; const list = await T('app_get_payment_requests'); const pending = list.filter(p => p.status === 'pending');
   el.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;gap:12px;flex-wrap:wrap"><div><h1>${admin ? 'بررسی پرداخت‌ها' : 'پرداخت بدهی'}</h1><p class="sub" style="margin:0">${admin ? 'پرداخت‌های منتظر تایید شما' : 'پرداخت خود را ثبت کنید.'}</p></div>${admin ? '' : '<button class="btn sf" id="np">ثبت پرداخت جدید</button>'}</div>${admin ? `<h2>منتظر تایید (${fa(pending.length)})</h2>${reqTable(pending, true)}<h2 style="margin-top:28px">سابقه</h2>${reqTable(list.filter(p => p.status !== 'pending'), true)}` : reqTable(list, false)}`;
-  $('#np').addEventListener('click', async () => { let r = null; if (!admin) { const rep = await T('app_report', { p_year: S.y, p_month: S.m }); r = rep.rows[0]; } payModal(r); });
+  $('#np')?.addEventListener('click', async () => { const rep = await T('app_report', { p_year: S.y, p_month: S.m }); const r = rep.rows[0]; payModal(r); });
   $$('[data-ap]').forEach(b => b.addEventListener('click', () => approveModal(list.find(p => p.id == b.dataset.ap))));
 }
 
