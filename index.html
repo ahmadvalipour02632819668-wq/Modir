@@ -2045,8 +2045,9 @@ function addAccountStandalone(units) {
   });
 }
 
+function normalizeJalaliDigits(value){return String(value||'').trim().replace(/[۰-۹]/g,d=>'۰۱۲۳۴۵۶۷۸۹'.indexOf(d)).replace(/[٠-٩]/g,d=>'٠١٢٣٤٥٦٧٨٩'.indexOf(d));}
 function jalaliToGregorianDate(value){
- const m=/^(\d{4})\/(\d{2})\/(\d{2})$/.exec(String(value||'').trim());if(!m)throw new Error('تاریخ را به شکل ۱۴۰۵/۰۸/۱۶ وارد کنید');
+ const m=/^(\d{4})\/(\d{2})\/(\d{2})$/.exec(normalizeJalaliDigits(value));if(!m)throw new Error('تاریخ را به شکل ۱۴۰۵/۰۸/۱۶ وارد کنید');
  const jy=+m[1],jm=+m[2],jd=+m[3];if(jm<1||jm>12||jd<1||jd>(jm<=6?31:jm<=11?30:30))throw new Error('روز یا ماه شمسی معتبر نیست');
  const f=new Intl.DateTimeFormat('en-US-u-ca-persian-nu-latn',{year:'numeric',month:'numeric',day:'numeric',timeZone:'UTC'});
  for(let i=0;i<740;i++){const dt=new Date(Date.UTC(jy+621,0,1+i,12)),p=f.formatToParts(dt),g=k=>Number(p.find(x=>x.type===k)?.value);if(g('year')===jy&&g('month')===jm&&g('day')===jd)return dt.getUTCFullYear()+'-'+String(dt.getUTCMonth()+1).padStart(2,'0')+'-'+String(dt.getUTCDate()).padStart(2,'0');}
