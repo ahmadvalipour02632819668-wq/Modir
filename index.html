@@ -1903,6 +1903,8 @@ function txModal(t, units) {
             <option value="other" ${t.category === 'other' ? 'selected' : ''}>سایر (درآمد)</option>
           </optgroup>
           <optgroup label="هزینه‌ها" id="opt-out">
+            <option value="water" ${t.category === 'water' ? 'selected' : ''}>قبض آب</option>
+            <option value="gas" ${t.category === 'gas' ? 'selected' : ''}>قبض گاز</option>
             <option value="cleaning" ${t.category === 'cleaning' ? 'selected' : ''}>نظافت</option>
             <option value="service" ${t.category === 'service' ? 'selected' : ''}>سرویس آسانسور</option>
             <option value="building_repair" ${t.category === 'building_repair' ? 'selected' : ''}>هزینه بازسازی</option>
@@ -1972,7 +1974,7 @@ function txModal(t, units) {
       if (['cleaning','service','building_repair','fixed_cost','repair_pay','payment'].includes($('#t-cat',m).value)) $('#t-cat',m).value = 'charge';
     } else {
       $('#t-occ',m).value = '';
-      if (['water','gas','electric','parking','repair','charge'].includes($('#t-cat',m).value)) $('#t-cat',m).value = 'cleaning';
+      if (['electric','parking','repair','charge'].includes($('#t-cat',m).value)) $('#t-cat',m).value = 'cleaning';
     }
     const building = +unitSelect.value === 0;
     const kind = $('input[name="expense-kind"]:checked',m)?.value || 'shared';
