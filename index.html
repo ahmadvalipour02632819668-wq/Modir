@@ -332,7 +332,7 @@ const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { pe
 // Register the PWA service worker on every normal visit, not only when push notifications are enabled.
 if ('serviceWorker' in navigator && window.isSecureContext) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js', { scope: '/' })
+    navigator.serviceWorker.register(new URL('./sw.js', document.baseURI), { scope: new URL('./', document.baseURI).pathname })
       .then(() => navigator.serviceWorker.ready)
       .catch(error => console.warn('PWA service worker registration failed:', error));
   }, { once: true });
@@ -407,7 +407,7 @@ async function getPushServiceWorker() {
   if (!('serviceWorker' in navigator) || !('PushManager' in window)) throw new Error('مرورگر شما اعلان مستقیم را پشتیبانی نمی‌کند');
   if (!window.isSecureContext) throw new Error('برای اعلان موبایلی باید سایت با HTTPS باز شود');
   if (!pushServiceWorkerRegistration) {
-    pushServiceWorkerRegistration = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
+    pushServiceWorkerRegistration = await navigator.serviceWorker.register(new URL('./sw.js', document.baseURI), { scope: new URL('./', document.baseURI).pathname });
     await navigator.serviceWorker.ready;
   }
   return pushServiceWorkerRegistration;
