@@ -939,9 +939,18 @@ function showConnectionError() {
 const mustChangeBanner = () => S.me?.must_change_password ? `<div class="card" style="background:#fef3c7;color:#92400e;margin-bottom:20px">رمز عبور شما هنوز پیش‌فرض است. از بخش <a href="#" id="go-profile">پروفایل</a> آن را تغییر دهید.</div>` : '';
 
 function billCard(r, rep) {
-  const expenseItems = Array.isArray(r.expenses) ? r.expenses : [];
-  const isExpenseFor = (x, category, words) =>
-    x.category_name === category || words.some(word => String(x.description || '').includes(word));
+  // RPC JSON may arrive as an array or as a serialized JSON string; normalize before calculating shares.
+  let rawExpenses = r.expenses;
+  if (typeof rawExpenses === 'string') {
+    try { rawExpenses = JSON.parse(rawExpenses); } catch (_) { rawExpenses = []; }
+  }
+  const expenseItems = Array.isArray(rawExpenses)
+    ? rawExpenses
+    : Array.isArray(rawExpenses?.items) ? rawExpenses.items : [];
+  const isExpenseFor = (x, category, words) => {
+    const key = String(x.category_name ?? x.category ?? '').trim().toLowerCase();
+    return key === category || words.some(word => String(x.description || '').includes(word));
+  };
   const sumExpense = (category, words) => expenseItems
     .filter(x => isExpenseFor(x, category, words))
     .reduce((sum, x) => sum + (Number(x.amount) || 0), 0);
