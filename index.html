@@ -715,7 +715,7 @@ function getMenuItems() {
   const a = S.me?.is_admin;
   return [
     ['dash', 'داشبورد'], a && ['units', 'مدیریت واحدها'], ['announcements', 'اعلانات'],
-    ['requests', a ? 'درخواست‌ها' : 'ارتباط با مدیر'], ['tx', 'تراکنش‌ها'],
+    ['requests', a ? 'درخواست‌ها' : 'ارتباط با مدیر'], a && ['registration-requests', 'درخواست‌های ثبت‌نام'], ['tx', 'تراکنش‌ها'],
     a && ['pay', 'تایید پرداخت‌ها'], ['report', 'گزارش ماهانه'],
     a && ['rates', 'نرخ‌ها و تنظیمات'], a && ['activity', 'گزارش فعالیت‌ها'], ['profile', 'پروفایل'],
   ].filter(Boolean);
@@ -735,6 +735,7 @@ async function viewServices(el) {
   const groups = [
     ['امور مالی', ['tx', 'pay', 'report']],
     ['ساختمان و ساکنین', ['units', 'announcements', 'requests']],
+    ...(a ? [['ثبت‌نام و عضویت', ['registration-requests']]] : []),
     [a ? 'مدیریت سامانه' : 'حساب کاربری', ['rates', 'activity', 'profile']],
   ];
   el.innerHTML = groups.map(([t, keys]) => {
@@ -814,7 +815,7 @@ async function renderShell() {
 
 function go(v, isBackNavigation = false) {
   const views = {
-    dash: viewDash, announcements: viewAnnouncements, requests: viewRequests, tx: viewTx, pay: viewPay,
+    dash: viewDash, announcements: viewAnnouncements, requests: viewRequests, 'registration-requests': viewRegistrationRequests, tx: viewTx, pay: viewPay,
     report: viewReport, units: viewUnits, rates: viewRates, activity: viewActivity, profile: viewProfile, services: viewServices,
   };
   if (!views[v]) v = 'dash';
@@ -1162,6 +1163,33 @@ async function viewAnnouncements(el) {
   }
 }
 
+async function viewRegistrationRequests(el) {
+  if (!S.me?.is_admin) { el.innerHTML = '<div class="card">این بخش فقط برای مدیر ساختمان قابل دسترسی است.</div>'; return; }
+  el.innerHTML = '<p class="sub">در حال دریافت درخواست‌ها...</p>';
+  let requests;
+  try { requests = await T('app_admin_list_membership_registrations'); }
+  catch (err) { el.innerHTML = `<div class="card" style="color:var(--danger)">دریافت درخواست‌های ثبت‌نام ناموفق بود: ${esc(err.message)} <button class="btn sf sm" id="registration-retry">تلاش دوباره</button></div>`; $('#registration-retry')?.addEventListener('click', () => go('registration-requests')); return; }
+  requests = Array.isArray(requests) ? requests : [];
+  el.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap"><div><h1>درخواست‌های ثبت‌نام</h1><p class="sub">درخواست‌های عضویت در ساختمان شما که منتظر تصمیم مدیر هستند.</p></div><span class="chip ${requests.length ? 'pd' : 'ok'}">${fa(requests.length)} درخواست در انتظار</span></div>
+    <div class="grid g2" style="margin-top:16px">${requests.map(r => `<article class="card"><div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start;flex-wrap:wrap"><h2 style="margin:0">${esc(r.full_name || '—')}</h2><span class="chip pd">در انتظار بررسی</span></div>
+      <p class="sub">${esc(r.occupancy || '—')} · واحد ${fa(r.unit_no)}</p><p>نام کاربری: <b>${esc(r.username || '—')}</b></p>
+      <p class="sub">موبایل: ${esc(r.phone || '—')} · ایمیل: ${esc(r.email || '—')}</p>
+      <p class="sub">متراژ: ${r.area == null ? '—' : fa(r.area) + ' متر'} · تعداد ساکنان: ${r.persons == null ? '—' : fa(r.persons)}</p>
+      <p class="sub">تاریخ شروع: ${esc(r.start_date_jalali || '—')}</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px"><button class="btn sf sm" data-registration-approve="${r.id}">تأیید عضویت</button><button class="btn rd sm" data-registration-reject="${r.id}">رد درخواست</button></div></article>`).join('') || '<div class="card sub">در حال حاضر درخواست ثبت‌نام در انتظار بررسی وجود ندارد.</div>'}</div>`;
+  $('[data-registration-approve], [data-registration-reject]', el).forEach(btn => btn.addEventListener('click', async () => {
+    const approve = btn.hasAttribute('data-registration-approve');
+    const id = Number(approve ? btn.dataset.registrationApprove : btn.dataset.registrationReject);
+    if (!approve && !confirm('درخواست ثبت‌نام رد شود؟')) return;
+    btn.disabled = true;
+    try {
+      const result = await T('app_admin_review_membership_registration', { p_request_id: id, p_decision: approve ? 'approve' : 'reject' });
+      if (!result?.ok) throw new Error(result?.error || 'عملیات ناموفق بود');
+      toast(approve ? 'عضویت تأیید و حساب فعال شد' : 'درخواست ثبت‌نام رد شد');
+      go('registration-requests');
+    } catch (err) { btn.disabled = false; showErr(err); }
+  }));
+}
 async function viewRequests(el) {
   const admin = !!S.me.is_admin;
   // Keep registration requests independent from other request/poll endpoints.
