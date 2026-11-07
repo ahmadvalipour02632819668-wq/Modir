@@ -233,9 +233,9 @@ tr:hover td{background:var(--bg)}
 @media(prefers-reduced-motion:reduce){.fly-payment{display:none!important}}
 
 /* Compact dashboard, four unit tiles per row */
-html{overflow-x:hidden;overflow-y:auto;overscroll-behavior-y:contain;min-height:100%}
-body{overflow-x:hidden;min-height:100vh;overscroll-behavior-y:contain;touch-action:pan-y}
-#app,main#view{height:auto;max-height:none;touch-action:pan-y}
+html{overflow-x:clip;overflow-y:visible;min-height:100%;height:auto}
+body{overflow-x:clip;overflow-y:visible;min-height:100vh;height:auto}
+#app,main#view{height:auto;max-height:none;overflow:visible}
 .dashboard-money-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
 .dashboard-money-grid > .bank-card:first-child{grid-column:1 / -1;min-height:0}
 .dashboard-money-grid > .bank-card:not(:first-child){grid-column:auto}
