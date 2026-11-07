@@ -1551,10 +1551,16 @@ function replyModal(r) {
 }async function payModal(targetUnitNo = null) {
   const isAdmin = S.me.is_admin;
   let selectedUnit = isAdmin ? (targetUnitNo || 1) : S.me.unit_no;
+  let accountOptions = [];
+  let selectedAccountId = null;
+  let selectedAccount = null;
 
   const fetchDebts = async (unitNo) => {
     if (isAdmin) {
-      return await T('app_get_unit_debts_for_admin', { p_unit_no: unitNo, p_today_ym: S.y * 100 + S.m });
+      accountOptions = await T('app_get_unit_account_debts_for_admin', { p_unit_no: unitNo, p_today_ym: S.y * 100 + S.m });
+      selectedAccount = accountOptions.find(a => a.account_id === selectedAccountId) || accountOptions[0] || null;
+      selectedAccountId = selectedAccount?.account_id || null;
+      return selectedAccount?.debts || [];
     } else {
       return await T('app_get_user_debts', { p_today_ym: S.y * 100 + S.m });
     }
@@ -1570,15 +1576,25 @@ function replyModal(r) {
     </label>
   ` : '';
 
+  const accountSelectHtml = isAdmin ? `
+    <label class="f" style="margin-bottom:16px;">پرداخت به حساب
+      <select id="pm-account-select">
+        ${accountOptions.map(a => `<option value="${a.account_id}" ${a.account_id === selectedAccountId ? 'selected' : ''}>${esc(a.full_name || 'بدون نام')} · ${esc(a.occupancy || 'نامشخص')} · بدهی: ${fmt(a.total)}</option>`).join('')}
+      </select>
+    </label>
+    <div class="card" style="margin:-4px 0 16px;padding:12px;background:var(--bg);font-weight:900;text-align:center">جمع بدهی همه حساب‌های واحد: ${fmt(accountOptions.reduce((sum,a)=>sum+(Number(a.total)||0),0))} تومان</div>
+  ` : '';
+
   const m = modal(`
     <h2>ثبت پرداخت</h2>
     <p class="sub">${isAdmin ? 'برای هر واحدی که بخواهید می‌توانید پرداخت ثبت کنید.' : 'نحوه پرداخت خود را انتخاب کنید.'}</p>
     
     ${unitSelectHtml}
+    ${accountSelectHtml}
 
     <div style="display:flex; gap:8px; margin-bottom:20px;">
       <button type="button" class="btn sf" id="tab-debts" style="flex:1;">پرداخت بر اساس بدهی</button>
-      <button type="button" class="btn lt" id="tab-custom" style="flex:1;">پرداخت مبلغ دلخواه</button>
+      ${isAdmin ? '' : '<button type="button" class="btn lt" id="tab-custom" style="flex:1;">پرداخت مبلغ دلخواه</button>'}
     </div>
 
     <div id="sec-debts"></div>
@@ -1665,7 +1681,7 @@ function replyModal(r) {
     updateTotalDebts();
   });
 
-  $('#tab-custom', m).addEventListener('click', () => {
+  if (!isAdmin) $('#tab-custom', m).addEventListener('click', () => {
     currentTab = 'custom';
     $('#tab-custom', m).className = 'btn sf'; $('#tab-custom', m).style.flex = '1';
     $('#tab-debts', m).className = 'btn lt'; $('#tab-debts', m).style.flex = '1';
@@ -1683,7 +1699,15 @@ function replyModal(r) {
   if (isAdmin) {
     $('#pm-unit-select', m).addEventListener('change', async (e) => {
       selectedUnit = +e.target.value;
+      selectedAccountId = null;
       debts = await fetchDebts(selectedUnit);
+      $('#pm-account-select', m).innerHTML = accountOptions.map(a => `<option value="${a.account_id}" ${a.account_id === selectedAccountId ? 'selected' : ''}>${esc(a.full_name || 'بدون نام')} · ${esc(a.occupancy || 'نامشخص')} · بدهی: ${fmt(a.total)}</option>`).join('');
+      renderDebts(debts);
+    });
+    $('#pm-account-select', m).addEventListener('change', e => {
+      selectedAccountId = e.target.value;
+      selectedAccount = accountOptions.find(a => a.account_id === selectedAccountId) || null;
+      debts = selectedAccount?.debts || [];
       renderDebts(debts);
     });
   }
@@ -1714,14 +1738,21 @@ function replyModal(r) {
         for (const debt of selectedDebts) {
           const year = Math.floor(debt.ym / 100);
           const month = debt.ym % 100;
-          await T('app_submit_payment', {
-            p_year: year, p_month: month, p_category: debt.category, p_amount: debt.amount,
-            p_ref_code: $('#pf-r', m).value, p_note: `پرداخت ${debt.category} ${MONTHS[month - 1]} ${year}`,
-            p_pay_date: $('#pf-d', m).value, p_receipt_image: base64Image,
-            p_target_unit: isAdmin ? selectedUnit : null
-          });
+          if (isAdmin) {
+            await T('app_admin_submit_account_payment', {
+              p_account_id: selectedAccountId, p_year: year, p_month: month, p_category: debt.category, p_amount: debt.amount,
+              p_ref_code: $('#pf-r', m).value, p_note: `پرداخت ${debt.category} ${MONTHS[month - 1]} ${year}`,
+              p_pay_date: $('#pf-d', m).value, p_receipt_image: base64Image
+            });
+          } else {
+            await T('app_submit_payment', {
+              p_year: year, p_month: month, p_category: debt.category, p_amount: debt.amount,
+              p_ref_code: $('#pf-r', m).value, p_note: `پرداخت ${debt.category} ${MONTHS[month - 1]} ${year}`,
+              p_pay_date: $('#pf-d', m).value, p_receipt_image: base64Image, p_target_unit: null
+            });
+          }
         }
-        notifyBale(`💸 پرداخت جدید (بر اساس بدهی):\n\n👤 واحد ${selectedUnit} - ${S.me.full_name}\n💰 مبلغ: ${fmt(totalAmount)} تومان`);
+        notifyBale(`💸 پرداخت جدید (بر اساس بدهی):\n\n👤 واحد ${selectedUnit} - ${isAdmin ? (selectedAccount?.full_name || selectedAccount?.occupancy || '') : S.me.full_name}\n💰 مبلغ: ${fmt(totalAmount)} تومان`);
 
       } else {
         const res = await T('app_process_payment_fifo', {
