@@ -1021,15 +1021,19 @@ function billCard(r, rep) {
       <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px dashed var(--line)">
         <span>شارژ ماهانه: <b>${money(chg)}</b> تومان${settlementNote(chg, chargeSettlement)}</span>
         <span>${settlementStatus(chg, chargeSettlement)}</span>
+      </div>
       <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px dashed var(--line)">
         <span>سهم قبض آب: <b>${money(w)}</b> تومان${settlementNote(w, waterSettlement)}</span>
         <span>${settlementStatus(w, waterSettlement)}</span>
+      </div>
       <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px dashed var(--line)">
         <span>سهم قبض گاز: <b>${money(g)}</b> تومان${settlementNote(g, gasSettlement)}</span>
         <span>${settlementStatus(g, gasSettlement)}</span>
+      </div>
       <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px dashed var(--line)">
         <span>پس‌انداز: <b>${money(rep_amt)}</b> تومان${settlementNote(rep_amt, repairSettlement)}</span>
         <span>${settlementStatus(rep_amt, repairSettlement)}</span>
+      </div>
       ${park > 0 ? `<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px dashed var(--line)"><span>اجاره پارکینگ: <b>${money(park)}</b> تومان${settlementNote(park, parkingSettlement)}</span><span>${settlementStatus(park, parkingSettlement)}</span></div>` : ''}
       ${extraSettlements.map(({item:x,settlement}) => `<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 0;border-bottom:1px dashed var(--line)"><span>${esc(x.description || x.category_name || 'هزینه تسهیمی')}: <b>${money(x.amount)}</b> تومان${settlementNote(x.amount, settlement)}</span><span>${settlementStatus(x.amount, settlement)}</span></div>`).join('')}
     </div>
