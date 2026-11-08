@@ -1038,7 +1038,7 @@ function billCard(r, rep) {
         <span>سهم قبض آب: <b>${money(w)}</b> تومان
           ${waterBalance.priorCreditApplied > 0 ? `<small style="display:block;color:var(--muted);font-size:11px;margin-top:4px">این مبلغ از بستانکاری قبلی حساب کسر شده است؛ نیازی به پرداخت نیست. (کسرشده: ${money(waterBalance.priorCreditApplied)} تومان)</small>` : ''}
         </span>
-        <span>${w === 0 || waterBalance.remaining === 0 || waterBalance.paymentApplied > 0 ? '' : '<span class="chip no">پرداخت نشده</span>'}
+        <span>${w === 0 || waterBalance.remaining === 0 ? '' : '<span class="chip no">پرداخت نشده</span>'}
       </div>
       <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px dashed var(--line)">
         <span>سهم قبض گاز: <b>${money(g)}</b> تومان</span>
