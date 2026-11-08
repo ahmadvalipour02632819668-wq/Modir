@@ -2110,7 +2110,7 @@ async function viewReport(el) {
       const canvas = await html2canvas(table, { backgroundColor: '#ffffff', scale: 2, width: tableWidth, height: tableHeight, windowWidth: tableWidth, windowHeight: tableHeight, scrollX: 0, scrollY: 0, useCORS: true, logging: false });
       const base64Image = canvas.toDataURL('image/jpeg', 0.88);
       btn.textContent = 'در حال ارسال به بله...';
-      const sent = await notifyBale(`📊 گزارش ماهانه ${rep.month_name} ${fa(rep.year)}\n${S.building}`, base64Image);
+      const sent = await notifyBale(`📊 گزارش ماهانه ${rep.month_name} ${fa(rep.year)}\n${S.me?.building_name || S.building}`, base64Image);
       if (!sent) throw new Error('ارسال گزارش به بله ناموفق بود؛ تنظیمات ربات و شناسه گروه را بررسی کنید');
       toast('گزارش با موفقیت به گروه بله ارسال شد');
     } catch (e) { showErr(e); } finally {
