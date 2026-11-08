@@ -467,7 +467,7 @@ function sendMobilePush(event, title, body) {
 
 
 const MONTHS = ['فروردین','اردیبهشت','خرداد','تیر','مرداد','شهریور','مهر','آبان','آذر','دی','بهمن','اسفند'];
-const CATS = { charge:'شارژ ماهیانه', water:'قبض آب', gas:'قبض گاز', electric:'برق عمومی', repair:'پس‌انداز', parking:'اجاره پارکینگ', debt:'پرداخت بدهی معوق', other:'سایر', bill:'کل صورتحساب ماه' };
+const CATS = { charge:'شارژ ماهیانه', water:'قبض آب', gas:'قبض گاز', electric:'برق عمومی', repair:'دریافت هزینه تعمیرات و بازسازی', parking:'اجاره پارکینگ', debt:'پرداخت بدهی معوق', other:'سایر درآمدها', bill:'کل صورتحساب ماه' };
 const OCC = ['مالک ساکن','مالک','مستأجر'];
 
 const $ = (s, el = document) => el.querySelector(s);
@@ -1892,11 +1892,11 @@ async function viewTx(el) {
 
 function txModal(t, units) {
   const isNew = !t;
-  t = t || { year: TODAY.y, month: TODAY.m, day: TODAY.d, unit_no: null, tx_type: 'درآمد', category: 'water', location: '', description: '', amount: '', occupancy: '' };
+  t = t || { year: TODAY.y, month: TODAY.m, day: TODAY.d, unit_no: null, tx_type: 'درآمد', category: 'repair', location: '', description: '', amount: '', occupancy: '' };
 
   const CATS = {
     water:'قبض آب', gas:'قبض گاز', electric:'قبض برق',
-    parking:'اجاره پارکینگ', repair:'دریافت پس‌انداز', charge:'شارژ ماهیانه', other:'سایر',
+    parking:'اجاره پارکینگ', repair:'دریافت هزینه تعمیرات و بازسازی', charge:'شارژ ماهیانه', other:'سایر درآمدها',
     cleaning:'نظافت', service:'سرویس آسانسور', repair_pay:'هزینه تعمیرات', building_repair:'هزینه بازسازی', fixed_cost:'هزینه‌های ثابت', payment:'پرداخت‌ها'
   };
   const savedPayers = Array.isArray(t.payer_occupancies) ? t.payer_occupancies : ['مالک ساکن','مستأجر'];
@@ -1930,13 +1930,8 @@ function txModal(t, units) {
       <label class="f" style="grid-column:1/-1">شرح / دسته‌بندی
         <select id="t-cat">
           <optgroup label="درآمدها" id="opt-in">
-            <option value="water" ${t.category === 'water' ? 'selected' : ''}>قبض آب</option>
-            <option value="gas" ${t.category === 'gas' ? 'selected' : ''}>قبض گاز</option>
-            <option value="electric" ${t.category === 'electric' ? 'selected' : ''}>قبض برق</option>
-            <option value="parking" ${t.category === 'parking' ? 'selected' : ''}>اجاره پارکینگ</option>
-            <option value="repair" ${t.category === 'repair' ? 'selected' : ''}>دریافت پس‌انداز</option>
-            <option value="charge" ${t.category === 'charge' ? 'selected' : ''}>شارژ ماهیانه</option>
-            <option value="other" ${t.category === 'other' ? 'selected' : ''}>سایر (درآمد)</option>
+            <option value="repair" ${t.category === 'repair' ? 'selected' : ''}>دریافت هزینه تعمیرات و بازسازی</option>
+            <option value="other" ${t.category === 'other' ? 'selected' : ''}>سایر درآمدها</option>
           </optgroup>
           <optgroup label="هزینه‌ها" id="opt-out">
             <option value="water" ${t.category === 'water' ? 'selected' : ''}>قبض آب</option>
@@ -2007,7 +2002,7 @@ function txModal(t, units) {
     expenseFields.style.display = income ? 'none' : 'block';
     $('#unit-label',m).textContent = income ? 'واحد' : 'پرداخت‌کننده هزینه';
     if (income) {
-      if (['cleaning','service','building_repair','fixed_cost','repair_pay','payment'].includes($('#t-cat',m).value)) $('#t-cat',m).value = 'charge';
+      if (!['repair','other'].includes($('#t-cat',m).value)) $('#t-cat',m).value = 'repair';
     } else {
       $('#t-occ',m).value = '';
       if (['electric','parking','repair','charge'].includes($('#t-cat',m).value)) $('#t-cat',m).value = 'cleaning';
