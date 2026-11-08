@@ -1894,11 +1894,18 @@ function txModal(t, units) {
   const isNew = !t;
   t = t || { year: TODAY.y, month: TODAY.m, day: TODAY.d, unit_no: null, tx_type: 'درآمد', category: 'repair', location: '', description: '', amount: '', occupancy: '' };
 
-  const CATS = {
-    water:'قبض آب', gas:'قبض گاز', electric:'قبض برق',
-    parking:'اجاره پارکینگ', repair:'دریافت هزینه تعمیرات و بازسازی', charge:'شارژ ماهیانه', other:'سایر درآمدها',
-    cleaning:'نظافت', service:'سرویس آسانسور', repair_pay:'هزینه تعمیرات', building_repair:'هزینه بازسازی', fixed_cost:'هزینه‌های ثابت', payment:'پرداخت‌ها'
-  };
+  const INCOME_CATS = [
+    ['repair','دریافت هزینه تعمیرات و بازسازی'],
+    ['other','سایر درآمدها']
+  ];
+  const EXPENSE_CATS = [
+    ['water','قبض آب'], ['gas','قبض گاز'], ['cleaning','نظافت'],
+    ['service','سرویس آسانسور'], ['building_repair','هزینه بازسازی'],
+    ['fixed_cost','هزینه‌های ثابت'], ['repair_pay','هزینه تعمیرات'],
+    ['payment','پرداخت‌ها'], ['other','سایر (هزینه)']
+  ];
+  const categoryLabel = (type, category) =>
+    (type === 'درآمد' ? INCOME_CATS : EXPENSE_CATS).find(x => x[0] === category)?.[1] || category;
   const savedPayers = Array.isArray(t.payer_occupancies) ? t.payer_occupancies : ['مالک ساکن','مستأجر'];
   const savedExcluded = Array.isArray(t.excluded_units) ? t.excluded_units.map(Number) : [];
   const savedKind = t.expense_kind || 'nonshared';
@@ -1928,23 +1935,7 @@ function txModal(t, units) {
         <input id="t-loc" value="${esc(t.location || '')}" placeholder="مثلاً بلوک A">
       </label>
       <label class="f" style="grid-column:1/-1">شرح / دسته‌بندی
-        <select id="t-cat">
-          <optgroup label="درآمدها" id="opt-in">
-            <option value="repair" ${t.category === 'repair' ? 'selected' : ''}>دریافت هزینه تعمیرات و بازسازی</option>
-            <option value="other" ${t.category === 'other' ? 'selected' : ''}>سایر درآمدها</option>
-          </optgroup>
-          <optgroup label="هزینه‌ها" id="opt-out">
-            <option value="water" ${t.category === 'water' ? 'selected' : ''}>قبض آب</option>
-            <option value="gas" ${t.category === 'gas' ? 'selected' : ''}>قبض گاز</option>
-            <option value="cleaning" ${t.category === 'cleaning' ? 'selected' : ''}>نظافت</option>
-            <option value="service" ${t.category === 'service' ? 'selected' : ''}>سرویس آسانسور</option>
-            <option value="building_repair" ${t.category === 'building_repair' ? 'selected' : ''}>هزینه بازسازی</option>
-            <option value="fixed_cost" ${t.category === 'fixed_cost' ? 'selected' : ''}>هزینه‌های ثابت</option>
-            <option value="repair_pay" ${t.category === 'repair_pay' ? 'selected' : ''}>هزینه تعمیرات</option>
-            <option value="payment" ${t.category === 'payment' ? 'selected' : ''}>پرداخت‌ها</option>
-            <option value="other" ${t.category === 'other' ? 'selected' : ''}>سایر (هزینه)</option>
-         </optgroup>
-        </select>
+        <select id="t-cat"></select>
       </label>
       <section id="expense-fields" class="card" style="grid-column:1/-1;padding:16px;display:none">
         <h2 style="margin:0 0 12px">جزئیات تقسیم هزینه</h2>
@@ -1992,20 +1983,29 @@ function txModal(t, units) {
   `);
 
   attachNumericInputIn(m, '#t-amt');
-  const typeSelect = $('#t-type',m), payerWrap = $('#wrap-payer',m), optIn = $('#opt-in',m), optOut = $('#opt-out',m);
+  const typeSelect = $('#t-type',m), payerWrap = $('#wrap-payer',m);
   const expenseFields = $('#expense-fields',m), unitSelect = $('#t-unit',m);
+  const categorySelect = $('#t-cat',m);
+  let renderedCategoryType = null;
   const updateFormUI = () => {
     const income = typeSelect.value === 'درآمد';
+    const categoryType = income ? 'درآمد' : 'هزینه';
+    const categoryOptions = income ? INCOME_CATS : EXPENSE_CATS;
+    const currentCategory = categorySelect.value || t.category;
+    const validCategory = categoryOptions.some(([value]) => value === currentCategory);
+    if (renderedCategoryType !== categoryType || !validCategory) {
+      const selectedCategory = validCategory ? currentCategory : (income ? 'repair' : 'cleaning');
+      categorySelect.innerHTML = categoryOptions.map(([value,label]) =>
+        '<option value="' + value + '">' + label + '</option>'
+      ).join('');
+      categorySelect.value = selectedCategory;
+      renderedCategoryType = categoryType;
+    }
     payerWrap.style.display = income ? 'flex' : 'none';
-    optIn.style.display = income ? '' : 'none';
-    optOut.style.display = income ? 'none' : '';
     expenseFields.style.display = income ? 'none' : 'block';
     $('#unit-label',m).textContent = income ? 'واحد' : 'پرداخت‌کننده هزینه';
-    if (income) {
-      if (!['repair','other'].includes($('#t-cat',m).value)) $('#t-cat',m).value = 'repair';
-    } else {
+    if (!income) {
       $('#t-occ',m).value = '';
-      if (['electric','parking','repair','charge'].includes($('#t-cat',m).value)) $('#t-cat',m).value = 'cleaning';
     }
     const building = +unitSelect.value === 0;
     const kind = $('input[name="expense-kind"]:checked',m)?.value || 'shared';
@@ -2055,7 +2055,7 @@ function txModal(t, units) {
         });
         if(saved?.ok==false) throw new Error(saved.error||'ثبت هزینه ناموفق بود');
       }
-      notifyBale(`${isNew?'📝 تراکنش جدید':'✏️ ویرایش تراکنش'}:\n\n🔹 نوع: ${txType}\n🏢 ${txType==='هزینه'?'پرداخت‌کننده':'واحد'}: ${unitNo?'واحد '+unitNo:'ساختمان'}\n💰 مبلغ: ${fmt(amount)} تومان\n📄 بابت: ${CATS[category]||category}`);
+      notifyBale(`${isNew?'📝 تراکنش جدید':'✏️ ویرایش تراکنش'}:\n\n🔹 نوع: ${txType}\n🏢 ${txType==='هزینه'?'پرداخت‌کننده':'واحد'}: ${unitNo?'واحد '+unitNo:'ساختمان'}\n💰 مبلغ: ${fmt(amount)} تومان\n📄 بابت: ${categoryLabel(txType, category)}`);
       closeModal(m);
       toast(isNew?'ثبت شد':'ویرایش شد');
       go('tx');
