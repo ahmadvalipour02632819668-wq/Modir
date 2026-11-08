@@ -1036,9 +1036,9 @@ function billCard(r, rep) {
       </div>
       <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px dashed var(--line)">
         <span>سهم قبض آب: <b>${money(w)}</b> تومان
-          ${waterBalance.applied > 0 ? `<small style="display:block;color:var(--muted);font-size:11px;margin-top:4px">${waterBalance.priorCreditApplied > 0 ? `کسر از بستانکاری قبلی: ${money(waterBalance.priorCreditApplied)} تومان` : ''}${waterBalance.priorCreditApplied > 0 && waterBalance.paymentApplied > 0 ? ' · ' : ''}${waterBalance.paymentApplied > 0 ? `پرداخت ثبت‌شده: ${money(waterBalance.paymentApplied)} تومان` : ''} · مانده آب: ${money(waterBalance.remaining)} تومان</small>` : ''}
+          ${waterBalance.priorCreditApplied > 0 ? `<small style="display:block;color:var(--muted);font-size:11px;margin-top:4px">این مبلغ از بستانکاری قبلی حساب کسر شده است؛ نیازی به پرداخت نیست. (کسرشده: ${money(waterBalance.priorCreditApplied)} تومان)</small>` : ''}
         </span>
-        <span>${w === 0 ? '' : waterBalance.remaining === 0 ? (waterBalance.priorCreditApplied > 0 && waterBalance.paymentApplied > 0 ? '<span class="chip ok">تسویه با بستانکاری و پرداخت</span>' : waterBalance.priorCreditApplied > 0 ? '<span class="chip ok">تسویه از محل بستانکاری</span>' : waterBalance.paymentApplied > 0 ? '<span class="chip ok">پرداخت شده</span>' : '<span class="chip no">پرداخت نشده</span>') : waterBalance.applied > 0 ? '<span class="chip pd">بخشی کسر شد</span>' : '<span class="chip no">پرداخت نشده</span>'}</span>
+        <span>${w === 0 || waterBalance.remaining === 0 || waterBalance.paymentApplied > 0 ? '' : '<span class="chip no">پرداخت نشده</span>'}
       </div>
       <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px dashed var(--line)">
         <span>سهم قبض گاز: <b>${money(g)}</b> تومان</span>
