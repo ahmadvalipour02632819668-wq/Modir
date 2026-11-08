@@ -980,27 +980,38 @@ function billCard(r, rep) {
   // payments to them in the same oldest-first order used by the debt ledger.
   const priorDebt = Math.max(0, prev);
   const currentPaymentForObligations = Math.max(0, paid - priorDebt);
-  let availableCredit = Math.max(0, -prev) + currentPaymentForObligations;
-  const applyCredit = amount => {
-    const applied = Math.min(Math.max(0, Number(amount) || 0), availableCredit);
-    availableCredit -= applied;
-    return { applied, remaining: Math.max(0, (Number(amount) || 0) - applied) };
+  // Keep prior credit distinct from payments recorded this month.
+  let availablePriorCredit = Math.max(0, -prev);
+  let availableCurrentPayment = currentPaymentForObligations;
+  const applyFunds = amount => {
+    const due = Math.max(0, Number(amount) || 0);
+    const fromPriorCredit = Math.min(due, availablePriorCredit);
+    availablePriorCredit -= fromPriorCredit;
+    const fromCurrentPayment = Math.min(due - fromPriorCredit, availableCurrentPayment);
+    availableCurrentPayment -= fromCurrentPayment;
+    return { fromPriorCredit, fromCurrentPayment };
   };
-  // Recurring obligations are settled first in category order. Shared
-  // expenses (including the water bill) follow in their recorded order.
-  applyCredit(Number(r.charge) || 0);
-  const baseWaterOffset = applyCredit(Number(r.water) || 0).applied;
-  applyCredit(Number(r.gas) || 0);
-  applyCredit(Number(r.repair) || 0);
-  applyCredit(Number(r.parking) || 0);
-  let waterExpenseOffset = 0;
+  applyFunds(Number(r.charge) || 0);
+  const baseWaterFunds = applyFunds(Number(r.water) || 0);
+  applyFunds(Number(r.gas) || 0);
+  applyFunds(Number(r.repair) || 0);
+  applyFunds(Number(r.parking) || 0);
+  let waterExpenseCredit = 0;
+  let waterExpensePayment = 0;
   expenseItems.forEach(x => {
-    const applied = applyCredit(x.amount).applied;
-    if (isExpenseFor(x, 'water', ['آب'])) waterExpenseOffset += applied;
+    const funds = applyFunds(x.amount);
+    if (isExpenseFor(x, 'water', ['آب'])) {
+      waterExpenseCredit += funds.fromPriorCredit;
+      waterExpensePayment += funds.fromCurrentPayment;
+    }
   });
+  const waterPriorCreditApplied = baseWaterFunds.fromPriorCredit + waterExpenseCredit;
+  const waterPaymentApplied = baseWaterFunds.fromCurrentPayment + waterExpensePayment;
   const waterBalance = {
-    applied: baseWaterOffset + waterExpenseOffset,
-    remaining: Math.max(0, w - baseWaterOffset - waterExpenseOffset)
+    applied: waterPriorCreditApplied + waterPaymentApplied,
+    priorCreditApplied: waterPriorCreditApplied,
+    paymentApplied: waterPaymentApplied,
+    remaining: Math.max(0, w - waterPriorCreditApplied - waterPaymentApplied)
   };
 
   return `
@@ -1025,9 +1036,9 @@ function billCard(r, rep) {
       </div>
       <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px dashed var(--line)">
         <span>سهم قبض آب: <b>${money(w)}</b> تومان
-          ${waterBalance.applied > 0 ? `<small style="display:block;color:var(--muted);font-size:11px;margin-top:4px">کسر از بستانکاری/پرداختی: ${money(waterBalance.applied)} تومان · مانده آب: ${money(waterBalance.remaining)} تومان</small>` : ''}
+          ${waterBalance.applied > 0 ? `<small style="display:block;color:var(--muted);font-size:11px;margin-top:4px">${waterBalance.priorCreditApplied > 0 ? `کسر از بستانکاری قبلی: ${money(waterBalance.priorCreditApplied)} تومان` : ''}${waterBalance.priorCreditApplied > 0 && waterBalance.paymentApplied > 0 ? ' · ' : ''}${waterBalance.paymentApplied > 0 ? `پرداخت ثبت‌شده: ${money(waterBalance.paymentApplied)} تومان` : ''} · مانده آب: ${money(waterBalance.remaining)} تومان</small>` : ''}
         </span>
-        <span>${w === 0 ? '' : waterBalance.remaining === 0 ? '<span class="chip ok">تسویه از محل بستانکاری/پرداختی</span>' : waterBalance.applied > 0 ? '<span class="chip pd">بخشی کسر شد</span>' : '<span class="chip no">پرداخت نشده</span>'}</span>
+        <span>${w === 0 ? '' : waterBalance.remaining === 0 ? (waterBalance.priorCreditApplied > 0 && waterBalance.paymentApplied > 0 ? '<span class="chip ok">تسویه با بستانکاری و پرداخت</span>' : waterBalance.priorCreditApplied > 0 ? '<span class="chip ok">تسویه از محل بستانکاری</span>' : waterBalance.paymentApplied > 0 ? '<span class="chip ok">پرداخت شده</span>' : '<span class="chip no">پرداخت نشده</span>') : waterBalance.applied > 0 ? '<span class="chip pd">بخشی کسر شد</span>' : '<span class="chip no">پرداخت نشده</span>'}</span>
       </div>
       <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px dashed var(--line)">
         <span>سهم قبض گاز: <b>${money(g)}</b> تومان</span>
