@@ -976,43 +976,31 @@ function billCard(r, rep) {
   const paid = Number(r.paid_this_month) || 0;
   const rem = Number(r.remaining) || 0;
 
-  // Keep gross obligations visible; apply prior credit and this month's
-  // payments to them in the same oldest-first order used by the debt ledger.
+  // Keep original bill amounts visible; settlement affects status only.
   const priorDebt = Math.max(0, prev);
-  const currentPaymentForObligations = Math.max(0, paid - priorDebt);
-  // Keep prior credit distinct from payments recorded this month.
   let availablePriorCredit = Math.max(0, -prev);
-  let availableCurrentPayment = currentPaymentForObligations;
+  let availableCurrentPayment = Math.max(0, paid - priorDebt);
   const applyFunds = amount => {
     const due = Math.max(0, Number(amount) || 0);
-    const fromPriorCredit = Math.min(due, availablePriorCredit);
-    availablePriorCredit -= fromPriorCredit;
-    const fromCurrentPayment = Math.min(due - fromPriorCredit, availableCurrentPayment);
-    availableCurrentPayment -= fromCurrentPayment;
-    return { fromPriorCredit, fromCurrentPayment };
+    const priorCredit = Math.min(due, availablePriorCredit);
+    availablePriorCredit -= priorCredit;
+    const directPayment = Math.min(due - priorCredit, availableCurrentPayment);
+    availableCurrentPayment -= directPayment;
+    return { priorCredit, directPayment, remaining: Math.max(0, due - priorCredit - directPayment) };
   };
-  applyFunds(Number(r.charge) || 0);
-  const baseWaterFunds = applyFunds(Number(r.water) || 0);
-  applyFunds(Number(r.gas) || 0);
-  applyFunds(Number(r.repair) || 0);
-  applyFunds(Number(r.parking) || 0);
-  let waterExpenseCredit = 0;
-  let waterExpensePayment = 0;
-  expenseItems.forEach(x => {
-    const funds = applyFunds(x.amount);
-    if (isExpenseFor(x, 'water', ['آب'])) {
-      waterExpenseCredit += funds.fromPriorCredit;
-      waterExpensePayment += funds.fromCurrentPayment;
-    }
-  });
-  const waterPriorCreditApplied = baseWaterFunds.fromPriorCredit + waterExpenseCredit;
-  const waterPaymentApplied = baseWaterFunds.fromCurrentPayment + waterExpensePayment;
-  const waterBalance = {
-    applied: waterPriorCreditApplied + waterPaymentApplied,
-    priorCreditApplied: waterPriorCreditApplied,
-    paymentApplied: waterPaymentApplied,
-    remaining: Math.max(0, w - waterPriorCreditApplied - waterPaymentApplied)
-  };
+  // Allocate once by visible bill rows; aggregated expense shares are not counted twice.
+  const chargeSettlement = applyFunds(chg);
+  const waterSettlement = applyFunds(w);
+  const gasSettlement = applyFunds(g);
+  const repairSettlement = applyFunds(rep_amt);
+  const parkingSettlement = applyFunds(park);
+  const extraSettlements = extraExpenses.map(item => ({ item, settlement: applyFunds(item.amount) }));
+  const settlementNote = (amount, settlement) => settlement.priorCredit > 0
+    ? `<small style="display:block;color:var(--muted);font-size:11px;margin-top:4px">${money(settlement.priorCredit)} تومان از بستانکاری قبلی کسر شد.</small>`
+    : '';
+  const settlementStatus = (amount, settlement) => amount <= 0 || settlement.remaining <= 0
+    ? '<span class="chip ok">پرداخت شده</span>'
+    : '<span class="chip no">پرداخت نشده</span>';
 
   return `
   <div class="card" style="padding:0;overflow:hidden">
@@ -1031,25 +1019,19 @@ function billCard(r, rep) {
       </div>
     <div style="padding:10px 24px">
       <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px dashed var(--line)">
-        <span>شارژ ماهانه: <b>${money(chg)}</b> تومان</span>
-        <span>${(chg === 0 || (r.ok_charge && chargeExpense === 0)) ? '<span class="chip ok">پرداخت شده</span>' : '<span class="chip no">پرداخت نشده</span>'}</span>
-      </div>
+        <span>شارژ ماهانه: <b>${money(chg)}</b> تومان${settlementNote(chg, chargeSettlement)}</span>
+        <span>${settlementStatus(chg, chargeSettlement)}</span>
       <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px dashed var(--line)">
-        <span>سهم قبض آب: <b>${money(w)}</b> تومان
-          ${waterBalance.priorCreditApplied > 0 ? `<small style="display:block;color:var(--muted);font-size:11px;margin-top:4px">این مبلغ از بستانکاری قبلی حساب کسر شده است؛ نیازی به پرداخت نیست. (کسرشده: ${money(waterBalance.priorCreditApplied)} تومان)</small>` : ''}
-        </span>
-        <span>${w === 0 || waterBalance.remaining === 0 ? '' : '<span class="chip no">پرداخت نشده</span>'}
-      </div>
+        <span>سهم قبض آب: <b>${money(w)}</b> تومان${settlementNote(w, waterSettlement)}</span>
+        <span>${settlementStatus(w, waterSettlement)}</span>
       <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px dashed var(--line)">
-        <span>سهم قبض گاز: <b>${money(g)}</b> تومان</span>
-        <span>${(g === 0 || (r.ok_gas && gasExpense === 0)) ? '<span class="chip ok">پرداخت شده</span>' : '<span class="chip no">پرداخت نشده</span>'}</span>
-      </div>
+        <span>سهم قبض گاز: <b>${money(g)}</b> تومان${settlementNote(g, gasSettlement)}</span>
+        <span>${settlementStatus(g, gasSettlement)}</span>
       <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px dashed var(--line)">
-        <span>پس‌انداز: <b>${money(rep_amt)}</b> تومان</span>
-        <span>${(rep_amt === 0 || (r.ok_repair && repairExpense === 0)) ? '<span class="chip ok">پرداخت شده</span>' : '<span class="chip no">پرداخت نشده</span>'}</span>
-      </div>
-      ${park > 0 ? `<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px dashed var(--line)"><span>اجاره پارکینگ: <b>${money(park)}</b> تومان</span><span>${r.ok_parking && parkingExpense === 0 ? '<span class="chip ok">پرداخت شده</span>' : '<span class="chip no">پرداخت نشده</span>'}</span></div>` : ''}
-      ${extraExpenses.map(x => `<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 0;border-bottom:1px dashed var(--line)"><span>${esc(x.description || x.category_name || 'هزینه تسهیمی')}: <b>${money(x.amount)}</b> تومان</span><span><span class="chip no">پرداخت نشده</span></span></div>`).join('')}
+        <span>پس‌انداز: <b>${money(rep_amt)}</b> تومان${settlementNote(rep_amt, repairSettlement)}</span>
+        <span>${settlementStatus(rep_amt, repairSettlement)}</span>
+      ${park > 0 ? `<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px dashed var(--line)"><span>اجاره پارکینگ: <b>${money(park)}</b> تومان${settlementNote(park, parkingSettlement)}</span><span>${settlementStatus(park, parkingSettlement)}</span></div>` : ''}
+      ${extraSettlements.map(({item:x,settlement}) => `<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 0;border-bottom:1px dashed var(--line)"><span>${esc(x.description || x.category_name || 'هزینه تسهیمی')}: <b>${money(x.amount)}</b> تومان${settlementNote(x.amount, settlement)}</span><span>${settlementStatus(x.amount, settlement)}</span></div>`).join('')}
     </div>
     <div style="background:var(--bg);padding:20px 24px;display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:16px;border-top:1px solid var(--line)";color:#000">
       <div><small style="color:var(--muted);display:block">بدهی قبلی</small><b style="color:#000">${money(prev)}</b> <span style="color:#000">تومان</span></div>
