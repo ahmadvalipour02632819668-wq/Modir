@@ -2058,89 +2058,63 @@ function exportCsv(rows) {
 }
 
 async function viewReport(el) {
-  const rep = await T('app_report', { p_year: S.y, p_month: S.m });
-  const reportTransactions = await T('app_get_transactions', { p_year: S.y, p_month: S.m, p_unit: null });
-  el.innerHTML = `
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; gap:12px; flex-wrap:wrap; width:100%; box-sizing:border-box;">
-      <div><h1 style="margin:0; line-height:1.5;">گزارش ${rep.month_name} ${fa(rep.year)}</h1></div>
-      <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">${periodPicker()}<button class="btn sf no-print" id="bale-btn">ارسال به بله 📤</button><button class="btn lt no-print" id="pr-btn">چاپ</button></div>
-    </div>
-    ${rep.missing_rates?.length ? `<div class="card" style="background:#fee2e2; color:#991b1b; margin-bottom:20px;">نرخ ماه‌های ${rep.missing_rates.map(fa).join('، ')} تعریف نشده.</div>` : ''}
-    <div class="tbl-wrap" style="border-radius:8px; overflow-x:auto; overflow-y:visible; -webkit-overflow-scrolling:touch; touch-action:pan-x pan-y; border:1px solid #333; padding:0; background:#fff; width:100%; max-width:100%; box-sizing:border-box; position:relative;">
-      <table style="width:max-content; min-width:100%; border-collapse:collapse; font-size:20px; font-weight:bold; text-align:center; direction:rtl; border:2px solid #000; table-layout:auto;">
-        <colgroup><col style="min-width:105px;"><col style="min-width:145px;"><col style="min-width:145px;"><col style="min-width:145px;"><col style="min-width:155px;"><col style="min-width:165px;"><col style="min-width:190px;"></colgroup>
-        <thead>
-          <tr><th colspan="7" style="background-color:#7A9CBE; color:white; padding:10px 12px; font-size:22px; font-weight:bold; border:1px solid #333; text-align:center; white-space:nowrap;">گزارش ${rep.month_name} ماه - ${fa(rep.year)}/${String(rep.month).padStart(2, '0')}</th></tr>
-          <tr><th style="background-color:#D9E1F2; border:1px solid #333; padding:7px 10px; font-weight:bold; white-space:nowrap; color:#000; font-size:18px; text-align:center;">واحد</th><th style="background-color:#D9E1F2; border:1px solid #333; padding:7px 10px; font-weight:bold; white-space:nowrap; color:#000; font-size:18px; text-align:center;">شارژ</th><th style="background-color:#D9E1F2; border:1px solid #333; padding:7px 10px; font-weight:bold; white-space:nowrap; color:#000; font-size:18px; text-align:center;">قبض آب</th><th style="background-color:#D9E1F2; border:1px solid #333; padding:7px 10px; font-weight:bold; white-space:nowrap; color:#000; font-size:18px; text-align:center;">قبض گاز</th><th style="background-color:#D9E1F2; border:1px solid #333; padding:7px 10px; font-weight:bold; white-space:nowrap; color:#000; font-size:18px; text-align:center;">پس‌انداز</th><th style="background-color:#D9E1F2; border:1px solid #333; padding:7px 10px; font-weight:bold; white-space:nowrap; color:#000; font-size:18px; text-align:center;">بدهی قبلی</th><th style="background-color:#D9E1F2; border:1px solid #333; padding:7px 10px; font-weight:bold; white-space:nowrap; color:#000; font-size:18px; text-align:center;">جمع مبلغ<br>قابل پرداخت</th></tr>
-        </thead>
-        <tbody>
-          ${rep.rows?.length ? rep.rows.map(r => {
-            // Mirror Negin2's category-by-category report logic, while resolving Modir's
-            // shared expense allocations from the current month's source transactions only.
-            const sharedExpenses = (reportTransactions || []).flatMap(t => {
-              if (t.tx_type !== 'هزینه' || Number(t.ym) !== Number(S.y) * 100 + Number(S.m)) return [];
-              let shares = t.expense_shares;
-              if (typeof shares === 'string') { try { shares = JSON.parse(shares); } catch (_) { shares = []; } }
-              if (!Array.isArray(shares)) return [];
-              const share = shares.find(x => String(x.account_id || '') === String(r.account_id || ''));
-              return share ? [{ transaction_id: t.id, category_name: String(t.category || '').toLowerCase(), description: t.description || 'هزینه تسهیمی', amount: Number(share.amount) || 0 }] : [];
+  if (S.reportMode === 'range') {
+    const fromY=Number(S.rangeFromYear||S.y), fromM=Number(S.rangeFromMonth||S.m), toY=Number(S.rangeToYear||S.y), toM=Number(S.rangeToMonth||S.m);
+    el.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><div><h1>گزارش مالی</h1><p class="sub">گزارش ماه‌به‌ماه در بازه انتخابی</p></div><button class="btn lt" id="report-month-mode">بازگشت به گزارش ماهانه</button></div>
+      <form id="report-range-form" class="card" style="display:flex;gap:10px;align-items:end;flex-wrap:wrap;margin-bottom:18px">
+        <label class="f">از ماه<select id="range-from-month">${monthOptions(fromM)}</select></label><label class="f">از سال<select id="range-from-year">${yearOptions(fromY)}</select></label>
+        <label class="f">تا ماه<select id="range-to-month">${monthOptions(toM)}</select></label><label class="f">تا سال<select id="range-to-year">${yearOptions(toY)}</select></label>
+        <button class="btn sf" type="submit">نمایش گزارش</button></form>
+      <div id="range-report-content" class="card" style="overflow-x:auto"><p>ماه و سال شروع و پایان را انتخاب کنید.</p></div>
+      <div style="display:flex;gap:8px;margin-top:14px"><button class="btn lt no-print" id="range-print-btn">چاپ</button><button class="btn sf no-print" id="range-bale-btn">ارسال به بله 📤</button></div>`;
+    $('#report-month-mode')?.addEventListener('click',()=>{S.reportMode='month';go('report');});
+    $('#report-range-form')?.addEventListener('submit',async e=>{
+      e.preventDefault();
+      const fy=Number($('#range-from-year').value),fm=Number($('#range-from-month').value),ty=Number($('#range-to-year').value),tm=Number($('#range-to-month').value);
+      if(fy*100+fm>ty*100+tm){toast('تاریخ شروع نباید بعد از تاریخ پایان باشد',true);return;}
+      S.rangeFromYear=fy;S.rangeFromMonth=fm;S.rangeToYear=ty;S.rangeToMonth=tm;
+      const content=$('#range-report-content');if(!content)return;content.innerHTML='<p>در حال دریافت گزارش...</p>';
+      try {
+        const pieces=[];let y=fy,m=fm;
+        while(y*100+m<=ty*100+tm){
+          const [rep,tx]=await Promise.all([T('app_report',{p_year:y,p_month:m}),T('app_get_transactions',{p_year:y,p_month:m,p_unit:null})]);
+          const rows=(rep.rows||[]).map(r=>{
+            const shared=(tx||[]).flatMap(t=>{
+              if(t.tx_type!=='هزینه'||Number(t.ym)!==y*100+m)return[];
+              let a=t.expense_shares;if(typeof a==='string'){try{a=JSON.parse(a)}catch(_){a=[]}}
+              if(!Array.isArray(a))return[];const sh=a.find(x=>String(x.account_id||'')===String(r.account_id||''));
+              return sh?[{id:t.id,cat:String(t.category||'').toLowerCase(),amount:Number(sh.amount)||0}]:[];
             });
-            const expensesOf = category => sharedExpenses.filter(x => x.category_name === category);
-            const expenseSum = items => items.reduce((sum, x) => sum + x.amount, 0);
-            const expensePaid = item => {
-              const paid = (reportTransactions || []).filter(t =>
-                Number(t.ym) === Number(S.y) * 100 + Number(S.m) &&
-                String(t.account_id || '') === String(r.account_id || '') &&
-                t.tx_type === 'درآمد' && String(t.category || '') === 'expense:' + item.transaction_id
-              ).reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
-              return paid >= item.amount;
-            };
-            const amountStatus = (base, basePaid, category) => {
-              const items = expensesOf(category);
-              return { amount: (Number(base) || 0) + expenseSum(items), paid: ((Number(base) <= 0 || !!basePaid) && items.every(expensePaid)) };
-            };
-            const charge = amountStatus(r.charge, r.ok_charge, 'charge');
-            const water = amountStatus(r.water, r.ok_water, 'water');
-            const gas = amountStatus(r.gas, r.ok_gas, 'gas');
-            const repair = amountStatus(r.repair, r.ok_repair, 'repair');
-            const paidBg = (amount, isPaid) => Number(amount) <= 0 || isPaid ? '#00B050' : '#ffffff';
-            const debtBg = Number(r.prev_debt) > 0 ? '#FFC000' : '#ffffff';
-            const totalBg = Number(r.remaining) <= 0 ? '#00B050' : (Number(r.prev_debt) > 0 ? '#FFC000' : '#ffffff');
-            const cellStyle = bg => `background-color:${bg}; border:1px solid #333; padding:6px 10px; white-space:nowrap; text-align:center; vertical-align:middle;`;
-            return `<tr style="color:#000000; font-size:30px;"><td style="border:1px solid #333; padding:6px 10px; font-weight:bold; white-space:nowrap; text-align:center; vertical-align:middle;">واحد ${fa(r.unit_no)}<div style="font-size:12px; font-weight:normal; color:#000; margin-top:2px; line-height:1.2;">${esc(r.occupancy || '')}</div></td><td style="${cellStyle(paidBg(charge.amount, charge.paid))}">${fmt(charge.amount)}</td><td style="${cellStyle(paidBg(water.amount, water.paid))}">${fmt(water.amount)}</td><td style="${cellStyle(paidBg(gas.amount, gas.paid))}">${fmt(gas.amount)}</td><td style="${cellStyle(paidBg(repair.amount, repair.paid))}">${fmt(repair.amount)}</td><td style="${cellStyle(debtBg)}">${fmt(r.prev_debt)}</td><td style="${cellStyle(totalBg)} font-weight:bold;">${fmt(r.remaining)}</td></tr>`;
-          }).join('') : `<tr><td colspan="7" style="border:1px solid #333; padding:20px; font-size:20px; text-align:center;">اطلاعاتی برای این دوره وجود ندارد.</td></tr>`}
-        </tbody>
-      </table>
-    </div>`;
-
-  bindPeriod(() => go('report'));
-  $('#pr-btn')?.addEventListener('click', () => { const tableElement = $('.tbl-wrap'); if (!tableElement) return; const oldWidth = tableElement.style.width; const oldOverflowX = tableElement.style.overflowX; const oldOverflowY = tableElement.style.overflowY; tableElement.style.width = '1400px'; tableElement.style.overflowX = 'visible'; tableElement.style.overflowY = 'visible'; window.print(); setTimeout(() => { tableElement.style.width = oldWidth; tableElement.style.overflowX = oldOverflowX; tableElement.style.overflowY = oldOverflowY; }, 1000); });
-
-  $('#bale-btn')?.addEventListener('click', async () => {
-    const btn = $('#bale-btn'); if (!btn) return; const oldText = btn.textContent; btn.disabled = true; let table = null; let originalStyles = null;
-    try {
-      btn.textContent = 'در حال آماده‌سازی تصویر...'; const wrapper = el.querySelector('.tbl-wrap'); table = wrapper?.querySelector('table');
-      if (!wrapper || !table) throw new Error('جدول گزارش پیدا نشد.');
-      originalStyles = { wrapperWidth: wrapper.style.width, wrapperMaxWidth: wrapper.style.maxWidth, wrapperOverflowX: wrapper.style.overflowX, wrapperOverflowY: wrapper.style.overflowY, tableWidth: table.style.width, tableMinWidth: table.style.minWidth };
-      table.style.width = 'max-content'; table.style.minWidth = '0'; wrapper.style.width = 'max-content'; wrapper.style.maxWidth = 'none'; wrapper.style.overflowX = 'visible'; wrapper.style.overflowY = 'visible';
-      await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
-      const tableWidth = Math.ceil(Math.max(table.scrollWidth, table.getBoundingClientRect().width)); const tableHeight = Math.ceil(Math.max(table.scrollHeight, table.getBoundingClientRect().height));
-      if (!tableWidth || !tableHeight) throw new Error('ابعاد جدول قابل محاسبه نیست.');
-      btn.textContent = 'در حال ساخت تصویر...';
-      const canvas = await html2canvas(table, { backgroundColor: '#ffffff', scale: 2, width: tableWidth, height: tableHeight, windowWidth: tableWidth, windowHeight: tableHeight, scrollX: 0, scrollY: 0, useCORS: true, logging: false });
-      const base64Image = canvas.toDataURL('image/jpeg', 0.88);
-      btn.textContent = 'در حال ارسال به بله...';
-      const sent = await notifyBale(`📊 گزارش ماهانه ${rep.month_name} ${fa(rep.year)}\n${S.me?.building_name || S.building}`, base64Image);
-      if (!sent) throw new Error('ارسال گزارش به بله ناموفق بود؛ تنظیمات ربات و شناسه گروه را بررسی کنید');
-      toast('گزارش با موفقیت به گروه بله ارسال شد');
-    } catch (e) { showErr(e); } finally {
-      if (table && originalStyles) {
-        const wrapper = el.querySelector('.tbl-wrap'); table.style.width = originalStyles.tableWidth; table.style.minWidth = originalStyles.tableMinWidth;
-        if (wrapper) { wrapper.style.width = originalStyles.wrapperWidth; wrapper.style.maxWidth = originalStyles.wrapperMaxWidth; wrapper.style.overflowX = originalStyles.wrapperOverflowX; wrapper.style.overflowY = originalStyles.wrapperOverflowY; }
-      }
-      btn.textContent = oldText; btn.disabled = false;
-    }
-  });
+            const items=c=>shared.filter(x=>x.cat===c),sum=a=>a.reduce((n,x)=>n+x.amount,0);
+            const status=(base,paid,cat)=>({amount:(Number(base)||0)+sum(items(cat)),paid:(Number(base)<=0||!!paid)&&items(cat).every(x=>(tx||[]).filter(t=>Number(t.ym)===y*100+m&&String(t.account_id||'')===String(r.account_id||'')&&t.tx_type==='درآمد'&&String(t.category||'')==='expense:'+x.id).reduce((n,t)=>n+(Number(t.amount)||0),0)>=x.amount)});
+            const c=status(r.charge,r.ok_charge,'charge'),w=status(r.water,r.ok_water,'water'),g=status(r.gas,r.ok_gas,'gas'),p=status(r.repair,r.ok_repair,'repair');
+            const cell=(bg,val)=>`<td style="background:`+bg+`;border:1px solid #333;padding:6px 9px;white-space:nowrap">`+fmt(val)+`</td>`;
+            const bg=(a,ok)=>Number(a)<=0||ok?'#00B050':'#fff',db=Number(r.prev_debt)>0?'#FFC000':'#fff',tb=Number(r.remaining)<=0?'#00B050':(Number(r.prev_debt)>0?'#FFC000':'#fff');
+            return `<tr><td style="border:1px solid #333;padding:6px 9px">واحد `+fa(r.unit_no)+`<div style="font-size:11px;font-weight:normal">`+esc(r.occupancy||'')+`</div></td>`+cell(bg(c.amount,c.paid),c.amount)+cell(bg(w.amount,w.paid),w.amount)+cell(bg(g.amount,g.paid),g.amount)+cell(bg(p.amount,p.paid),p.amount)+cell(db,r.prev_debt)+cell(tb,r.remaining)+`</tr>`;
+          }).join('');
+          pieces.push(`<section style="margin-bottom:24px;break-inside:avoid"><h2 style="font-size:18px;margin:12px 0">گزارش `+rep.month_name+` `+fa(rep.year)+`</h2><div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;text-align:center;direction:rtl;font-size:18px"><thead><tr><th colspan="7" style="background:#7A9CBE;color:white;padding:9px;border:1px solid #333">گزارش `+rep.month_name+` ماه - `+fa(rep.year)+`</th></tr><tr>`+['واحد','شارژ','قبض آب','قبض گاز','پس‌انداز','بدهی قبلی','جمع مبلغ قابل پرداخت'].map(x=>`<th style="background:#D9E1F2;border:1px solid #333;padding:7px">`+x+`</th>`).join('')+`</tr></thead><tbody>`+(rows||'<tr><td colspan="7" style="padding:15px">اطلاعاتی برای این ماه وجود ندارد.</td></tr>')+`</tbody></table></div></section>`);
+          m++;if(m>12){m=1;y++;}
+        }
+        content.innerHTML=pieces.join('');content.dataset.rangeTitle=``+fa(fy)+`/`+fa(String(fm).padStart(2,'0'))+` تا `+fa(ty)+`/`+fa(String(tm).padStart(2,'0'));
+      }catch(err){content.innerHTML=`<p style="color:#b91c1c">`+esc(err.message||'خطا در دریافت گزارش')+`</p>`;}
+    });
+    $('#range-print-btn')?.addEventListener('click',()=>window.print());
+    $('#range-bale-btn')?.addEventListener('click',async()=>{const b=$('#range-bale-btn'),c=$('#range-report-content');if(!b||!c)return;const old=b.textContent;b.disabled=true;try{b.textContent='در حال ساخت تصویر...';const canvas=await html2canvas(c,{backgroundColor:'#fff',scale:2,useCORS:true,logging:false});const ok=await notifyBale(`📊 گزارش بازه‌ای `+(c.dataset.rangeTitle||'')+`\n`+(S.me?.building_name||S.building),canvas.toDataURL('image/jpeg',0.88));if(!ok)throw new Error('ارسال گزارش به بله ناموفق بود');toast('گزارش بازه‌ای به گروه بله ارسال شد');}catch(err){showErr(err)}finally{b.textContent=old;b.disabled=false}});
+    return;
+  }
+  const rep=await T('app_report',{p_year:S.y,p_month:S.m});
+  const reportTransactions=await T('app_get_transactions',{p_year:S.y,p_month:S.m,p_unit:null});
+  el.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;gap:12px;flex-wrap:wrap"><div><h1 style="margin:0">گزارش `+rep.month_name+` `+fa(rep.year)+`</h1></div><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">`+periodPicker()+`<button class="btn lt" id="report-range-mode">گزارش بازه‌ای</button><button class="btn sf no-print" id="bale-btn">ارسال به بله 📤</button><button class="btn lt no-print" id="pr-btn">چاپ</button></div></div>
+  <div class="tbl-wrap" style="border-radius:8px;overflow-x:auto;border:1px solid #333;background:#fff;width:100%"><table style="width:max-content;min-width:100%;border-collapse:collapse;font-size:20px;font-weight:bold;text-align:center;direction:rtl;border:2px solid #000"><thead><tr><th colspan="7" style="background:#7A9CBE;color:white;padding:10px;border:1px solid #333">گزارش `+rep.month_name+` ماه - `+fa(rep.year)+`/`+String(rep.month).padStart(2,'0')+`</th></tr><tr>`+['واحد','شارژ','قبض آب','قبض گاز','پس‌انداز','بدهی قبلی','جمع مبلغ قابل پرداخت'].map(x=>`<th style="background:#D9E1F2;border:1px solid #333;padding:7px">`+x+`</th>`).join('')+`</tr></thead><tbody>`+(rep.rows||[]).map(r=>{
+    const shared=(reportTransactions||[]).flatMap(t=>{if(t.tx_type!=='هزینه'||Number(t.ym)!==Number(S.y)*100+Number(S.m))return[];let a=t.expense_shares;if(typeof a==='string'){try{a=JSON.parse(a)}catch(_){a=[]}}if(!Array.isArray(a))return[];const sh=a.find(x=>String(x.account_id||'')===String(r.account_id||''));return sh?[{id:t.id,cat:String(t.category||'').toLowerCase(),amount:Number(sh.amount)||0}]:[]});
+    const items=c=>shared.filter(x=>x.cat===c),sum=a=>a.reduce((n,x)=>n+x.amount,0),status=(base,paid,cat)=>({amount:(Number(base)||0)+sum(items(cat)),paid:(Number(base)<=0||!!paid)&&items(cat).every(x=>(reportTransactions||[]).filter(t=>Number(t.ym)===Number(S.y)*100+Number(S.m)&&String(t.account_id||'')===String(r.account_id||'')&&t.tx_type==='درآمد'&&String(t.category||'')==='expense:'+x.id).reduce((n,t)=>n+(Number(t.amount)||0),0)>=x.amount)});
+    const c=status(r.charge,r.ok_charge,'charge'),w=status(r.water,r.ok_water,'water'),g=status(r.gas,r.ok_gas,'gas'),p=status(r.repair,r.ok_repair,'repair'),bg=(a,ok)=>Number(a)<=0||ok?'#00B050':'#fff',cell=(color,val)=>`<td style="background:`+color+`;border:1px solid #333;padding:6px 10px">`+fmt(val)+`</td>`;
+    return `<tr><td style="border:1px solid #333;padding:6px 10px">واحد `+fa(r.unit_no)+`<div style="font-size:12px;font-weight:normal">`+esc(r.occupancy||'')+`</div></td>`+cell(bg(c.amount,c.paid),c.amount)+cell(bg(w.amount,w.paid),w.amount)+cell(bg(g.amount,g.paid),g.amount)+cell(bg(p.amount,p.paid),p.amount)+cell(Number(r.prev_debt)>0?'#FFC000':'#fff',r.prev_debt)+cell(Number(r.remaining)<=0?'#00B050':Number(r.prev_debt)>0?'#FFC000':'#fff',r.remaining)+`</tr>`;
+  }).join('')||'<tr><td colspan="7">اطلاعاتی برای این دوره وجود ندارد.</td></tr>'`+</tbody></table></div>`;
+  bindPeriod(()=>go('report'));
+  $('#report-range-mode')?.addEventListener('click',()=>{S.reportMode='range';S.rangeFromYear=S.y;S.rangeFromMonth=S.m;S.rangeToYear=S.y;S.rangeToMonth=S.m;go('report')});
+  $('#pr-btn')?.addEventListener('click',()=>window.print());
+  $('#bale-btn')?.addEventListener('click',async()=>{const b=$('#bale-btn'),table=$('.tbl-wrap table');if(!b||!table)return;const old=b.textContent;b.disabled=true;try{b.textContent='در حال ساخت تصویر...';const canvas=await html2canvas(table,{backgroundColor:'#fff',scale:2,useCORS:true,logging:false});const ok=await notifyBale(`📊 گزارش ماهانه `+rep.month_name+` `+fa(rep.year)+`\n`+(S.me?.building_name||S.building),canvas.toDataURL('image/jpeg',0.88));if(!ok)throw new Error('ارسال گزارش به بله ناموفق بود');toast('گزارش با موفقیت به گروه بله ارسال شد')}catch(err){showErr(err)}finally{b.textContent=old;b.disabled=false}});
 }
 
 async function viewUnits(el) {
