@@ -2075,20 +2075,29 @@ async function viewReport(el) {
         </thead>
         <tbody>
           ${rep.rows?.length ? rep.rows.map(r => {
-            let expenseItems = r.expenses;
-            if (typeof expenseItems === 'string') { try { expenseItems = JSON.parse(expenseItems); } catch (_) { expenseItems = []; } }
-            if (!Array.isArray(expenseItems)) expenseItems = [];
-            const expensesOf = category => expenseItems.filter(x => String(x.category_name || x.category || '').trim().toLowerCase() === category);
-            const expenseSum = items => items.reduce((sum, x) => sum + (Number(x.amount) || 0), 0);
+            // Mirror Negin2's category-by-category report logic, while resolving Modir's
+            // shared expense allocations from the current month's source transactions only.
+            const sharedExpenses = (reportTransactions || []).flatMap(t => {
+              if (t.tx_type !== 'هزینه' || Number(t.ym) !== Number(S.y) * 100 + Number(S.m)) return [];
+              let shares = t.expense_shares;
+              if (typeof shares === 'string') { try { shares = JSON.parse(shares); } catch (_) { shares = []; } }
+              if (!Array.isArray(shares)) return [];
+              const share = shares.find(x => String(x.account_id || '') === String(r.account_id || ''));
+              return share ? [{ transaction_id: t.id, category_name: String(t.category || '').toLowerCase(), description: t.description || 'هزینه تسهیمی', amount: Number(share.amount) || 0 }] : [];
+            });
+            const expensesOf = category => sharedExpenses.filter(x => x.category_name === category);
+            const expenseSum = items => items.reduce((sum, x) => sum + x.amount, 0);
             const expensePaid = item => {
-              const sourceId = Number(item.transaction_id);
-              if (!sourceId) return false;
-              const paid = (reportTransactions || []).filter(t => t.account_id === r.account_id && t.tx_type === 'درآمد' && String(t.category || '') === 'expense:' + sourceId).reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
-              return paid >= (Number(item.amount) || 0);
+              const paid = (reportTransactions || []).filter(t =>
+                Number(t.ym) === Number(S.y) * 100 + Number(S.m) &&
+                String(t.account_id || '') === String(r.account_id || '') &&
+                t.tx_type === 'درآمد' && String(t.category || '') === 'expense:' + item.transaction_id
+              ).reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
+              return paid >= item.amount;
             };
             const amountStatus = (base, basePaid, category) => {
               const items = expensesOf(category);
-              return { amount: (Number(base) || 0) + expenseSum(items), paid: ((Number(base) || 0) <= 0 || !!basePaid) && items.every(expensePaid) };
+              return { amount: (Number(base) || 0) + expenseSum(items), paid: ((Number(base) <= 0 || !!basePaid) && items.every(expensePaid)) };
             };
             const charge = amountStatus(r.charge, r.ok_charge, 'charge');
             const water = amountStatus(r.water, r.ok_water, 'water');
