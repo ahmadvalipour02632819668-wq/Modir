@@ -1032,7 +1032,7 @@ function billCard(r, rep) {
 }
 function reminderText(r, rep) {
   return `${S.building} - واحد ${r.unit_no}\nصورتحساب ${rep.month_name} ${rep.year}:\n` +
-    `شارژ ${fmt(charge.amount)} | آب ${fmt(water.amount)} | گاز ${fmt(gas.amount)} | پس‌انداز ${fmt(repair.amount)}` +
+    `شارژ ${fmt(r.charge)} | آب ${fmt(r.water)} | گاز ${fmt(r.gas)} | پس‌انداز ${fmt(r.repair)}` +
     (r.parking ? ` | پارکینگ ${fmt(r.parking)}` : '') +
     `\nبدهی قبلی: ${fmt(r.prev_debt)}\nمانده قابل پرداخت: ${fmt(r.remaining)} تومان`;
 }
@@ -2098,7 +2098,7 @@ async function viewReport(el) {
             const debtBg = Number(r.prev_debt) > 0 ? '#FFC000' : '#ffffff';
             const totalBg = Number(r.remaining) <= 0 ? '#00B050' : (Number(r.prev_debt) > 0 ? '#FFC000' : '#ffffff');
             const cellStyle = bg => `background-color:${bg}; border:1px solid #333; padding:6px 10px; white-space:nowrap; text-align:center; vertical-align:middle;`;
-            return `<tr style="color:#000000; font-size:30px;"><td style="border:1px solid #333; padding:6px 10px; font-weight:bold; white-space:nowrap; text-align:center; vertical-align:middle;">واحد ${fa(r.unit_no)}<div style="font-size:12px; font-weight:normal; color:#000; margin-top:2px; line-height:1.2;">${esc(r.occupancy || '')}</div></td><td style="${cellStyle(paidBg(charge.amount, charge.paid))}">${fmt(r.charge)}</td><td style="${cellStyle(paidBg(water.amount, water.paid))}">${fmt(r.water)}</td><td style="${cellStyle(paidBg(gas.amount, gas.paid))}">${fmt(r.gas)}</td><td style="${cellStyle(paidBg(repair.amount, repair.paid))}">${fmt(r.repair)}</td><td style="${cellStyle(debtBg)}">${fmt(r.prev_debt)}</td><td style="${cellStyle(totalBg)} font-weight:bold;">${fmt(r.remaining)}</td></tr>`;
+            return `<tr style="color:#000000; font-size:30px;"><td style="border:1px solid #333; padding:6px 10px; font-weight:bold; white-space:nowrap; text-align:center; vertical-align:middle;">واحد ${fa(r.unit_no)}<div style="font-size:12px; font-weight:normal; color:#000; margin-top:2px; line-height:1.2;">${esc(r.occupancy || '')}</div></td><td style="${cellStyle(paidBg(charge.amount, charge.paid))}">${fmt(charge.amount)}</td><td style="${cellStyle(paidBg(water.amount, water.paid))}">${fmt(water.amount)}</td><td style="${cellStyle(paidBg(gas.amount, gas.paid))}">${fmt(gas.amount)}</td><td style="${cellStyle(paidBg(repair.amount, repair.paid))}">${fmt(repair.amount)}</td><td style="${cellStyle(debtBg)}">${fmt(r.prev_debt)}</td><td style="${cellStyle(totalBg)} font-weight:bold;">${fmt(r.remaining)}</td></tr>`;
           }).join('') : `<tr><td colspan="7" style="border:1px solid #333; padding:20px; font-size:20px; text-align:center;">اطلاعاتی برای این دوره وجود ندارد.</td></tr>`}
         </tbody>
       </table>
