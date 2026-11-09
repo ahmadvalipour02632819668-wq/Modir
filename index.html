@@ -978,31 +978,16 @@ function billCard(r, rep) {
   const paid = Number(r.paid_this_month) || 0;
   const rem = Number(r.remaining) || 0;
 
-  // Keep original bill amounts visible; settlement affects status only.
-  const priorDebt = Math.max(0, prev);
-  let availablePriorCredit = Math.max(0, -prev);
-  let availableCurrentPayment = Math.max(0, paid - priorDebt);
-  const applyFunds = amount => {
-    const due = Math.max(0, Number(amount) || 0);
-    const priorCredit = Math.min(due, availablePriorCredit);
-    availablePriorCredit -= priorCredit;
-    const directPayment = Math.min(due - priorCredit, availableCurrentPayment);
-    availableCurrentPayment -= directPayment;
-    return { priorCredit, directPayment, remaining: Math.max(0, due - priorCredit - directPayment) };
-  };
-  // Allocate once by visible bill rows; aggregated expense shares are not counted twice.
-  const chargeSettlement = applyFunds(chg);
-  const waterSettlement = applyFunds(w);
-  const gasSettlement = applyFunds(g);
-  const repairSettlement = applyFunds(rep_amt);
-  const parkingSettlement = applyFunds(park);
-  const extraSettlements = extraExpenses.map(item => ({ item, settlement: applyFunds(item.amount) }));
-  const settlementNote = (amount, settlement) => settlement.priorCredit > 0
-    ? `<small style="display:block;color:var(--muted);font-size:11px;margin-top:4px">${money(settlement.priorCredit)} تومان از بستانکاری قبلی کسر شد.</small>`
-    : '';
-  const settlementStatus = (amount, settlement) => amount <= 0 || settlement.remaining <= 0
+  // Match Negin2: each bill category is settled only against payments recorded for that category.
+  const settlementStatus = (amount, isPaid) => amount <= 0 || isPaid
     ? '<span class="chip ok">پرداخت شده</span>'
     : '<span class="chip no">پرداخت نشده</span>';
+  const chargeStatus = settlementStatus(chg, r.ok_charge);
+  const waterStatus = settlementStatus(w, r.ok_water);
+  const gasStatus = settlementStatus(g, r.ok_gas);
+  const repairStatus = settlementStatus(rep_amt, r.ok_repair);
+  const parkingStatus = settlementStatus(park, r.ok_parking);
+  const extraSettlements = extraExpenses.map(item => ({ item }));
 
   return `
   <div class="card" style="padding:0;overflow:hidden">
@@ -1021,23 +1006,23 @@ function billCard(r, rep) {
       </div>
     <div style="padding:10px 24px">
       <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px dashed var(--line)">
-        <span>شارژ ماهانه: <b>${money(chg)}</b> تومان${settlementNote(chg, chargeSettlement)}</span>
-        <span>${settlementStatus(chg, chargeSettlement)}</span>
+        <span>شارژ ماهانه: <b>${money(chg)}</b> تومان${''}</span>
+        <span>${chargeStatus}</span>
       </div>
       <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px dashed var(--line)">
-        <span>سهم قبض آب: <b>${money(w)}</b> تومان${settlementNote(w, waterSettlement)}</span>
-        <span>${settlementStatus(w, waterSettlement)}</span>
+        <span>سهم قبض آب: <b>${money(w)}</b> تومان${''}</span>
+        <span>${waterStatus}</span>
       </div>
       <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px dashed var(--line)">
-        <span>سهم قبض گاز: <b>${money(g)}</b> تومان${settlementNote(g, gasSettlement)}</span>
-        <span>${settlementStatus(g, gasSettlement)}</span>
+        <span>سهم قبض گاز: <b>${money(g)}</b> تومان${''}</span>
+        <span>${gasStatus}</span>
       </div>
       <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px dashed var(--line)">
-        <span>پس‌انداز: <b>${money(rep_amt)}</b> تومان${settlementNote(rep_amt, repairSettlement)}</span>
-        <span>${settlementStatus(rep_amt, repairSettlement)}</span>
+        <span>پس‌انداز: <b>${money(rep_amt)}</b> تومان${''}</span>
+        <span>${repairStatus}</span>
       </div>
-      ${park > 0 ? `<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px dashed var(--line)"><span>اجاره پارکینگ: <b>${money(park)}</b> تومان${settlementNote(park, parkingSettlement)}</span><span>${settlementStatus(park, parkingSettlement)}</span></div>` : ''}
-      ${extraSettlements.map(({item:x,settlement}) => `<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 0;border-bottom:1px dashed var(--line)"><span>${esc(x.description || x.category_name || 'هزینه تسهیمی')}: <b>${money(x.amount)}</b> تومان${settlementNote(x.amount, settlement)}</span><span>${settlementStatus(x.amount, settlement)}</span></div>`).join('')}
+      ${park > 0 ? `<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px dashed var(--line)"><span>اجاره پارکینگ: <b>${money(park)}</b> تومان${settlementNote(park, parkingSettlement)}</span><span>${parkingStatus}</span></div>` : ''}
+      ${extraSettlements.map(({item:x}) => `<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 0;border-bottom:1px dashed var(--line)"><span>${esc(x.description || x.category_name || 'هزینه تسهیمی')}: <b>${money(x.amount)}</b> تومان</span><span>${settlementStatus(x.amount, Number(r.remaining) <= 0)}</span></div>`).join('')}
     </div>
     <div style="background:var(--bg);padding:20px 24px;display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:16px;border-top:1px solid var(--line)";color:#000">
       <div><small style="color:var(--muted);display:block">بدهی قبلی</small><b style="color:#000">${money(prev)}</b> <span style="color:#000">تومان</span></div>
