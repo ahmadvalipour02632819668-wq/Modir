@@ -2006,7 +2006,7 @@ function txModal(t, units) {
     $('#expense-exclusions',m).style.display = building && kind === 'shared' ? 'block' : 'none';
     $('#expense-fund-note',m).style.display = building && kind === 'nonshared' ? 'block' : 'none';
   };
-  const updateBillPeriodUI=()=>{const bill=['water','gas','electric_bill','waste','other_bill'].includes(categorySelect.value);$('#bill-period-fields',m).style.display=!typeSelect.value.includes('درآمد')&&bill&&+unitSelect.value===0?'block':'none';};
+  const updateBillPeriodUI=()=>{const bill=['water','gas','electric_bill','waste','other_bill'].includes(categorySelect.value);$('#bill-period-fields',m).style.display=!typeSelect.value.includes('درآمد')&&bill?'block':'none';};
   categorySelect.addEventListener('change',updateBillPeriodUI);
   typeSelect.addEventListener('change',()=>{updateFormUI();updateBillPeriodUI();});
   unitSelect.addEventListener('change',()=>{updateFormUI();updateBillPeriodUI();});
