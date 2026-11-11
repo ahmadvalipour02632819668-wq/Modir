@@ -1127,6 +1127,9 @@ function setupPaymentScrollAnimation(root, unitMap) {
 
 async function viewDash(el) {
   const rep = await T('app_report', { p_year: S.y, p_month: S.m });
+  const managerResidencyUnits = S.me.is_admin ? await T('app_get_units') : [];
+  const managerResidencyIssues = managerResidencyUnits.filter(u=>u.residency_issue);
+  const residencyWarning = managerResidencyIssues.length ? `<div class="card" style="margin-bottom:16px;border-color:var(--danger);background:var(--bg)"><b style="color:var(--danger)">ثبت هرگونه تراکنش مالی تا تعیین تکلیف و تأیید تمام واحدها مسدود است.</b><p class="sub" style="margin:8px 0 0">واحدهای نیازمند اقدام: ${managerResidencyIssues.map(u=>'واحد '+fa(u.unit_no)+': '+esc(u.residency_issue)).join(' · ')}</p><button class="btn sf sm" style="margin-top:10px" data-go="units">تعیین وضعیت واحدها</button></div>` : '';
   const missing = rep.missing_rates?.length ? `<div class="card" style="background:#fee2e2;color:#991b1b;margin-bottom:20px">مبالغ شارژ/پس‌انداز برای این ماه‌ها تعریف نشده: ${rep.missing_rates.map(fa).join('، ')}</div>` : '';
 
   if (!S.me.is_admin) {
@@ -1174,6 +1177,7 @@ async function viewDash(el) {
       ${periodPicker()}
     </div>
     ${missing}
+    ${residencyWarning}
     ${mustChangeBanner()}
     <div><div class="sec-title">دسترسی سریع</div>
       <div class="quick">${[['units','واحدها'],['pay','تایید پرداخت'],['announcements','اعلانات'],['rates','نرخ‌ها']].map(([k,l]) => `<button class="tile" data-go="${k}">${ico(k)}${k==='pay' && +fund.pending_payments ? `<i class="badge">${fa(fund.pending_payments)}</i>` : ''}<span>${l}</span></button>`).join('') + installTileHtml()}</div></div>
