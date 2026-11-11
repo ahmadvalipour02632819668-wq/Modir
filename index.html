@@ -1886,7 +1886,7 @@ function txModal(t, units) {
     ['other','سایر درآمدها']
   ];
   const EXPENSE_CATS = [
-    ['water','قبض آب'], ['gas','قبض گاز'], ['cleaning','نظافت'],
+    ['water','قبض آب'], ['gas','قبض گاز'], ['electric_bill','قبض برق'], ['waste','قبض پسماند'], ['other_bill','سایر قبوض'], ['cleaning','نظافت'],
     ['service','سرویس آسانسور'], ['building_repair','هزینه بازسازی'],
     ['fixed_cost','هزینه‌های ثابت'], ['repair_pay','هزینه تعمیرات'],
     ['payment','پرداخت‌ها'], ['other','سایر (هزینه)']
@@ -1963,6 +1963,12 @@ function txModal(t, units) {
       <label class="f">سال<select id="t-y">${yearOptions(t.year)}</select></label>
       <label class="f">ماه<select id="t-m">${monthOptions(t.month)}</select></label>
       <label class="f">روز<input id="t-d" type="number" min="1" max="31" value="${t.day || 1}"></label>
+      <section id="bill-period-fields" class="card" style="grid-column:1/-1;display:none;padding:12px">
+        <div style="font-weight:900;margin-bottom:8px">دوره مصرف قبض (شمسی)</div>
+        <div class="grid g2"><label class="f">از تاریخ<input id="bill-period-start" dir="ltr" placeholder="۱۴۰۵/۰۷/۱۵" value="${t.bill_period_start ? gregorianToJalaliDate(t.bill_period_start) : ''}"></label>
+        <label class="f">تا تاریخ<input id="bill-period-end" dir="ltr" placeholder="۱۴۰۵/۰۸/۱۵" value="${t.bill_period_end ? gregorianToJalaliDate(t.bill_period_end) : ''}"></label></div>
+        <p class="sub" style="margin:6px 0 0">سهم هر ساکن بر اساس روزهای حضور در این بازه محاسبه می‌شود.</p>
+      </section>
       <div style="grid-column:1/-1;margin-top:8px">
         <button class="btn sf" type="submit" style="width:100%">${isNew ? 'ثبت تراکنش' : 'ذخیره تغییرات'}</button>
       </div>
@@ -2000,10 +2006,12 @@ function txModal(t, units) {
     $('#expense-exclusions',m).style.display = building && kind === 'shared' ? 'block' : 'none';
     $('#expense-fund-note',m).style.display = building && kind === 'nonshared' ? 'block' : 'none';
   };
-  typeSelect.addEventListener('change',updateFormUI);
-  unitSelect.addEventListener('change',updateFormUI);
+  const updateBillPeriodUI=()=>{const bill=['water','gas','electric_bill','waste','other_bill'].includes(categorySelect.value);$('#bill-period-fields',m).style.display=!typeSelect.value.includes('درآمد')&&bill&&+unitSelect.value===0?'block':'none';};
+  categorySelect.addEventListener('change',updateBillPeriodUI);
+  typeSelect.addEventListener('change',()=>{updateFormUI();updateBillPeriodUI();});
+  unitSelect.addEventListener('change',()=>{updateFormUI();updateBillPeriodUI();});
   $$('input[name="expense-kind"]',m).forEach(x=>x.addEventListener('change',updateFormUI));
-  updateFormUI();
+  updateFormUI();updateBillPeriodUI();
 
   $('#tf',m).addEventListener('submit',async e=>{
     e.preventDefault();
@@ -2029,6 +2037,9 @@ function txModal(t, units) {
         const payers=payer==='resident_tenant'?['مالک ساکن','مستأجر']:['مالک ساکن','مالک'];
         const excluded=$$('.expense-excluded-unit:checked',m).map(x=>+x.value);
         const method=$('#expense-method',m).value;
+        const isBill=['water','gas','electric_bill','waste','other_bill'].includes(category)&&!unitNo;
+        let billStart=null,billEnd=null;
+        if(isBill){billStart=jalaliToGregorianDate($('#bill-period-start',m).value);billEnd=jalaliToGregorianDate($('#bill-period-end',m).value);if(billEnd<billStart)throw new Error('تاریخ پایان دوره قبض نباید قبل از شروع باشد');}
         const saved=await T('app_admin_save_expense',{
           p_id:isNew?null:t.id,
           p_year:+$('#t-y',m).value,p_month:+$('#t-m',m).value,p_day:+$('#t-d',m).value||1,
@@ -2038,7 +2049,8 @@ function txModal(t, units) {
           p_expense_kind:kind,
           p_allocation_method:kind==='shared'?method:null,
           p_payer_occupancies:payers,
-          p_excluded_units:unitNo||kind!=='shared'?[]:excluded
+          p_excluded_units:unitNo||kind!=='shared'?[]:excluded,
+          p_bill_period_start:billStart,p_bill_period_end:billEnd
         });
         if(saved?.ok==false) throw new Error(saved.error||'ثبت هزینه ناموفق بود');
       }
@@ -2168,7 +2180,7 @@ function jalaliToGregorianDate(value){
  for(let i=0;i<740;i++){const dt=new Date(Date.UTC(jy+621,0,1+i,12)),p=f.formatToParts(dt),g=k=>Number(p.find(x=>x.type===k)?.value);if(g('year')===jy&&g('month')===jm&&g('day')===jd)return dt.getUTCFullYear()+'-'+String(dt.getUTCMonth()+1).padStart(2,'0')+'-'+String(dt.getUTCDate()).padStart(2,'0');}
  throw new Error('تاریخ شمسی قابل تبدیل نیست');
 }
-function jalaliMonthDays(y,m){const a=jalaliToGregorianDate(y+'/'+String(m).padStart(2,'0')+'/01'),ny=m===12?y+1:y,nm=m===12?1:m+1,b=jalaliToGregorianDate(ny+'/'+String(nm).padStart(2,'0')+'/01');return Math.round((Date.parse(b+'T00:00:00Z')-Date.parse(a+'T00:00:00Z'))/86400000);}
+function gregorianToJalaliDate(value){const d=String(value||'').slice(0,10);if(!/^\\d{4}-\\d{2}-\\d{2}$/.test(d))return '';const p=new Intl.DateTimeFormat('en-US-u-ca-persian-nu-latn',{year:'numeric',month:'2-digit',day:'2-digit',timeZone:'UTC'}).formatToParts(new Date(d+'T12:00:00Z'));const g=k=>p.find(x=>x.type===k)?.value;return g('year')+'/'+String(g('month')).padStart(2,'0')+'/'+String(g('day')).padStart(2,'0');}\nfunction jalaliMonthDays(y,m){const a=jalaliToGregorianDate(y+'/'+String(m).padStart(2,'0')+'/01'),ny=m===12?y+1:y,nm=m===12?1:m+1,b=jalaliToGregorianDate(ny+'/'+String(nm).padStart(2,'0')+'/01');return Math.round((Date.parse(b+'T00:00:00Z')-Date.parse(a+'T00:00:00Z'))/86400000);}
 async function settleAccountModal(acc){
  const td=jalaliToday();const today=td.y+'/'+String(td.m).padStart(2,'0')+'/'+String(td.d).padStart(2,'0');
  const m=modal('<h2>تسویه و آرشیو حساب</h2><p class="sub">'+esc(acc.full_name)+' · واحد '+fa(acc.unit_no)+' · '+esc(acc.occupancy)+'</p><div class="grid g2"><label class="f">تاریخ خروج (شمسی)<input id="exit-date" dir="ltr" value="'+today+'" required></label></div><p class="sub">شارژ، آب، گاز و پس‌انداز فقط در ماه خروج تا روز خروج محاسبه می‌شوند. پارکینگ و هزینه تعمیرات روزشمار نمی‌شوند.</p><div id="exit-preview"></div><div style="display:flex;gap:8px;margin-top:16px"><button class="btn sf" id="exit-calc" style="flex:1">محاسبه پیش‌نمایش</button><button class="btn lt" id="exit-close">انصراف</button></div>');
