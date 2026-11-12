@@ -59,6 +59,7 @@ begin
 
  update public.units
     set residency_status=v_residency_status,
+        occupancy=case v_residency_status when 'tenant_occupied' then 'مستأجر' when 'owner_occupied' then 'مالک ساکن' when 'vacant_confirmed' then 'مالک' else occupancy end,
         residency_confirmed_by=case when v_residency_status='pending' then null else me.id end,
         residency_confirmed_at=case when v_residency_status='pending' then null else now() end,
         updated_at=now()
