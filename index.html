@@ -1481,7 +1481,7 @@ async function viewRequests(el) {
       }
     });
   } else {
-    $('[data-registration-approve], [data-registration-reject]', el).forEach(btn => btn.addEventListener('click', async () => {
+    $$$('[data-registration-approve], [data-registration-reject]', el).forEach(btn => btn.addEventListener('click', async () => {
       const approve = btn.hasAttribute('data-registration-approve');
       const id = Number(approve ? btn.dataset.registrationApprove : btn.dataset.registrationReject);
       if (!approve && !confirm('درخواست ثبت‌نام رد شود؟')) return;
