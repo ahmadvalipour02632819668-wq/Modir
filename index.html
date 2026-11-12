@@ -778,7 +778,7 @@ function getMenuItems() {
   const a = S.me?.is_admin;
   return [
     ['dash', 'داشبورد'], a && ['units', 'مدیریت واحدها'], ['announcements', 'اعلانات'],
-    ['requests', a ? 'درخواست‌ها' : 'ارتباط با مدیر'], a && ['registration-requests', 'درخواست‌های ثبت‌نام'], ['tx', 'تراکنش‌ها'],
+    ['requests', a ? 'درخواست‌ها' : 'ارتباط با مدیر'], ['tx', 'تراکنش‌ها'],
     a && ['pay', 'تایید پرداخت‌ها'], ['report', 'گزارش ماهانه'],
     a && ['rates', 'نرخ‌ها و تنظیمات'], a && ['activity', 'گزارش فعالیت‌ها'], ['profile', 'پروفایل'],
   ].filter(Boolean);
@@ -798,7 +798,6 @@ async function viewServices(el) {
   const groups = [
     ['امور مالی', ['tx', 'pay', 'report']],
     ['ساختمان و ساکنین', ['units', 'announcements', 'requests']],
-    ...(a ? [['ثبت‌نام و عضویت', ['registration-requests']]] : []),
     [a ? 'مدیریت سامانه' : 'حساب کاربری', ['rates', 'activity', 'profile']],
   ];
   el.innerHTML = groups.map(([t, keys]) => {
@@ -808,6 +807,28 @@ async function viewServices(el) {
       <div class="tiles">${list.map(([k, l], i) => `<button class="tile" data-v="${k}" style="animation-delay:${i * 50}ms">${ico(k)}<span>${esc(l)}</span></button>`).join('')}</div></div>`;
   }).join('');
   $$('.tile', el).forEach(b => b.addEventListener('click', () => go(b.dataset.v)));
+}
+
+async function refreshManagerAlertBadge() {
+  if (!S.me?.is_admin) return;
+  const badge = $('#manager-alert-count');
+  if (!badge) return;
+  try {
+    const [registrations, payments, requests] = await Promise.all([
+      T('app_admin_list_membership_registrations'),
+      T('app_get_payment_requests'),
+      T('app_get_requests')
+    ]);
+    const regCount = Array.isArray(registrations) ? registrations.length : 0;
+    const payCount = Array.isArray(payments) ? payments.filter(x => x.status === 'pending').length : 0;
+    const requestCount = Array.isArray(requests) ? requests.filter(x => !['done','rejected','closed'].includes(String(x.status || '').toLowerCase())).length : 0;
+    const total = regCount + payCount + requestCount;
+    badge.textContent = total > 99 ? '99+' : String(total);
+    badge.style.display = total ? 'block' : 'none';
+    badge.title = `ثبت‌نام: ${regCount} · پرداخت: ${payCount} · درخواست: ${requestCount}`;
+  } catch (error) {
+    console.warn('Manager alert count could not be refreshed:', error);
+  }
 }
 
 async function renderShell() {
@@ -833,7 +854,7 @@ async function renderShell() {
         <button class="ic-btn avatar" id="who-btn" aria-label="رفتن به پروفایل" title="پروفایل">${S.avatarData ? `<img src="${esc(S.avatarData)}" alt="عکس پروفایل" style="width:100%;height:100%;object-fit:cover;border-radius:50%">` : ICONS.profile.replace('<svg','<svg width="26" height="26"')}</button>
         <button class="ic-btn" id="who-menu-btn" aria-label="تنظیمات و تم" title="تنظیمات و تم"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg></button>
         <div class="appbar-title" id="appbar-title"></div>
-        <button class="ic-btn" id="go-req" aria-label="پیام‌ها"><svg width="26" height="26" viewBox="0 0 48 48" fill="none" stroke="#fff" stroke-width="3" stroke-linejoin="round"><path d="M8 12a4 4 0 0 1 4-4h24a4 4 0 0 1 4 4v16a4 4 0 0 1-4 4H20l-8 7v-7a4 4 0 0 1-4-4z"/><g fill="#fff" stroke="none"><circle cx="17" cy="20" r="2.4"/><circle cx="24" cy="20" r="2.4"/><circle cx="31" cy="20" r="2.4"/></g></svg></button>
+        <button class="ic-btn" id="go-req" aria-label="${S.me.is_admin ? 'اعلان‌های مدیر' : 'پیام‌ها'}" title="${S.me.is_admin ? 'موارد نیازمند رسیدگی' : 'پیام‌ها'}" style="position:relative">${S.me.is_admin ? '<svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg>' : '<svg width="26" height="26" viewBox="0 0 48 48" fill="none" stroke="#fff" stroke-width="3" stroke-linejoin="round"><path d="M8 12a4 4 0 0 1 4-4h24a4 4 0 0 1 4 4v16a4 4 0 0 1-4 4H20l-8 7v-7a4 4 0 0 1-4-4z"/><g fill="#fff" stroke="none"><circle cx="17" cy="20" r="2.4"/><circle cx="24" cy="20" r="2.4"/><circle cx="31" cy="20" r="2.4"/></g></svg>'}<span id="manager-alert-count" style="display:none;position:absolute;top:-3px;right:-3px;min-width:19px;height:19px;padding:0 5px;border-radius:99px;background:#ef4444;color:#fff;font-size:11px;font-weight:900;line-height:19px;text-align:center;border:2px solid var(--navy)"></span></button>
         <button class="ic-btn logout-top" id="direct-logout" title="خروج از حساب">${ICONS.logout.replace('<svg','<svg width="22" height="22"')}</button>
         <div class="who-pop" id="who-pop">
           <b>${esc(S.me.full_name || S.me.username)}</b>
@@ -869,6 +890,7 @@ async function renderShell() {
 
   $('#go-prof').addEventListener('click', () => { $('#who-pop').classList.remove('show'); go('profile'); });
   $('#go-req').addEventListener('click', () => go('requests'));
+  refreshManagerAlertBadge();
   $$('.bnav-items button').forEach(b => b.addEventListener('click', () => go(b.dataset.v)));
   window.addEventListener('resize', debounce(() => renderShellHeaderState(false), 100));
   if ('serviceWorker' in navigator && window.isSecureContext) getPushServiceWorker().catch(err => console.warn('Service worker registration failed:', err));
@@ -878,7 +900,7 @@ async function renderShell() {
 
 function go(v, isBackNavigation = false) {
   const views = {
-    dash: viewDash, announcements: viewAnnouncements, requests: viewRequests, 'registration-requests': viewRegistrationRequests, tx: viewTx, pay: viewPay,
+    dash: viewDash, announcements: viewAnnouncements, requests: viewRequests, tx: viewTx, pay: viewPay,
     report: viewReport, units: viewUnits, rates: viewRates, activity: viewActivity, profile: viewProfile, services: viewServices,
   };
   if (!views[v]) v = 'dash';
@@ -886,6 +908,7 @@ function go(v, isBackNavigation = false) {
   const el = $('#view'); if (!el) return;
   el.innerHTML = `<p class="sub">در حال بارگذاری...</p>`;
   renderShellHeaderState();
+  if (S.me?.is_admin) refreshManagerAlertBadge();
   const currentRenderId = ++S.renderId;
   Promise.resolve(views[v](el)).then(() => { if (v === 'dash') renderInstallBanner(); }).catch(e => {
     if (currentRenderId !== S.renderId) return;
@@ -1267,44 +1290,18 @@ async function viewAnnouncements(el) {
   }
 }
 
-async function viewRegistrationRequests(el) {
-  if (!S.me?.is_admin) { el.innerHTML = '<div class="card">این بخش فقط برای مدیر ساختمان قابل دسترسی است.</div>'; return; }
-  el.innerHTML = '<p class="sub">در حال دریافت درخواست‌ها...</p>';
-  let requests;
-  try { requests = await T('app_admin_list_membership_registrations'); }
-  catch (err) { el.innerHTML = `<div class="card" style="color:var(--danger)">دریافت درخواست‌های ثبت‌نام ناموفق بود: ${esc(err.message)} <button class="btn sf sm" id="registration-retry">تلاش دوباره</button></div>`; $('#registration-retry')?.addEventListener('click', () => go('registration-requests')); return; }
-  requests = Array.isArray(requests) ? requests : [];
-  el.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap"><div><h1>درخواست‌های ثبت‌نام</h1><p class="sub">درخواست‌های عضویت در ساختمان شما که منتظر تصمیم مدیر هستند.</p></div><span class="chip ${requests.length ? 'pd' : 'ok'}">${fa(requests.length)} درخواست در انتظار</span></div>
-    <div class="grid g2" style="margin-top:16px">${requests.map(r => `<article class="card"><div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start;flex-wrap:wrap"><h2 style="margin:0">${esc(r.full_name || '—')}</h2><span class="chip pd">در انتظار بررسی</span></div>
-      <p class="sub">${esc(r.occupancy || '—')} · واحد ${fa(r.unit_no)}</p><p>نام کاربری: <b>${esc(r.username || '—')}</b></p>
-      <p class="sub">موبایل: ${esc(r.phone || '—')} · ایمیل: ${esc(r.email || '—')}</p>
-      <p class="sub">متراژ: ${r.area == null ? '—' : fa(r.area) + ' متر'} · تعداد ساکنان: ${r.persons == null ? '—' : fa(r.persons)}</p>
-      <p class="sub">تاریخ شروع: ${esc(r.start_date_jalali || '—')}</p>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px"><button class="btn sf sm" data-registration-approve="${r.id}">تأیید عضویت</button><button class="btn rd sm" data-registration-reject="${r.id}">رد درخواست</button></div></article>`).join('') || '<div class="card sub">در حال حاضر درخواست ثبت‌نام در انتظار بررسی وجود ندارد.</div>'}</div>`;
-  $$( '[data-registration-approve], [data-registration-reject]', el).forEach(btn => btn.addEventListener('click', async () => {
-    const approve = btn.hasAttribute('data-registration-approve');
-    const id = Number(approve ? btn.dataset.registrationApprove : btn.dataset.registrationReject);
-    if (!approve && !confirm('درخواست ثبت‌نام رد شود؟')) return;
-    btn.disabled = true;
-    try {
-      const result = await T('app_admin_review_membership_registration', { p_request_id: id, p_decision: approve ? 'approve' : 'reject' });
-      if (!result?.ok) throw new Error(result?.error || 'عملیات ناموفق بود');
-      toast(approve ? 'عضویت تأیید و حساب فعال شد' : 'درخواست ثبت‌نام رد شد');
-      go('registration-requests');
-    } catch (err) { btn.disabled = false; showErr(err); }
-  }));
-}
 async function viewRequests(el) {
   const admin = !!S.me.is_admin;
   // Keep registration requests independent from other request/poll endpoints.
-  let list = [], polls = [];
+  let list = [], polls = [], registrations = [];
   const safeLoad = async (name, fallback) => {
     try { const value = await T(name); return value ?? fallback; }
     catch (err) { console.error(name + ' failed:', err); return fallback; }
   };
   const loads = [
     safeLoad('app_get_requests', []).then(v => { list = Array.isArray(v) ? v : []; }),
-    safeLoad('app_get_polls', []).then(v => { polls = Array.isArray(v) ? v : []; })
+    safeLoad('app_get_polls', []).then(v => { polls = Array.isArray(v) ? v : []; }),
+    ...(admin ? [safeLoad('app_admin_list_membership_registrations', []).then(v => { registrations = Array.isArray(v) ? v : []; })] : [])
   ];
   await Promise.all(loads);
 
@@ -1391,10 +1388,34 @@ async function viewRequests(el) {
       </div>`;
   }).join('');
 
+  const registrationPanel = admin ? `
+    <section class="card" style="margin:16px 0;border-color:var(--accent)">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+        <div><h2 style="margin:0">درخواست‌های ثبت‌نام اعضا</h2><p class="sub" style="margin:5px 0 0">بررسی و تأیید عضویت‌ها در همین بخش انجام می‌شود.</p></div>
+        <span class="chip ${registrations.length ? 'pd' : 'ok'}">${fa(registrations.length)} در انتظار</span>
+      </div>
+      <div class="grid g2" style="margin-top:14px">
+        ${registrations.map(r => `<article class="card" style="box-shadow:none">
+          <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start;flex-wrap:wrap"><h2 style="margin:0">${esc(r.full_name || '—')}</h2><span class="chip pd">در انتظار بررسی</span></div>
+          <p class="sub" style="margin:6px 0 10px">${esc(r.occupancy || '—')} · واحد ${fa(r.unit_no)}</p>
+          <p>نام کاربری: <b>${esc(r.username || '—')}</b></p>
+          <p class="sub">موبایل: ${esc(r.phone || '—')} · ایمیل: ${esc(r.email || '—')}</p>
+          <p class="sub">متراژ: ${r.area == null ? '—' : fa(r.area) + ' متر'} · تعداد ساکنان: ${r.persons == null ? '—' : fa(r.persons)}</p>
+          <p class="sub">تاریخ شروع: ${esc(r.start_date_jalali || '—')}</p>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><button class="btn sf sm" data-registration-approve="${r.id}">تأیید عضویت</button><button class="btn rd sm" data-registration-reject="${r.id}">رد درخواست</button></div>
+        </article>`).join('') || '<div class="sub">درخواست ثبت‌نامِ در انتظار بررسی وجود ندارد.</div>'}
+      </div>
+    </section>` : '';
+  const pendingPayShortcut = admin ? `<div class="card" style="margin:16px 0;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+    <div><b>تأیید پرداخت‌ها</b><p class="sub" style="margin:4px 0 0">درخواست‌های پرداخت در بخش بررسی پرداخت‌ها رسیدگی می‌شوند.</p></div>
+    <button class="btn sf sm" id="open-pending-pay">مشاهده پرداخت‌ها</button>
+  </div>` : '';
   el.innerHTML = `
     <h1>${admin ? 'درخواست‌ها و نظرسنجی‌ها' : 'ارتباط با مدیر'}</h1>
     <p class="sub">${admin ? 'درخواست‌های ساکنان، پاسخ‌گویی و مدیریت نظرسنجی‌ها' : 'ثبت درخواست، ارسال پیام عمومی و شرکت در نظرسنجی‌ها'}</p>
     ${residentForm}
+    ${registrationPanel}
+    ${pendingPayShortcut}
     ${pollCreateForm}
     <section style="margin:20px 0">
       <h2 style="margin:0 0 12px">📊 ${admin ? 'نظرسنجی‌های ساختمان' : 'نظرسنجی‌های فعال'}</h2>
@@ -1460,6 +1481,19 @@ async function viewRequests(el) {
       }
     });
   } else {
+    $('[data-registration-approve], [data-registration-reject]', el).forEach(btn => btn.addEventListener('click', async () => {
+      const approve = btn.hasAttribute('data-registration-approve');
+      const id = Number(approve ? btn.dataset.registrationApprove : btn.dataset.registrationReject);
+      if (!approve && !confirm('درخواست ثبت‌نام رد شود؟')) return;
+      btn.disabled = true;
+      try {
+        const result = await T('app_admin_review_membership_registration', { p_request_id: id, p_decision: approve ? 'approve' : 'reject' });
+        if (!result?.ok) throw new Error(result?.error || 'عملیات ناموفق بود');
+        toast(approve ? 'عضویت تأیید و حساب فعال شد' : 'درخواست ثبت‌نام رد شد');
+        go('requests');
+      } catch (err) { btn.disabled = false; showErr(err); }
+    }));
+    $('#open-pending-pay')?.addEventListener('click', () => go('pay'));
     $('#transfer-create-form')?.addEventListener('submit', async e => {
       e.preventDefault();
       const target = $('#transfer-target')?.value;
