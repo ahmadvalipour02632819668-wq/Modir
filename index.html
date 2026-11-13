@@ -533,11 +533,23 @@ async function notifyBale(msg, imageBase64 = null) {
     const payload = { app_token: S.token, building_id: Number(S.me.building_id), text: msg };
     if (imageBase64) payload.image = imageBase64;
     const { data, error } = await sb.functions.invoke('send-bale', { body: payload });
-    if (error) throw error;
+    if (error) {
+      let detail = error.message || 'ارسال به بله ناموفق بود';
+      try {
+        const response = error.context;
+        if (response && typeof response.clone === 'function') {
+          const body = await response.clone().json();
+          if (body?.error) detail = body.error;
+        }
+      } catch (_) {}
+      throw new Error(detail);
+    }
     if (!data?.success) throw new Error(data?.error || 'ارسال به بله ناموفق بود');
+    S.lastBaleError = '';
     console.log('✅ Bale: پیام با موفقیت ارسال شد');
     return true;
   } catch(e) {
+    S.lastBaleError = e?.message || 'ارسال به بله ناموفق بود';
     console.warn('❌ Bale: ارسال پیام ناموفق بود:', e);
     return false;
   }
@@ -547,7 +559,7 @@ const S = {
   unitCount: 10,
   token: sessionStorage.getItem('bm_token'),
   me: JSON.parse(sessionStorage.getItem('bm_me') || 'null'),
-  view: 'dash', y: TODAY.y, m: TODAY.m, building: 'مجتمع نگین ۲', txFilter: null, renderId: 0,
+  view: 'dash', y: TODAY.y, m: TODAY.m, building: 'مجتمع نگین ۲', txFilter: null, renderId: 0, lastBaleError: '',
 };
 localStorage.removeItem('bm_token');
 
@@ -1474,7 +1486,7 @@ async function viewRequests(el) {
         toast(
           baleSent
             ? 'پیام در اعلان‌های برنامه ثبت و به گروه بله ارسال شد'
-            : 'پیام در اعلان‌های برنامه ثبت شد؛ ارسال به بله ناموفق بود',
+            : 'پیام در اعلان‌های برنامه ثبت شد؛ ارسال به بله ناموفق بود: ' + (S.lastBaleError || 'علت نامشخص'),
           !baleSent
         );
         go('requests');
