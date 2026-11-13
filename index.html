@@ -315,10 +315,14 @@ body{overflow-x:clip;overflow-y:visible;min-height:100vh;height:auto}
 
 
 /* Modir AI help assistant */
-#modir-ai-launch{position:fixed;z-index:9000;top:46%;right:14px;width:58px;height:58px;border:2px solid #fff;border-radius:50%;background:linear-gradient(145deg,#5e79d5,#29356f);color:#fff;box-shadow:0 8px 28px #18234b66;cursor:pointer;display:none;align-items:center;justify-content:center;padding:0}
-#modir-ai-launch svg{width:39px;height:39px;display:block}
+#modir-ai-launch{position:fixed;z-index:9002;top:46%;right:14px;width:58px;height:58px;border:2px solid #fff;border-radius:50%;background:linear-gradient(145deg,#5e79d5,#29356f);color:#fff;box-shadow:0 8px 28px #18234b66;cursor:grab;display:none;align-items:center;justify-content:center;padding:0;touch-action:none;user-select:none}
+#modir-ai-launch.dragging{cursor:grabbing;box-shadow:0 12px 34px #18234b88}
+#modir-ai-launch svg{width:39px;height:39px;display:block;pointer-events:none}
 #modir-ai-panel{position:fixed;z-index:9001;right:82px;top:50%;transform:translateY(-50%);width:min(390px,calc(100vw - 104px));height:min(560px,calc(100dvh - 36px));background:var(--card,#fff);color:var(--text,#20243b);border:1px solid var(--border,#e5e7ef);border-radius:20px;box-shadow:0 18px 60px #10173545;display:none;overflow:hidden;flex-direction:column;font-family:Vazirmatn,sans-serif}
 #modir-ai-panel.open{display:flex}
+.modir-ai-links{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.modir-ai-link{display:inline-flex;align-items:center;gap:5px;border:1px solid #cbd5f5;border-radius:999px;background:#f0f4ff;color:#263875;padding:5px 10px;font:11px Vazirmatn,sans-serif;text-decoration:none;cursor:pointer}
+.modir-ai-link:active{transform:scale(.98)}
 #modir-ai-head{padding:14px 16px;background:linear-gradient(120deg,#303b78,#5268b8);color:#fff;display:flex;align-items:center;justify-content:space-between}
 #modir-ai-head strong{font-size:14px}#modir-ai-head small{display:block;opacity:.82;font-size:11px;margin-top:2px}
 #modir-ai-close{background:#ffffff22;border:0;color:white;border-radius:9px;width:34px;height:34px;font-size:20px}
@@ -658,7 +662,16 @@ function modirAiMount(){
  if(!launch||!panel)return;
  if(modirAiHistoryToken!==S.token){modirAiHistory=[];modirAiHistoryToken=S.token||'';}
  launch.style.display=S.token?'flex':'none';
- launch.onclick=()=>{panel.classList.toggle('open');if(panel.classList.contains('open'))document.getElementById('modir-ai-input')?.focus();};
+  const savedPos=(()=>{try{return JSON.parse(localStorage.getItem('modir_ai_avatar_pos')||'null')}catch(_){return null}})();
+  if(savedPos&&Number.isFinite(savedPos.x)&&Number.isFinite(savedPos.y)){launch.style.left=Math.max(4,Math.min(innerWidth-62,savedPos.x))+'px';launch.style.top=Math.max(4,Math.min(innerHeight-62,savedPos.y))+'px';launch.style.right='auto';}
+  let dragState=null,dragged=false;
+  const placePanel=()=>{if(!panel.classList.contains('open'))return;const r=launch.getBoundingClientRect(),w=panel.offsetWidth||Math.min(390,innerWidth-76),h=panel.offsetHeight||Math.min(560,innerHeight-36),gap=12;let left=r.left>innerWidth/2?r.left-w-gap:r.right+gap;left=Math.max(6,Math.min(innerWidth-w-6,left));let top=Math.max(6,Math.min(innerHeight-h-6,r.top+r.height/2-h/2));panel.style.left=left+'px';panel.style.right='auto';panel.style.top=top+'px';panel.style.transform='none';};
+  launch.onpointerdown=e=>{if(e.button!==undefined&&e.button!==0)return;const r=launch.getBoundingClientRect();dragState={id:e.pointerId,startX:e.clientX,startY:e.clientY,left:r.left,top:r.top};dragged=false;launch.setPointerCapture?.(e.pointerId);};
+  launch.onpointermove=e=>{if(!dragState||dragState.id!==e.pointerId)return;const dx=e.clientX-dragState.startX,dy=e.clientY-dragState.startY;if(Math.abs(dx)+Math.abs(dy)>5)dragged=true;if(!dragged)return;const x=Math.max(4,Math.min(innerWidth-launch.offsetWidth-4,dragState.left+dx)),y=Math.max(4,Math.min(innerHeight-launch.offsetHeight-4,dragState.top+dy));launch.style.left=x+'px';launch.style.top=y+'px';launch.style.right='auto';launch.classList.add('dragging');placePanel();};
+  const finishDrag=e=>{if(!dragState||dragState.id!==e.pointerId)return;if(dragged){const r=launch.getBoundingClientRect();try{localStorage.setItem('modir_ai_avatar_pos',JSON.stringify({x:r.left,y:r.top}))}catch(_){}}launch.classList.remove('dragging');dragState=null;};
+  launch.onpointerup=finishDrag;launch.onpointercancel=finishDrag;
+  launch.onclick=()=>{if(dragged){dragged=false;return;}panel.classList.toggle('open');if(panel.classList.contains('open')){placePanel();document.getElementById('modir-ai-input')?.focus();}};
+  window.addEventListener('resize',()=>{if(panel.classList.contains('open'))placePanel();});
  document.getElementById('modir-ai-close').onclick=()=>panel.classList.remove('open');
  const form=document.getElementById('modir-ai-compose');
  if(form.dataset.ready)return;form.dataset.ready='1';
@@ -678,7 +691,21 @@ function modirAiMount(){
   try{
    const response=await fetch(SUPABASE_URL+'/functions/v1/modir-assistant',{method:'POST',headers:{'Content-Type':'application/json','apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY},body:JSON.stringify({token:S.token,question,history:modirAiHistory.slice(-12)})});
    const data=await response.json();if(!response.ok||!data.answer)throw new Error(data.error||'پاسخ‌گویی موقتاً امکان‌پذیر نیست.');
-   wait.textContent=data.answer;
+    wait.textContent=data.answer;
+    const answerText=String(data.answer||'');
+    const shortcuts=[
+     {key:'announcements',label:'رفتن به اعلانات',re:/اعلان|اطلاعیه/},
+     {key:'requests',label:S.me?.is_admin?'رفتن به درخواست‌ها':'ارتباط با مدیر',re:/درخواست|ارتباط با مدیر/},
+     {key:'tx',label:'رفتن به تراکنش‌ها',re:/شارژ|قبض|بدهی|مانده حساب|پرداخت|تراکنش|رسید/},
+     {key:'pay',label:'تأیید پرداخت‌ها',re:/تأیید پرداخت/,admin:true},
+     {key:'rates',label:'نرخ‌ها و تنظیمات',re:/نرخ.?ها و تنظیمات|تنظیمات نرخ/,admin:true},
+     {key:'profile',label:'رفتن به پروفایل',re:/پروفایل|اطلاعات حساب/},
+     {key:'units',label:'مدیریت واحدها',re:/مدیریت واحد|واحدها/,admin:true},
+     {key:'services',label:'مشاهده خدمات',re:/منو|خدمات سامانه|بخش.?های سامانه/}
+    ];
+    const linkBox=document.createElement('div');linkBox.className='modir-ai-links';
+    shortcuts.filter(s=>s.re.test(answerText)&&(!s.admin||S.me?.is_admin)).forEach(s=>{const a=document.createElement('a');a.href='#'+s.key;a.className='modir-ai-link';a.textContent='↗ '+s.label;a.addEventListener('click',ev=>{ev.preventDefault();panel.classList.remove('open');go(s.key);});linkBox.appendChild(a);});
+    if(linkBox.childElementCount)wait.appendChild(linkBox);
    modirAiHistory.push({role:'model',text:data.answer});
    modirAiHistory=modirAiHistory.slice(-12);
   }catch(err){modirAiHistory.pop();wait.textContent=err.message||'ارتباط با دستیار برقرار نشد. دوباره تلاش کنید.';}
