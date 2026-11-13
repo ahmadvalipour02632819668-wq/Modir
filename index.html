@@ -780,7 +780,7 @@ async function renderLogin() {
       const r=await api('app_login_unified',{p_login:$('#lg-user').value.trim(),p_password:$('#lg-pass').value});
       if(!r?.ok){$('#lg-err').textContent=r?.error||'نام کاربری یا گذرواژه اشتباه است';return;}
       if(r.kind==='superadmin'){sessionStorage.setItem('bm_superadmin_token',r.token);sessionStorage.setItem('bm_superadmin_account',JSON.stringify(r.account||{}));window.location.href='superadmin.html';return;}
-      S.token=r.token;S.me=r.account;S.unitCount=Number(r.account.units_count||10);S.building=r.account.building_name||'';sessionStorage.setItem('bm_token',S.token);sessionStorage.setItem('bm_me',JSON.stringify(S.me));renderShell();if(!S.me?.is_admin) sendMobilePush('resident_login','ورود ساکن',`${S.me?.full_name||'ساکن'} از ${S.me?.unit_no?'واحد '+fa(S.me.unit_no):'حساب کاربری'} وارد برنامه شد.`);
+      S.token=r.token;S.me=r.account;S.unitCount=Number(r.account.units_count||10);S.building=r.account.building_name||'';sessionStorage.setItem('bm_token',S.token);sessionStorage.setItem('bm_me',JSON.stringify(S.me));renderShell();if(!S.me?.is_admin) await sendMobilePush('resident_login','ورود ساکن',`${S.me?.full_name||'ساکن'} از ${S.me?.unit_no?'واحد '+fa(S.me.unit_no):'حساب کاربری'} وارد برنامه شد.`);
     }catch(err){showErr(err);}finally{btn.disabled=false;btn.textContent=old;}
   });
 
@@ -811,8 +811,7 @@ async function logout(silent = false) {
   if(!silent && !confirm('آیا قصد خروج از حساب را دارید؟')) return;
   const token = S.token; const account = S.me; S.renderId++;
   if (token && !silent) {
-    if (account && !account.is_admin) await sendMobilePush('resident_logout','خروج ساکن',`${account.full_name||'ساکن'} از ${account.unit_no?'واحد '+fa(account.unit_no):'حساب کاربری'} خارج شد.`);
-    try { await api('app_logout', { p_token: token }); } catch {}
+        try { await api('app_logout', { p_token: token }); } catch {}
   }
   S.token = null; S.me = null; S.view = 'dash';
   sessionStorage.removeItem('bm_token'); sessionStorage.removeItem('bm_me'); renderLogin();
