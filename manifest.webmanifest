@@ -1,36 +1,29 @@
 {
-  "id": "./",
+  "id": "/Modir/",
   "name": "مدیر | مدیریت مجتمع‌های مسکونی",
   "short_name": "مدیر",
   "lang": "fa",
   "dir": "rtl",
-  "start_url": "./",
-  "scope": "./",
+  "start_url": "/Modir/",
+  "scope": "/Modir/",
   "display": "standalone",
   "display_override": [
-    "standalone",
-    "minimal-ui"
+    "standalone"
   ],
   "background_color": "#101b36",
   "theme_color": "#123b70",
   "icons": [
     {
-      "src": "./icone-192.png",
+      "src": "/Modir/icone-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "./icone-512.png",
+      "src": "/Modir/icone-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "./icone-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "maskable"
+      "purpose": "any maskable"
     }
   ],
   "description": "سامانه هوشمند مدیریت مجتمع‌های مسکونی مدیر"
