@@ -398,7 +398,7 @@ window.addEventListener('appinstalled', () => {
   document.getElementById('pwa-install-banner')?.remove();
 });
 
-const PUSH_VAPID_PUBLIC_KEY = 'BG2kHbhNer7-oNifxU96_I8AcCmF0PJ-J7SVIeYd28Xo_iYVfG63Ue12kvtrAcM-UM3w8yoZRiphTjuzaG-Mt6I';
+const PUSH_VAPID_PUBLIC_KEY = 'BDnNy6gzRUK421MtmsBkibL-4XUFGr0V_2N_AdRGJtZDHGoPvuHGrKc5b8yZWilrauC5sneo3dr8KJCxNJQiWxw';
 let pushServiceWorkerRegistration = null;
 let pushPromptShown = false;
 function pushBase64UrlToBytes(value) {
@@ -423,9 +423,20 @@ async function enableMobilePush() {
     : Notification.permission;
   if (permission !== 'granted') throw new Error('اجازه نمایش اعلان داده نشد. می‌توانید از تنظیمات مرورگر آن را فعال کنید.');
   const registration = await getPushServiceWorker();
+  const applicationServerKey = pushBase64UrlToBytes(PUSH_VAPID_PUBLIC_KEY);
   let subscription = await registration.pushManager.getSubscription();
+  if (subscription) {
+    const currentKey = subscription.options?.applicationServerKey;
+    const currentBytes = currentKey ? new Uint8Array(currentKey) : null;
+    const sameKey = currentBytes && currentBytes.length === applicationServerKey.length &&
+      applicationServerKey.every((byte, index) => byte === currentBytes[index]);
+    if (!sameKey) {
+      await subscription.unsubscribe();
+      subscription = null;
+    }
+  }
   if (!subscription) subscription = await registration.pushManager.subscribe({
-    userVisibleOnly: true, applicationServerKey: pushBase64UrlToBytes(PUSH_VAPID_PUBLIC_KEY)
+    userVisibleOnly: true, applicationServerKey
   });
   const json = subscription.toJSON();
   const { error } = await sb.rpc('app_push_save_subscription', {
