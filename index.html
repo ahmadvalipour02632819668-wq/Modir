@@ -786,6 +786,7 @@ async function renderLogin() {
     })();
     const clearPreviousAccountData=()=>{
       ['bm_token','bm_me','bm_superadmin_token','bm_superadmin_account'].forEach(k=>sessionStorage.removeItem(k));
+      localStorage.removeItem('bm_token');
       S.token=null;S.me=null;S.view='dash';S.txFilter=null;S.avatarData=null;
     };
     const attemptLogin=async replaceId=>{
@@ -852,6 +853,7 @@ async function logout(silent = false) {
   if (token) { try { await api('app_logout', { p_token: token }); } catch {} }
   S.token = null; S.me = null; S.view = 'dash'; S.txFilter = null; S.avatarData = null;
   ['bm_token','bm_me','bm_superadmin_token','bm_superadmin_account'].forEach(k=>sessionStorage.removeItem(k));
+  localStorage.removeItem('bm_token');
   renderLogin();
 }
 
