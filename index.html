@@ -664,7 +664,7 @@ function modirAiMount(){
  launch.style.display=S.token?'flex':'none';
   const faqBox=document.getElementById('modir-ai-faq');
   if(faqBox&&S.me?.is_admin){
-   const managerFaqs=['شارژ ماهانه را چطور ثبت کنم؟','قبض آب یا گاز را چطور ثبت و تقسیم کنم؟','هزینه تعمیرات را چطور ثبت کنم؟','پرداخت ساکن را چطور تأیید کنم؟','درخواست‌های ساکنان را کجا بررسی کنم؟','چطور برای ساکنان اطلاعیه بفرستم؟','بدهی واحدها را چطور ببینم؟','مشخصات واحدها را چطور ویرایش کنم؟'];
+   const managerFaqs=['شارژ ماهانه را چطور ثبت کنم؟','قبض آب یا گاز را چطور ثبت و تقسیم کنم؟','هزینه تعمیرات را چطور ثبت کنم؟','پرداخت ساکن را چطور تأیید کنم؟','درخواست‌های ساکنان را کجا بررسی کنم؟','چطور برای ساکنان اطلاعیه بفرستم؟','بدهی واحدها را چطور ببینم؟','مشخصات واحدها را چطور ویرایش کنم؟','اتصال ربات بله به گروه ساختمان چطور کار می‌کند؟'];
    faqBox.innerHTML=managerFaqs.map(q=>'<button type="button" data-faq="'+q+'" style="border:1px solid var(--border,#dfe2ec);border-radius:16px;background:var(--card,#fff);color:var(--text,#222);padding:7px 10px;font:11px Vazirmatn,sans-serif;cursor:pointer">'+q+'</button>').join('');
   }
   const savedPos=(()=>{try{return JSON.parse(localStorage.getItem('modir_ai_avatar_pos')||'null')}catch(_){return null}})();
