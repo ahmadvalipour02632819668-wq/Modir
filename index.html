@@ -2004,13 +2004,21 @@ function replyModal(r) {
 
   const updateTotalDebts = () => {
     if (currentTab !== 'debts') return;
-    let total = 0;
-    $$('.debt-row', m).forEach(row => {
+    let total = 0, gross = 0, credit = 0;
+    $('.debt-row', m).forEach(row => {
       const cb = $('.debt-check', row);
       const amtInp = $('.debt-amount', row);
-      if (cb.checked) total += toNum(amtInp.value);
+      if (cb.checked) {
+        total += toNum(amtInp.value);
+        gross += Number(cb.dataset.gross || cb.dataset.original || 0);
+        credit += Number(cb.dataset.credit || 0);
+      }
     });
     $('#pf-a', m).value = fmt(total);
+    const g=$('#pf-gross-summary',m),c=$('#pf-credit-summary',m),p=$('#pf-payable-summary',m);
+    if(g)g.textContent=fmt(gross)+' تومان';
+    if(c)c.textContent=fmt(credit)+' تومان';
+    if(p)p.textContent=fmt(total)+' تومان';
   };
 
   renderDebts(debts);
