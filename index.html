@@ -670,7 +670,7 @@ function modirAiMount(){
    const response=await fetch(SUPABASE_URL+'/functions/v1/modir-assistant',{method:'POST',headers:{'Content-Type':'application/json','apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY},body:JSON.stringify({token:S.token,question})});
    const data=await response.json();if(!response.ok||!data.answer)throw new Error(data.error||'پاسخ‌گویی موقتاً امکان‌پذیر نیست.');
    wait.textContent=data.answer;
-   if(data.setup_required)wait.textContent+='\n\n(برای فعال شدن هوش مصنوعی کامل، کلید سرویس باید در تنظیمات امن سرور ثبت شود.)';
+
   }catch(err){wait.textContent=err.message||'ارتباط با دستیار برقرار نشد. دوباره تلاش کنید.';}
   finally{modirAiBusy=false;send.disabled=false;send.textContent='ارسال';input.focus();box.scrollTop=box.scrollHeight;}
  });
