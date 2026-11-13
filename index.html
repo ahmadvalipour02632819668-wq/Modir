@@ -1958,15 +1958,15 @@ function replyModal(r) {
       container.innerHTML = `
         <div class="card" style="margin-bottom:16px; padding:14px; background:var(--bg)">
           <h3 style="margin:0 0 10px 0; font-size:14px; color:var(--ink)">خلاصه صورتحساب</h3>
-          <div style="display:flex;justify-content:space-between;gap:10px;padding:5px 0"><span>جمع مبالغ اصلی بدهی</span><b>${fmt(grossTotal)} تومان</b></div>
-          <div style="display:flex;justify-content:space-between;gap:10px;padding:5px 0;color:#15803d"><span>بستانکاری کسرشده</span><b>${fmt(creditTotal)} تومان</b></div>
-          <div style="display:flex;justify-content:space-between;gap:10px;padding:9px 0 0;border-top:1px solid var(--line);font-size:16px"><b>مبلغ قابل پرداخت</b><b style="color:var(--navy)">${fmt(payableTotal)} تومان</b></div>
+          <div style="display:flex;justify-content:space-between;gap:10px;padding:5px 0"><span>جمع مبالغ اصلی بدهی</span><b id="pf-gross-summary">${fmt(grossTotal)} تومان</b></div>
+          <div style="display:flex;justify-content:space-between;gap:10px;padding:5px 0;color:#15803d"><span>بستانکاری کسرشده</span><b id="pf-credit-summary">${fmt(creditTotal)} تومان</b></div>
+          <div style="display:flex;justify-content:space-between;gap:10px;padding:9px 0 0;border-top:1px solid var(--line);font-size:16px"><b>مبلغ قابل پرداخت</b><b id="pf-payable-summary" style="color:var(--navy)">${fmt(payableTotal)} تومان</b></div>
         </div>
         <div class="card" style="margin-bottom:16px; padding:12px; background:var(--bg)">
           <h3 style="margin:0 0 10px 0; font-size:14px; color:var(--ink)">جزئیات بدهی‌ها و بستانکاری:</h3>
           ${debtList.map((d) => `
             <div class="debt-row" style="display:flex; flex-wrap:wrap; align-items:center; gap:8px; padding:10px 0; border-bottom:1px dashed var(--line)">
-              <input type="checkbox" class="debt-check" value="${d.ym}" data-category="${d.category}" data-original="${d.amount}" checked style="width:18px;height:18px;accent-color:var(--navy)">
+              <input type="checkbox" class="debt-check" value="${d.ym}" data-category="${d.category}" data-original="${d.amount}" data-gross="${d.original_amount ?? d.amount}" data-credit="${d.credit_applied || 0}" checked style="width:18px;height:18px;accent-color:var(--navy)">
               <span style="flex:1; min-width:130px; font-weight:bold">${d.category_name} ${d.month_name} ${fa(d.year)}</span>
               <input type="text" class="debt-amount" value="${fmt(d.amount)}" style="width:120px; text-align:left; direction:rtl; padding:6px 10px; min-height:36px; font-weight:bold;">
               <div style="width:100%;padding-right:28px;font-size:12px;color:var(--muted)">
