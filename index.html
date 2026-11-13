@@ -445,6 +445,16 @@ async function enableMobilePush() {
   });
   if (error) throw error;
 }
+async function detachPushSubscription(token) {
+  if (!token || !('serviceWorker' in navigator)) return;
+  const registration = await getPushServiceWorker();
+  const subscription = await registration.pushManager.getSubscription();
+  if (!subscription?.endpoint) return;
+  const { error } = await sb.rpc('app_push_remove_subscription', {
+    p_token: token, p_endpoint: subscription.endpoint
+  });
+  if (error) throw error;
+}
 function maybeAskForPushPermission() {
   if (!S.token || !('Notification' in window) || pushPromptShown) return;
   // Refresh a previously granted subscription after VAPID key rotation.
@@ -854,7 +864,10 @@ async function renderLogin() {
 async function logout(silent = false) {
   if(!silent && !confirm('آیا قصد خروج از حساب را دارید؟')) return;
   const token = S.token; S.renderId++;
-  if (token) { try { await api('app_logout', { p_token: token }); } catch {} }
+  if (token) {
+    try { await detachPushSubscription(token); } catch (err) { console.warn('Could not detach previous account push subscription:', err); }
+    try { await api('app_logout', { p_token: token }); } catch {}
+  }
   S.token = null; S.me = null; S.view = 'dash'; S.txFilter = null; S.avatarData = null;
   ['bm_token','bm_me','bm_superadmin_token','bm_superadmin_account'].forEach(k=>sessionStorage.removeItem(k));
   localStorage.removeItem('bm_token');
