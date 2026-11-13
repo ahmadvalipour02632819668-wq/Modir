@@ -975,8 +975,8 @@ async function renderLogin() {
   });
 
   $('#forgot-pass').addEventListener('click',e=>{
-    e.preventDefault();const m=modal('<h2>فراموشی گذرواژه</h2><form id="fp-form" class="grid g2"><label class="f">نام کاربری<input id="fp-user" dir="ltr" required></label><label class="f">شماره موبایل<input id="fp-phone" dir="ltr" required></label><label class="f" style="grid-column:1/-1">گذرواژه جدید<input id="fp-pass" type="password" dir="ltr" required pattern="[0-9]{4,8}" minlength="4" maxlength="8" autocomplete="new-password" autocorrect="off" autocapitalize="off" spellcheck="false" inputmode="numeric"></label><button class="btn sf" style="grid-column:1/-1">تغییر گذرواژه</button></form>');
-    $('#fp-form',m).addEventListener('submit',async e=>{e.preventDefault();try{const r=await api('app_reset_password',{p_username:$('#fp-user',m).value,p_phone:$('#fp-phone',m).value,p_new_password:$('#fp-pass',m).value});if(!r.ok){toast(r.error,true);return;}closeModal(m);toast('گذرواژه تغییر کرد. وارد شوید.');}catch(err){showErr(err);}});
+    e.preventDefault();
+    modal('<h2>بازیابی گذرواژه</h2><p class="sub" style="line-height:2">برای حفظ امنیت حساب، بازیابی مستقیم با نام کاربری و شماره موبایل غیرفعال شده است. لطفاً از مدیر ساختمان بخواهید گذرواژه شما را از بخش مدیریت واحدها بازنشانی کند. پس از ورود، گذرواژه خود را تغییر دهید.</p>');
   });
 }
 async function logout(silent = false) {
