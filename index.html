@@ -461,11 +461,11 @@ function maybeAskForPushPermission() {
     }
   });
 }
-async function sendMobilePush(event, title, body) {
+async function sendMobilePush(event, title, body, targetAccountId = null) {
   if (!S.token) return null;
   try {
     const { data, error } = await sb.functions.invoke('send-web-push', {
-      body: { token: S.token, event, title, body, url: new URL('./', document.baseURI).pathname }
+      body: { token: S.token, event, title, body, target_account_id: targetAccountId, url: new URL('./', document.baseURI).pathname }
     });
     if (error) throw error;
     if (!data?.success) throw new Error(data?.error || 'ارسال اعلان انجام نشد');
@@ -1698,8 +1698,9 @@ function replyModal(r) {
         `💬 پاسخ مدیر:\n${reply}`
       );
 
+      await sendMobilePush('manager_reply_created', 'پاسخ مدیر به درخواست واحد ' + r.unit_no, reply, r.account_id);
       closeModal(m);
-      toast('پاسخ ثبت و به بله ارسال شد');
+      toast('پاسخ ثبت شد');
       go('requests');
     } catch (err) { showErr(err); }
   });
@@ -1896,6 +1897,7 @@ function replyModal(r) {
         if (!res.ok) throw new Error(res.error);
         notifyBale(`💸 پرداخت جدید (مبلغ دلخواه):\n\n👤 واحد ${selectedUnit} - ${S.me.full_name}\n💰 مبلغ: ${fmt(totalAmount)} تومان`);
       }
+      if (!isAdmin) await sendMobilePush('payment_request_created', 'پرداخت جدید از واحد ' + selectedUnit, 'مبلغ ' + fmt(totalAmount) + ' تومان برای بررسی ثبت شد.');
       closeModal(m);
       toast('پرداخت با موفقیت ثبت شد و منتظر تایید است');
       go(S.view);
@@ -1923,11 +1925,12 @@ function replyModal(r) {
 function approveModal(p) {
   const m = modal(`<h2>تایید پرداخت واحد ${fa(p.unit_no)}</h2><p class="sub">${esc(p.full_name || '')} · بابت ${esc(CATS[p.category] || p.category)} · ${MONTHS[p.month-1]} ${fa(p.year)}</p>${p.receipt_image ? `<div style="margin-bottom:16px;text-align:center"><img src="${p.receipt_image}" style="max-width:100%;max-height:300px;border-radius:12px;border:1px solid var(--line)"></div>` : `<div class="card" style="background:var(--bg);margin-bottom:16px;text-align:center;color:var(--muted)">تصویری بارگذاری نشده است</div>`}<div class="grid g2"><label class="f">مبلغ تاییدی (تومان)<input id="ap-a" value="${fmt(p.amount)}" inputmode="numeric"></label><label class="f">یادداشت<input id="ap-n"></label></div><div style="margin-top:20px;display:flex;gap:10px"><button class="btn" id="ap-go" style="flex:1">تایید و ثبت</button><button class="btn rd" id="ap-rj">رد کردن</button></div>`);
   attachNumericInputIn(m, '#ap-a');
-  $('#ap-rj', m).addEventListener('click', async () => { const note = prompt('دلیل رد:') ?? null; if (note === null) return; try { await T('app_admin_review_payment', { p_id: p.id, p_approve: false, p_admin_note: note }); closeModal(m); toast('رد شد'); go('pay'); } catch (e) { showErr(e); } });
+  $('#ap-rj', m).addEventListener('click', async () => { const note = prompt('دلیل رد:') ?? null; if (note === null) return; try { await T('app_admin_review_payment', { p_id: p.id, p_approve: false, p_admin_note: note }); await sendMobilePush('payment_reviewed', 'نتیجه بررسی پرداخت', 'پرداخت شما رد شد. ' + note, p.account_id); closeModal(m); toast('رد شد'); go('pay'); } catch (e) { showErr(e); } });
   $('#ap-go', m).addEventListener('click', async () => {
     try {
       await T('app_admin_review_payment', { p_id: p.id, p_approve: true, p_amount: toNum($('#ap-a', m).value), p_admin_note: $('#ap-n', m).value });
       notifyBale(`✅ پرداخت تایید شد:\n\n👤 واحد ${p.unit_no} - ${p.full_name}\n💰 مبلغ: ${fmt(p.amount)} تومان\n📅 بابت: ${CATS[p.category] || p.category} - ${MONTHS[p.month-1]} ${p.year}`);
+      await sendMobilePush('payment_reviewed', 'پرداخت شما تایید شد', 'پرداخت ' + fmt(p.amount) + ' تومان تایید شد.', p.account_id);
       closeModal(m); toast('تایید شد'); go('pay');
     } catch (e) { showErr(e); }
   });
