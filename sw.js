@@ -10,8 +10,8 @@ self.addEventListener('push', event => {
   const title = String(data.title || 'اعلان ساختمان');
   const options = {
     body: String(data.body || 'یک اعلان جدید دریافت کردید.'),
-    icon: new URL('./icon-192.svg', self.registration.scope).href,
-    badge: new URL('./icon-192.svg', self.registration.scope).href,
+    icon: new URL('./icone-192.png', self.registration.scope).href,
+    badge: new URL('./icone-192.png', self.registration.scope).href,
     dir: 'rtl',
     lang: 'fa',
     data: { url: data.url || '/' },
