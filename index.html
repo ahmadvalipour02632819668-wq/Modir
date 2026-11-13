@@ -952,7 +952,7 @@ async function renderShell() {
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible' && S.me?.is_admin) refreshManagerAlertBadge();
   });
-  $('.bnav-items button').forEach(b => b.addEventListener('click', () => go(b.dataset.v)));
+  document.querySelectorAll('.bnav-items button').forEach(b => b.addEventListener('click', () => go(b.dataset.v)));
   window.addEventListener('resize', debounce(() => renderShellHeaderState(false), 100));
   if ('serviceWorker' in navigator && window.isSecureContext) getPushServiceWorker().catch(err => console.warn('Service worker registration failed:', err));
   go(S.view);
