@@ -884,6 +884,24 @@ async function renderLogin() {
     e.preventDefault();
     const btn=$('#lg-btn'),old=btn.textContent,login=$('#lg-user').value.trim(),password=$('#lg-pass').value;
     $('#lg-err').textContent='';
+    const deviceId=(()=>{
+      const key='modir_device_id';
+      try{
+        let id=localStorage.getItem(key);
+        if(!id){
+          id=typeof crypto!=='undefined'&&crypto.randomUUID?crypto.randomUUID():('dev-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2));
+          localStorage.setItem(key,id);
+        }
+        return id;
+      }catch(_){
+        let id=sessionStorage.getItem(key);
+        if(!id){
+          id=typeof crypto!=='undefined'&&crypto.randomUUID?crypto.randomUUID():('dev-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2));
+          sessionStorage.setItem(key,id);
+        }
+        return id;
+      }
+    })();
     const deviceLabel=(()=>{
       const ua=navigator.userAgent||'';
       let device=/Android/i.test(ua)?'Android':/iPhone/i.test(ua)?'iPhone':/iPad/i.test(ua)?'iPad':/Windows/i.test(ua)?'Windows':/Macintosh/i.test(ua)?'Mac':/Linux/i.test(ua)?'Linux':'دستگاه';
@@ -904,7 +922,7 @@ async function renderLogin() {
       try{
         const r=await api('app_login_unified',{
           p_login:login,p_password:password,
-          p_replace_session_id:replaceId||null,p_device_label:deviceLabel
+          p_replace_session_id:replaceId||null,p_device_label:deviceLabel,p_device_id:deviceId
         });
         if(!r?.ok){
           if(r.code==='SESSION_LIMIT'&&Array.isArray(r.sessions)){
