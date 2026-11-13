@@ -313,11 +313,36 @@ body{overflow-x:clip;overflow-y:visible;min-height:100vh;height:auto}
  #building-map .unit-paid strong,#building-map .unit-debt strong{font-size:9px}
 }
 
+
+/* Modir AI help assistant */
+#modir-ai-launch{position:fixed;z-index:9000;bottom:calc(18px + env(safe-area-inset-bottom));left:18px;width:58px;height:58px;border:0;border-radius:50%;background:linear-gradient(145deg,#4b65bd,#29356f);color:#fff;box-shadow:0 8px 28px #18234b55;font-size:25px;cursor:pointer;display:none}
+#modir-ai-panel{position:fixed;z-index:9001;left:14px;bottom:calc(86px + env(safe-area-inset-bottom));width:min(390px,calc(100vw - 28px));height:min(560px,calc(100dvh - 115px));background:var(--card,#fff);color:var(--text,#20243b);border:1px solid var(--border,#e5e7ef);border-radius:20px;box-shadow:0 18px 60px #10173545;display:none;overflow:hidden;flex-direction:column;font-family:Vazirmatn,sans-serif}
+#modir-ai-panel.open{display:flex}
+#modir-ai-head{padding:14px 16px;background:linear-gradient(120deg,#303b78,#5268b8);color:#fff;display:flex;align-items:center;justify-content:space-between}
+#modir-ai-head strong{font-size:14px}#modir-ai-head small{display:block;opacity:.82;font-size:11px;margin-top:2px}
+#modir-ai-close{background:#ffffff22;border:0;color:white;border-radius:9px;width:34px;height:34px;font-size:20px}
+#modir-ai-messages{padding:13px;overflow:auto;flex:1;display:flex;flex-direction:column;gap:10px;background:var(--bg,#f6f7fb)}
+.modir-ai-msg{max-width:88%;padding:10px 12px;border-radius:14px;font-size:12px;line-height:1.9;white-space:pre-wrap;overflow-wrap:anywhere}
+.modir-ai-msg.bot{align-self:flex-start;background:var(--card,#fff);border:1px solid var(--border,#e6e8f0);border-bottom-right-radius:4px}
+.modir-ai-msg.user{align-self:flex-end;background:#e7edff;color:#202e66;border-bottom-left-radius:4px}
+#modir-ai-compose{display:flex;gap:8px;padding:10px;border-top:1px solid var(--border,#e5e7ef);background:var(--card,#fff)}
+#modir-ai-input{flex:1;min-width:0;border:1px solid var(--border,#dfe2ec);border-radius:12px;padding:10px;font:12px Vazirmatn,sans-serif;outline:none;background:var(--bg,#fff);color:var(--text,#222)}
+#modir-ai-send{border:0;border-radius:12px;background:#354582;color:white;padding:0 15px;font:12px Vazirmatn,sans-serif}
+#modir-ai-send:disabled{opacity:.55}
+@media(max-width:480px){#modir-ai-panel{left:8px;bottom:calc(82px + env(safe-area-inset-bottom));width:calc(100vw - 16px);height:min(68dvh,570px)}#modir-ai-launch{left:14px;bottom:calc(14px + env(safe-area-inset-bottom))}}
+
 </style>
 </head>
 <body>
 <div id="app"></div>
 <div id="toast" class="toast"></div>
+
+<button id="modir-ai-launch" type="button" aria-label="راهنمای هوشمند" title="راهنمای هوشمند">✦</button>
+<section id="modir-ai-panel" aria-label="دستیار هوشمند آقای مدیر">
+ <header id="modir-ai-head"><div><strong>دستیار هوشمند آقای مدیر</strong><small>پاسخ‌گویی و راهنمای استفاده از سامانه</small></div><button id="modir-ai-close" type="button" aria-label="بستن">×</button></header>
+ <div id="modir-ai-messages"><div class="modir-ai-msg bot">سلام! سؤال یا مشکلتان درباره کار با سامانه مدیر را بنویسید تا راهنمایی‌تان کنم.</div></div>
+ <form id="modir-ai-compose"><input id="modir-ai-input" maxlength="1200" autocomplete="off" placeholder="سؤالتان را بنویسید..." aria-label="متن سؤال" required><button id="modir-ai-send" type="submit">ارسال</button></form>
+</section>
 
 <script>
 // Apply Theme from LocalStorage
@@ -623,6 +648,35 @@ async function api(fn, args = {}) {
 }
 const T = (fn, args = {}) => api(fn, { p_token: S.token, ...args });
 
+/* Modir AI assistant: help-only, no financial/account data is sent to the model. */
+let modirAiBusy = false;
+function modirAiMount(){
+ const launch=document.getElementById('modir-ai-launch'), panel=document.getElementById('modir-ai-panel');
+ if(!launch||!panel)return;
+ launch.style.display=S.token?'block':'none';
+ launch.onclick=()=>{panel.classList.toggle('open');if(panel.classList.contains('open'))document.getElementById('modir-ai-input')?.focus();};
+ document.getElementById('modir-ai-close').onclick=()=>panel.classList.remove('open');
+ const form=document.getElementById('modir-ai-compose');
+ if(form.dataset.ready)return;form.dataset.ready='1';
+ form.addEventListener('submit',async e=>{
+  e.preventDefault();if(modirAiBusy||!S.token)return;
+  const input=document.getElementById('modir-ai-input'),send=document.getElementById('modir-ai-send');
+  const question=input.value.trim();if(!question)return;
+  const box=document.getElementById('modir-ai-messages');
+  const user=document.createElement('div');user.className='modir-ai-msg user';user.textContent=question;box.appendChild(user);input.value='';
+  modirAiBusy=true;send.disabled=true;send.textContent='...';
+  const wait=document.createElement('div');wait.className='modir-ai-msg bot';wait.textContent='در حال بررسی سؤال شما...';box.appendChild(wait);box.scrollTop=box.scrollHeight;
+  try{
+   const response=await fetch(SUPABASE_URL+'/functions/v1/modir-assistant',{method:'POST',headers:{'Content-Type':'application/json','apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY},body:JSON.stringify({token:S.token,question})});
+   const data=await response.json();if(!response.ok||!data.answer)throw new Error(data.error||'پاسخ‌گویی موقتاً امکان‌پذیر نیست.');
+   wait.textContent=data.answer;
+   if(data.setup_required)wait.textContent+='\n\n(برای فعال شدن هوش مصنوعی کامل، کلید سرویس باید در تنظیمات امن سرور ثبت شود.)';
+  }catch(err){wait.textContent=err.message||'ارتباط با دستیار برقرار نشد. دوباره تلاش کنید.';}
+  finally{modirAiBusy=false;send.disabled=false;send.textContent='ارسال';input.focus();box.scrollTop=box.scrollHeight;}
+ });
+}
+
+
 const monthOptions = (sel, withAll = false) => (withAll ? `<option value="">همه ماه‌ها</option>` : '') + MONTHS.map((n, i) => `<option value="${i+1}" ${+sel === i+1 ? 'selected' : ''}>${n}</option>`).join('');
 const yearOptions = (sel) => { const ys = []; for (let y = TODAY.y + 1; y >= 1403; y--) ys.push(y); return ys.map(y => `<option value="${y}" ${+y === +sel ? 'selected' : ''}>${fa(y)}</option>`).join(''); };
 const unitOptions = (sel, withBuilding = true, withAll = false) => (withAll ? `<option value="">همه</option>` : '') + (withBuilding ? `<option value="0" ${+sel === 0 ? 'selected' : ''}>ساختمان</option>` : '') + Array.from({length:(S.unitCount || 10)}, (_,i) => `<option value="${i+1}" ${+sel === i+1 ? 'selected' : ''}>واحد ${fa(i+1)}</option>`).join('');
@@ -869,6 +923,7 @@ async function logout(silent = false) {
     try { await api('app_logout', { p_token: token }); } catch {}
   }
   S.token = null; S.me = null; S.view = 'dash'; S.txFilter = null; S.avatarData = null;
+  const aiPanel=document.getElementById('modir-ai-panel'),aiLaunch=document.getElementById('modir-ai-launch'); if(aiPanel)aiPanel.classList.remove('open'); if(aiLaunch)aiLaunch.style.display='none';
   ['bm_token','bm_me','bm_superadmin_token','bm_superadmin_account'].forEach(k=>sessionStorage.removeItem(k));
   localStorage.removeItem('bm_token');
   renderLogin();
@@ -949,6 +1004,7 @@ async function renderShell() {
     const account = await T('app_me');
     if (renderId !== S.renderId) return;
     S.me = account; S.unitCount = Number(account.units_count || S.unitCount || 10); S.building = account.building_name || S.building; sessionStorage.setItem('bm_me', JSON.stringify(S.me));
+    modirAiMount();
   } catch (e) {
     if (e.message === 'AUTH_ERROR') { logout(true); return; }
     if (e.message === 'NETWORK_ERROR') { showConnectionError(); return; }
