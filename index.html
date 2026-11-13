@@ -340,7 +340,7 @@ body{overflow-x:clip;overflow-y:visible;min-height:100vh;height:auto}
 <button id="modir-ai-launch" type="button" aria-label="راهنمای هوشمند" title="راهنمای هوشمند">✦</button>
 <section id="modir-ai-panel" aria-label="دستیار هوشمند آقای مدیر">
  <header id="modir-ai-head"><div><strong>دستیار هوشمند آقای مدیر</strong><small>پاسخ‌گویی و راهنمای استفاده از سامانه</small></div><button id="modir-ai-close" type="button" aria-label="بستن">×</button></header>
- <div id="modir-ai-messages"><div class="modir-ai-msg bot">سلام! سؤال یا مشکلتان درباره کار با سامانه مدیر را بنویسید تا راهنمایی‌تان کنم.</div></div>
+ <div id="modir-ai-messages"><div class="modir-ai-msg bot">سلام! سؤال یا مشکلتان درباره کار با سامانه مدیر را بنویسید تا راهنمایی‌تان کنم. لطفاً رمز عبور یا اطلاعات شخصی را ارسال نکنید.</div></div>
  <form id="modir-ai-compose"><input id="modir-ai-input" maxlength="1200" autocomplete="off" placeholder="سؤالتان را بنویسید..." aria-label="متن سؤال" required><button id="modir-ai-send" type="submit">ارسال</button></form>
 </section>
 
@@ -923,7 +923,7 @@ async function logout(silent = false) {
     try { await api('app_logout', { p_token: token }); } catch {}
   }
   S.token = null; S.me = null; S.view = 'dash'; S.txFilter = null; S.avatarData = null;
-  const aiPanel=document.getElementById('modir-ai-panel'),aiLaunch=document.getElementById('modir-ai-launch'); if(aiPanel)aiPanel.classList.remove('open'); if(aiLaunch)aiLaunch.style.display='none';
+  const aiPanel=document.getElementById('modir-ai-panel'),aiLaunch=document.getElementById('modir-ai-launch'); if(aiPanel)aiPanel.classList.remove('open'); if(aiLaunch)aiLaunch.style.display='none'; const aiMessages=document.getElementById('modir-ai-messages'); if(aiMessages)aiMessages.innerHTML='<div class="modir-ai-msg bot">سلام! سؤال یا مشکلتان درباره کار با سامانه مدیر را بنویسید تا راهنمایی‌تان کنم. لطفاً رمز عبور یا اطلاعات شخصی را ارسال نکنید.</div>'; const aiInput=document.getElementById('modir-ai-input'); if(aiInput)aiInput.value='';
   ['bm_token','bm_me','bm_superadmin_token','bm_superadmin_account'].forEach(k=>sessionStorage.removeItem(k));
   localStorage.removeItem('bm_token');
   renderLogin();
