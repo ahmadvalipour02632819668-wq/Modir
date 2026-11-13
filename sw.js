@@ -1,3 +1,6 @@
+self.addEventListener('install', event => { self.skipWaiting(); });
+self.addEventListener('activate', event => { event.waitUntil(self.clients.claim()); });
+
 /* Mobile web push service worker */
 self.addEventListener('push', event => {
   let data = {};
@@ -7,8 +10,8 @@ self.addEventListener('push', event => {
   const title = String(data.title || 'اعلان ساختمان');
   const options = {
     body: String(data.body || 'یک اعلان جدید دریافت کردید.'),
-    icon: '/icon.svg',
-    badge: '/icon.svg',
+    icon: new URL('./icon-192.svg', self.registration.scope).href,
+    badge: new URL('./icon-192.svg', self.registration.scope).href,
     dir: 'rtl',
     lang: 'fa',
     data: { url: data.url || '/' },
