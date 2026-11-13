@@ -8,7 +8,8 @@
   "scope": "./",
   "display": "standalone",
   "display_override": [
-    "standalone"
+    "standalone",
+    "minimal-ui"
   ],
   "background_color": "#101b36",
   "theme_color": "#123b70",
@@ -23,7 +24,13 @@
       "src": "./icone-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "./icone-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ],
   "description": "سامانه هوشمند مدیریت مجتمع‌های مسکونی مدیر"
