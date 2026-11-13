@@ -461,11 +461,20 @@ function maybeAskForPushPermission() {
     }
   });
 }
-function sendMobilePush(event, title, body) {
-  if (!S.token) return;
-  sb.functions.invoke('send-web-push', { body: { token: S.token, event, title, body } })
-    .then(({ error }) => { if (error) console.warn('Mobile push failed:', error); })
-    .catch(error => console.warn('Mobile push failed:', error));
+async function sendMobilePush(event, title, body) {
+  if (!S.token) return null;
+  try {
+    const { data, error } = await sb.functions.invoke('send-web-push', {
+      body: { token: S.token, event, title, body, url: new URL('./', document.baseURI).pathname }
+    });
+    if (error) throw error;
+    if (!data?.success) throw new Error(data?.error || 'ارسال اعلان انجام نشد');
+    if (data.sent === 0) console.info('Mobile push had no active recipient subscriptions:', data);
+    return data;
+  } catch (error) {
+    console.warn('Mobile push failed:', error);
+    return null;
+  }
 }
 
 
@@ -824,7 +833,7 @@ async function viewServices(el) {
   $$('.tile', el).forEach(b => b.addEventListener('click', () => go(b.dataset.v)));
 }
 
-async function refreshManagerAlertBadge() {
+async function refreshManagerAlertBadge(markAsRead = false) {
   if (!S.me?.is_admin) return;
   const badge = $('#manager-alert-count');
   if (!badge) return;
@@ -834,13 +843,24 @@ async function refreshManagerAlertBadge() {
       T('app_get_payment_requests'),
       T('app_get_requests')
     ]);
-    const regCount = Array.isArray(registrations) ? registrations.length : 0;
-    const payCount = Array.isArray(payments) ? payments.filter(x => x.status === 'pending').length : 0;
-    const requestCount = Array.isArray(requests) ? requests.filter(x => !['done','rejected','closed'].includes(String(x.status || '').toLowerCase())).length : 0;
-    const total = regCount + payCount + requestCount;
-    badge.textContent = total > 99 ? '99+' : String(total);
-    badge.style.display = total ? 'block' : 'none';
-    badge.title = `ثبت‌نام: ${regCount} · پرداخت: ${payCount} · درخواست: ${requestCount}`;
+    const items = [
+      ...(Array.isArray(registrations) ? registrations.map(x => 'registration:' + x.id) : []),
+      ...(Array.isArray(payments) ? payments.filter(x => x.status === 'pending').map(x => 'payment:' + x.id) : []),
+      ...(Array.isArray(requests) ? requests.filter(x => !['done','rejected','closed'].includes(String(x.status || '').toLowerCase())).map(x => 'request:' + x.id) : [])
+    ];
+    const seenKey = 'bm_manager_alerts_seen:' + String(S.me.id || S.me.account_id || S.me.username || S.me.building_id);
+    let seen = [];
+    try { seen = JSON.parse(localStorage.getItem(seenKey) || '[]'); } catch (_) { seen = []; }
+    if (!Array.isArray(seen)) seen = [];
+    if (markAsRead) {
+      seen = [...new Set([...seen, ...items])].slice(-2000);
+      localStorage.setItem(seenKey, JSON.stringify(seen));
+    }
+    const seenSet = new Set(seen);
+    const unread = markAsRead ? 0 : items.filter(id => !seenSet.has(id)).length;
+    badge.textContent = unread > 99 ? '99+' : String(unread);
+    badge.style.display = unread ? 'block' : 'none';
+    badge.title = markAsRead ? 'همه اعلان‌های فعلی خوانده شدند' : `${unread} مورد خوانده‌نشده`;
   } catch (error) {
     console.warn('Manager alert count could not be refreshed:', error);
   }
@@ -904,7 +924,10 @@ async function renderShell() {
   $$('.theme-dot').forEach(d => d.addEventListener('click', () => setTheme(d.dataset.t)));
 
   $('#go-prof').addEventListener('click', () => { $('#who-pop').classList.remove('show'); go('profile'); });
-  $('#go-req').addEventListener('click', () => go('requests'));
+  $('#go-req').addEventListener('click', async () => {
+    if (S.me?.is_admin) await refreshManagerAlertBadge(true);
+    go('requests');
+  });
   refreshManagerAlertBadge();
   $$('.bnav-items button').forEach(b => b.addEventListener('click', () => go(b.dataset.v)));
   window.addEventListener('resize', debounce(() => renderShellHeaderState(false), 100));
@@ -1297,7 +1320,7 @@ async function viewAnnouncements(el) {
         const title = $('#a-title').value; const content = $('#a-content').value; const type = $('#a-type').value;
         await T('app_admin_save_announcement', { p_title: title, p_content: content, p_type: type });
         notifyBale(`📢 اعلان جدید در ساختمان:\n\n🔹 ${title}\n\n${content}`);
-        sendMobilePush('announcement_created', title, content);
+        await sendMobilePush('announcement_created', title, content);
         toast('ثبت شد'); go('announcements');
       } catch (err) { showErr(err); }
     });
@@ -1469,6 +1492,7 @@ async function viewRequests(el) {
         const desc = $('#rq-desc').value.trim();
         await T('app_submit_request', { p_type: type, p_description: desc });
         notifyBale(`🔔 درخواست جدید از واحد ${S.me.unit_no}:\n\n🔹 نوع: ${type}\n📝 توضیحات: ${desc}`);
+        await sendMobilePush('resident_request_created', 'درخواست جدید از واحد ' + S.me.unit_no, type + (desc ? ' · ' + desc : ''));
         toast('درخواست ثبت شد'); go('requests');
       } catch (err) { showErr(err); }
     });
@@ -1482,6 +1506,7 @@ async function viewRequests(el) {
       try {
         const saved = await T('app_submit_group_message', { p_message: message });
         const title = saved?.title || `پیام گروهی از واحد ${S.me.unit_no || '—'}`;
+        await sendMobilePush('group_message_created', title, message);
         const baleSent = await notifyBale(`💬 ${title}\n\n${message}`);
         toast(
           baleSent
@@ -1550,7 +1575,7 @@ async function viewRequests(el) {
         if (isActive) {
           const pollText = `📊 نظرسنجی جدید ساختمان\n\n${title}${description ? `\n${description}` : ''}\n\nگزینه‌ها:\n${options.map((x, i) => `${i + 1}) ${x}`).join('\n')}\n\nبرای ثبت رأی وارد برنامه مدیریت ساختمان شوید.`;
           const sent = await notifyBale(pollText);
-        sendMobilePush('poll_created', 'نظرسنجی جدید: ' + title, description || options.join('، '));
+        await sendMobilePush('poll_created', 'نظرسنجی جدید: ' + title, description || options.join('، '));
           toast(sent ? 'نظرسنجی ایجاد و در گروه بله اعلام شد' : 'نظرسنجی ایجاد شد؛ ارسال اعلان به بله ناموفق بود', !sent);
         } else {
           toast('نظرسنجی به‌صورت غیرفعال ایجاد شد');
