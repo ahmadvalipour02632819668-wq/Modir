@@ -255,13 +255,15 @@ tr:hover td{background:var(--bg)}
 .bnav{position:fixed;bottom:0;left:0;right:0;z-index:30;height:84px;pointer-events:none}
 .bnav-in{position:relative;max-width:640px;margin:auto;height:100%;pointer-events:auto}
 .bnav-bg{position:absolute;inset:auto 0 0 0;height:74px;background:var(--card);border-top:1px solid var(--line);border-radius:26px 26px 0 0;box-shadow:0 -8px 30px rgba(0,0,0,.08)}
+.bnav-bg:before{content:"";position:absolute;top:0;left:var(--notch-x,50%);transform:translateX(-50%);width:76px;height:22px;background:var(--bg);clip-path:polygon(0 0,100% 0,50% 100%)}
 .bnav-items{position:absolute;inset:auto 0 0 0;height:74px;display:grid;grid-template-columns:repeat(5,1fr)}
 .bnav-items button{background:none;border:0;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:var(--ink);font-size:11.5px;font-weight:700;transition:opacity .3s,transform .3s var(--ease);padding-bottom:6px}
 .bnav-items button svg{width:28px;height:28px}
 .bnav-items button.on{opacity:0;transform:translateY(-8px)}
-.bnav-diamond{position:absolute;top:0;width:66px;height:66px;margin-right:-33px;border-radius:20px;background:var(--card);border:1px solid var(--line);box-shadow:0 10px 26px rgba(0,0,0,.15);display:grid;place-items:center;transform:rotate(45deg);transition:right .5s var(--ease);animation:pop .55s var(--ease) both}
-.bnav-diamond > span{transform:rotate(-45deg);display:grid;place-items:center;color:var(--peach)}
-.bnav-diamond svg{width:30px;height:30px}
+.bnav-diamond{position:absolute;top:-62px;width:66px;height:66px;margin-right:-33px;border-radius:20px;background:var(--card);border:1px solid var(--line);box-shadow:0 10px 26px rgba(0,0,0,.15);display:grid;place-items:center;transform:rotate(45deg);transition:right .5s var(--ease),top .35s var(--ease);animation:pop .55s var(--ease) both}
+.bnav-diamond > span{transform:rotate(-45deg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:var(--peach);font-size:9px;font-weight:800;white-space:nowrap}
+.bnav-diamond svg{width:22px;height:22px}
+.bnav-diamond small{font-size:9px;line-height:1.2;color:var(--ink);max-width:64px;overflow:hidden;text-overflow:ellipsis}
 .bnav-diamond.bump{animation:pop .5s var(--ease)}
 
 /* Dashboard: unit payment/debt and scroll-driven payment fragments */
@@ -1159,9 +1161,12 @@ function renderShellHeaderState(resetScroll = true) {
   const dia = $('#bnav-dia'), wrap = $('.bnav-in');
   if (dia && active && wrap) {
     const wr = wrap.getBoundingClientRect(), br = active.getBoundingClientRect();
-    dia.style.right = (wr.right - (br.left + br.width / 2)) + 'px';
+    const center = (br.left + br.width / 2) - wr.left;
+    dia.style.right = (wr.width - center) + 'px';
+    $('.bnav-bg')?.style.setProperty('--notch-x', center + 'px');
     const key = active.dataset.v;
-    $('span', dia).innerHTML = (LINE_ICONS[key] || ico(key));
+    const label = $('span', active)?.textContent?.trim() || '';
+    $('span', dia).innerHTML = (LINE_ICONS[key] || ico(key)) + `<small>${esc(label)}</small>`;
     dia.classList.remove('bump'); void dia.offsetWidth; dia.classList.add('bump');
   }
   if (resetScroll) window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
