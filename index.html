@@ -880,9 +880,13 @@ async function renderLogin() {
     $('#lg-err').textContent='';
     const deviceLabel=(()=>{
       const ua=navigator.userAgent||'';
-      const os=/Android/i.test(ua)?'Android':/iPhone|iPad/i.test(ua)?'iOS':/Windows/i.test(ua)?'Windows':/Macintosh/i.test(ua)?'macOS':/Linux/i.test(ua)?'Linux':'دستگاه';
+      let device=/Android/i.test(ua)?'Android':/iPhone/i.test(ua)?'iPhone':/iPad/i.test(ua)?'iPad':/Windows/i.test(ua)?'Windows':/Macintosh/i.test(ua)?'Mac':/Linux/i.test(ua)?'Linux':'دستگاه';
+      if(/Android/i.test(ua)){
+        const model=ua.match(/;\s*([^;)]+?)\s+Build\//i);
+        if(model&&model[1]&&!/wv|\b(?:K|U)\d{3,}\b/i.test(model[1]))device+=' '+model[1].trim();
+      }
       const browser=/Edg\//i.test(ua)?'Edge':/Firefox\//i.test(ua)?'Firefox':/Chrome\//i.test(ua)?'Chrome':/Safari\//i.test(ua)?'Safari':'مرورگر';
-      return os+' · '+browser;
+      return device+' · '+browser;
     })();
     const clearPreviousAccountData=()=>{
       ['bm_token','bm_me','bm_superadmin_token','bm_superadmin_account'].forEach(k=>sessionStorage.removeItem(k));
