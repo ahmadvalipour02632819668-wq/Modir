@@ -775,13 +775,52 @@ async function renderLogin() {
   $('#tab-register').addEventListener('click',()=>{$('#login-panel').classList.add('hidden');$('#register-panel').classList.remove('hidden');$('#tab-login').className='btn lt';$('#tab-register').className='btn sf';});
 
   $('#lg').addEventListener('submit',async e=>{
-    e.preventDefault();const btn=$('#lg-btn'),old=btn.textContent;btn.disabled=true;btn.textContent='در حال بررسی...';$('#lg-err').textContent='';
-    try{
-      const r=await api('app_login_unified',{p_login:$('#lg-user').value.trim(),p_password:$('#lg-pass').value});
-      if(!r?.ok){$('#lg-err').textContent=r?.error||'نام کاربری یا گذرواژه اشتباه است';return;}
-      if(r.kind==='superadmin'){sessionStorage.setItem('bm_superadmin_token',r.token);sessionStorage.setItem('bm_superadmin_account',JSON.stringify(r.account||{}));window.location.href='superadmin.html';return;}
-      S.token=r.token;S.me=r.account;S.unitCount=Number(r.account.units_count||10);S.building=r.account.building_name||'';sessionStorage.setItem('bm_token',S.token);sessionStorage.setItem('bm_me',JSON.stringify(S.me));renderShell();if(!S.me?.is_admin) await sendMobilePush('resident_login','ورود ساکن',`${S.me?.full_name||'ساکن'} از ${S.me?.unit_no?'واحد '+fa(S.me.unit_no):'حساب کاربری'} وارد برنامه شد.`);
-    }catch(err){showErr(err);}finally{btn.disabled=false;btn.textContent=old;}
+    e.preventDefault();
+    const btn=$('#lg-btn'),old=btn.textContent,login=$('#lg-user').value.trim(),password=$('#lg-pass').value;
+    $('#lg-err').textContent='';
+    const deviceLabel=(()=>{
+      const ua=navigator.userAgent||'';
+      const os=/Android/i.test(ua)?'Android':/iPhone|iPad/i.test(ua)?'iOS':/Windows/i.test(ua)?'Windows':/Macintosh/i.test(ua)?'macOS':/Linux/i.test(ua)?'Linux':'دستگاه';
+      const browser=/Edg\//i.test(ua)?'Edge':/Firefox\//i.test(ua)?'Firefox':/Chrome\//i.test(ua)?'Chrome':/Safari\//i.test(ua)?'Safari':'مرورگر';
+      return os+' · '+browser;
+    })();
+    const clearPreviousAccountData=()=>{
+      ['bm_token','bm_me','bm_superadmin_token','bm_superadmin_account'].forEach(k=>sessionStorage.removeItem(k));
+      S.token=null;S.me=null;S.view='dash';S.txFilter=null;S.avatarData=null;
+    };
+    const attemptLogin=async replaceId=>{
+      btn.disabled=true;btn.textContent='در حال بررسی...';
+      try{
+        const r=await api('app_login_unified',{
+          p_login:login,p_password:password,
+          p_replace_session_id:replaceId||null,p_device_label:deviceLabel
+        });
+        if(!r?.ok){
+          if(r.code==='SESSION_LIMIT'&&Array.isArray(r.sessions)){
+            const bg=modal(`<h2>حداکثر دو نشست فعال</h2><p class="sub">این حساب هم‌اکنون در دو دستگاه فعال است. برای ورود در این دستگاه، یکی از نشست‌های زیر را خارج کنید.</p><div class="grid" style="gap:10px" id="active-session-list">${r.sessions.map((s,i)=>`<div class="card" style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap"><div><b>${esc(s.device_label||'دستگاه ناشناس')}</b><div class="sub" style="margin:3px 0 0">شروع نشست: ${esc(new Date(s.created_at).toLocaleString('fa-IR'))}</div></div><button type="button" class="btn rd sm" data-revoke-session="${esc(s.session_id)}">خروج از این دستگاه</button></div>`).join('')}</div><p class="sub" style="margin:14px 0 0">با انتخاب یک نشست، همان نشست باطل و ورود این دستگاه انجام می‌شود.</p>`);
+            bg.querySelectorAll('[data-revoke-session]').forEach(b=>b.addEventListener('click',async()=>{
+              bg.querySelectorAll('button').forEach(x=>x.disabled=true);
+              try{closeModal(bg);await attemptLogin(b.dataset.revokeSession);}
+              catch(err){$('#lg-err').textContent=err?.message||'ورود ناموفق بود';}
+            }));
+            return;
+          }
+          $('#lg-err').textContent=r?.error||(r.code==='SESSION_CHANGED'?'وضعیت نشست‌ها تغییر کرده است؛ دوباره تلاش کنید':'نام کاربری یا گذرواژه اشتباه است');
+          return;
+        }
+        clearPreviousAccountData();
+        if(r.kind==='superadmin'){
+          sessionStorage.setItem('bm_superadmin_token',r.token);
+          sessionStorage.setItem('bm_superadmin_account',JSON.stringify(r.account||{}));
+          window.location.href='superadmin.html';return;
+        }
+        S.token=r.token;S.me=r.account;S.unitCount=Number(r.account.units_count||10);S.building=r.account.building_name||'';
+        sessionStorage.setItem('bm_token',S.token);sessionStorage.setItem('bm_me',JSON.stringify(S.me));
+        renderShell();
+        if(!S.me?.is_admin) await sendMobilePush('resident_login','ورود ساکن',`${S.me?.full_name||'ساکن'} از ${S.me?.unit_no?'واحد '+fa(S.me.unit_no):'حساب کاربری'} وارد برنامه شد.`);
+      }finally{btn.disabled=false;btn.textContent=old;}
+    };
+    try{await attemptLogin(null);}catch(err){showErr(err);}
   });
 
   $('#registration-form').addEventListener('submit',async e=>{
@@ -809,12 +848,11 @@ async function renderLogin() {
 }
 async function logout(silent = false) {
   if(!silent && !confirm('آیا قصد خروج از حساب را دارید؟')) return;
-  const token = S.token; const account = S.me; S.renderId++;
-  if (token && !silent) {
-        try { await api('app_logout', { p_token: token }); } catch {}
-  }
-  S.token = null; S.me = null; S.view = 'dash';
-  sessionStorage.removeItem('bm_token'); sessionStorage.removeItem('bm_me'); renderLogin();
+  const token = S.token; S.renderId++;
+  if (token) { try { await api('app_logout', { p_token: token }); } catch {} }
+  S.token = null; S.me = null; S.view = 'dash'; S.txFilter = null; S.avatarData = null;
+  ['bm_token','bm_me','bm_superadmin_token','bm_superadmin_account'].forEach(k=>sessionStorage.removeItem(k));
+  renderLogin();
 }
 
 function getMenuItems() {
