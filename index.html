@@ -657,7 +657,7 @@ function modirAiMount(){
  const launch=document.getElementById('modir-ai-launch'), panel=document.getElementById('modir-ai-panel');
  if(!launch||!panel)return;
  if(modirAiHistoryToken!==S.token){modirAiHistory=[];modirAiHistoryToken=S.token||'';}
- launch.style.display=S.token?'block':'none';
+ launch.style.display=S.token?'flex':'none';
  launch.onclick=()=>{panel.classList.toggle('open');if(panel.classList.contains('open'))document.getElementById('modir-ai-input')?.focus();};
  document.getElementById('modir-ai-close').onclick=()=>panel.classList.remove('open');
  const form=document.getElementById('modir-ai-compose');
