@@ -648,11 +648,14 @@ async function api(fn, args = {}) {
 }
 const T = (fn, args = {}) => api(fn, { p_token: S.token, ...args });
 
-/* Modir AI assistant: help-only, no financial/account data is sent to the model. */
+/* Modir AI assistant: short-lived conversational context; no private account/finance data is sent. */
 let modirAiBusy = false;
+let modirAiHistory = [];
+let modirAiHistoryToken = '';
 function modirAiMount(){
  const launch=document.getElementById('modir-ai-launch'), panel=document.getElementById('modir-ai-panel');
  if(!launch||!panel)return;
+ if(modirAiHistoryToken!==S.token){modirAiHistory=[];modirAiHistoryToken=S.token||'';}
  launch.style.display=S.token?'block':'none';
  launch.onclick=()=>{panel.classList.toggle('open');if(panel.classList.contains('open'))document.getElementById('modir-ai-input')?.focus();};
  document.getElementById('modir-ai-close').onclick=()=>panel.classList.remove('open');
@@ -664,18 +667,19 @@ function modirAiMount(){
   const question=input.value.trim();if(!question)return;
   const box=document.getElementById('modir-ai-messages');
   const user=document.createElement('div');user.className='modir-ai-msg user';user.textContent=question;box.appendChild(user);input.value='';
+  modirAiHistory.push({role:'user',text:question});
   modirAiBusy=true;send.disabled=true;send.textContent='...';
   const wait=document.createElement('div');wait.className='modir-ai-msg bot';wait.textContent='در حال بررسی سؤال شما...';box.appendChild(wait);box.scrollTop=box.scrollHeight;
   try{
-   const response=await fetch(SUPABASE_URL+'/functions/v1/modir-assistant',{method:'POST',headers:{'Content-Type':'application/json','apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY},body:JSON.stringify({token:S.token,question})});
+   const response=await fetch(SUPABASE_URL+'/functions/v1/modir-assistant',{method:'POST',headers:{'Content-Type':'application/json','apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY},body:JSON.stringify({token:S.token,question,history:modirAiHistory.slice(-12)})});
    const data=await response.json();if(!response.ok||!data.answer)throw new Error(data.error||'پاسخ‌گویی موقتاً امکان‌پذیر نیست.');
    wait.textContent=data.answer;
-
-  }catch(err){wait.textContent=err.message||'ارتباط با دستیار برقرار نشد. دوباره تلاش کنید.';}
+   modirAiHistory.push({role:'model',text:data.answer});
+   modirAiHistory=modirAiHistory.slice(-12);
+  }catch(err){modirAiHistory.pop();wait.textContent=err.message||'ارتباط با دستیار برقرار نشد. دوباره تلاش کنید.';}
   finally{modirAiBusy=false;send.disabled=false;send.textContent='ارسال';input.focus();box.scrollTop=box.scrollHeight;}
  });
 }
-
 
 const monthOptions = (sel, withAll = false) => (withAll ? `<option value="">همه ماه‌ها</option>` : '') + MONTHS.map((n, i) => `<option value="${i+1}" ${+sel === i+1 ? 'selected' : ''}>${n}</option>`).join('');
 const yearOptions = (sel) => { const ys = []; for (let y = TODAY.y + 1; y >= 1403; y--) ys.push(y); return ys.map(y => `<option value="${y}" ${+y === +sel ? 'selected' : ''}>${fa(y)}</option>`).join(''); };
