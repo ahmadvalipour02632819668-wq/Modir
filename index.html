@@ -446,7 +446,12 @@ async function enableMobilePush() {
   if (error) throw error;
 }
 function maybeAskForPushPermission() {
-  if (!S.token || !('Notification' in window) || Notification.permission === 'granted' || pushPromptShown) return;
+  if (!S.token || !('Notification' in window) || pushPromptShown) return;
+  // Refresh a previously granted subscription after VAPID key rotation.
+  if (Notification.permission === 'granted') {
+    enableMobilePush().catch(error => console.warn('Push subscription refresh failed:', error));
+    return;
+  }
   pushPromptShown = true;
   const permissionBlocked = Notification.permission === 'denied';
   const message = permissionBlocked
