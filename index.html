@@ -689,7 +689,7 @@ function modirAiMount(){
   modirAiBusy=true;send.disabled=true;send.textContent='...';
   const wait=document.createElement('div');wait.className='modir-ai-msg bot';wait.textContent='در حال بررسی سؤال شما...';box.appendChild(wait);box.scrollTop=box.scrollHeight;
   try{
-   const response=await fetch(SUPABASE_URL+'/functions/v1/modir-assistant',{method:'POST',headers:{'Content-Type':'application/json','apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY},body:JSON.stringify({token:S.token,question,history:modirAiHistory.slice(-12)})});
+   const response=await fetch(SUPABASE_URL+'/functions/v1/modir-assistant',{method:'POST',headers:{'Content-Type':'application/json','apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY},body:JSON.stringify({token:S.token,question,today_ym:(TODAY.y*100+TODAY.m),history:modirAiHistory.slice(-12)})});
    const data=await response.json();if(!response.ok||!data.answer)throw new Error(data.error||'پاسخ‌گویی موقتاً امکان‌پذیر نیست.');
     wait.textContent=data.answer;
     const answerText=String(data.answer||'');
