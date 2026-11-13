@@ -945,7 +945,14 @@ async function renderShell() {
     go('requests');
   });
   refreshManagerAlertBadge();
-  $$('.bnav-items button').forEach(b => b.addEventListener('click', () => go(b.dataset.v)));
+  if (window.__modirManagerAlertTimer) clearInterval(window.__modirManagerAlertTimer);
+  window.__modirManagerAlertTimer = setInterval(() => {
+    if (S.me?.is_admin && document.visibilityState === 'visible') refreshManagerAlertBadge();
+  }, 15000);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && S.me?.is_admin) refreshManagerAlertBadge();
+  });
+  $('.bnav-items button').forEach(b => b.addEventListener('click', () => go(b.dataset.v)));
   window.addEventListener('resize', debounce(() => renderShellHeaderState(false), 100));
   if ('serviceWorker' in navigator && window.isSecureContext) getPushServiceWorker().catch(err => console.warn('Service worker registration failed:', err));
   go(S.view);
