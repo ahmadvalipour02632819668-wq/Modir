@@ -1,7 +1,7 @@
 {
   "id": "./",
-  "name": "مجتمع نگین ۲",
-  "short_name": "نگین ۲",
+  "name": "Resident Manager",
+  "short_name": "Resident Manager",
   "lang": "fa",
   "dir": "rtl",
   "start_url": "./",
@@ -33,5 +33,5 @@
       "purpose": "maskable"
     }
   ],
-  "description": "سامانه مدیریت مجتمع مسکونی نگین ۲"
+  "description": "Residential Community Management System"
 }
