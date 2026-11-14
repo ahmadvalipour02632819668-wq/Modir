@@ -356,6 +356,18 @@ body{overflow-x:clip;overflow-y:visible;min-height:100vh;height:auto}
   .no-print{display:none!important}
 }
 
+
+/* Shared Persian Jalali calendar */
+.jalali-calendar{border:1px solid var(--line);border-radius:12px;padding:10px;background:var(--card);}
+.jalali-calendar-head{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;}
+.jalali-calendar-head select{min-width:0;}
+.jalali-calendar-week,.jalali-calendar-days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;text-align:center;}
+.jalali-calendar-week{font-size:12px;color:var(--muted);font-weight:800;margin-bottom:5px;}
+.jalali-calendar-days{grid-auto-rows:minmax(36px,auto);}
+.jalali-day{border:1px solid transparent;border-radius:9px;background:var(--bg);color:var(--ink);font:inherit;font-size:13px;cursor:pointer;min-width:0;padding:5px 0;}
+.jalali-day:active{transform:scale(.96);}
+.jalali-day.selected{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:900;}
+.jalali-calendar-empty{min-width:0;}
 </style>
 </head>
 <body>
@@ -591,21 +603,31 @@ function jalaliToday() {
 const TODAY = jalaliToday();
 function jalaliDatePicker(label, name, value='', id='', required=true) {
   const v=normalizeJalaliDigits(value), p=/^(\d{4})\/(\d{2})\/(\d{2})$/.exec(v);
-  const y=p?+p[1]:0, mo=p?+p[2]:0, d=p?+p[3]:0, years=Array.from({length:201},(_,i)=>1300+i);
-  const yearOpts='<option value="">سال</option>'+years.map(n=>'<option value="'+n+'" '+(n===y?'selected':'')+'>'+fa(n)+'</option>').join('');
-  const monthOpts='<option value="">ماه</option>'+MONTHS.map((n,i)=>'<option value="'+(i+1)+'" '+(i+1===mo?'selected':'')+'>'+n+'</option>').join('');
-  const max= y&&mo ? jalaliMonthDays(y,mo) : 31;
-  const dayOpts='<option value="">روز</option>'+Array.from({length:max},(_,i)=>i+1).map(n=>'<option value="'+n+'" '+(n===d?'selected':'')+'>'+fa(n)+'</option>').join('');
-  return '<label class="f">'+label+'<div class="grid g3" data-jalali-picker><select data-jp-year '+(required?'required':'')+'>'+yearOpts+'</select><select data-jp-month '+(required?'required':'')+'>'+monthOpts+'</select><select data-jp-day '+(required?'required':'')+'>'+dayOpts+'</select></div><input type="hidden" '+(id?'id="'+id+'" ':'')+(name?'name="'+name+'" ':'')+'value="'+(p?v:'')+'"></label>';
+  const y=p?+p[1]:TODAY.y, mo=p?+p[2]:TODAY.m, d=p?+p[3]:0, years=Array.from({length:201},(_,i)=>1300+i);
+  const yearOpts=years.map(n=>'<option value="'+n+'" '+(n===y?'selected':'')+'>'+fa(n)+'</option>').join('');
+  const monthOpts=MONTHS.map((n,i)=>'<option value="'+(i+1)+'" '+(i+1===mo?'selected':'')+'>'+n+'</option>').join('');
+  return '<label class="f">'+label+'<div class="jalali-calendar" data-jalali-picker><div class="jalali-calendar-head"><select data-jp-month aria-label="ماه">'+monthOpts+'</select><select data-jp-year aria-label="سال">'+yearOpts+'</select></div><div class="jalali-calendar-week">'+['ش','ی','د','س','چ','پ','ج'].map(x=>'<span>'+x+'</span>').join('')+'</div><div class="jalali-calendar-days" data-jp-days>'+jalaliCalendarDays(y,mo,d)+'</div></div><input type="hidden" '+(id?'id="'+id+'" ':'')+(name?'name="'+name+'" ':'')+(required?'required ':'')+'value="'+(p?v:'')+'"></label>';
+}
+function jalaliCalendarDays(y,m,selected) {
+  const first=jalaliToGregorianDate(y+'/'+String(m).padStart(2,'0')+'/01');
+  const offset=(new Date(first+'T00:00:00Z').getUTCDay()+1)%7, count=jalaliMonthDays(y,m);
+  return Array.from({length:offset},()=>'<span class="jalali-calendar-empty"></span>').join('')+
+    Array.from({length:count},(_,i)=>{const day=i+1;return '<button type="button" class="jalali-day '+(day===selected?'selected':'')+'" data-jp-day="'+day+'" aria-label="روز '+fa(day)+'">'+fa(day)+'</button>';}).join('');
 }
 document.addEventListener('change',e=>{
   const picker=e.target.closest('[data-jalali-picker]'); if(!picker)return;
-  const y=picker.querySelector('[data-jp-year]'),m=picker.querySelector('[data-jp-month]'),d=picker.querySelector('[data-jp-day]');
+  const y=Number(picker.querySelector('[data-jp-year]').value),m=Number(picker.querySelector('[data-jp-month]').value);
+  const hidden=picker.parentElement.querySelector('input[type="hidden"]'),old=Number(hidden.value.split('/')[2])||0,max=jalaliMonthDays(y,m),day=Math.min(old,max);
+  picker.querySelector('[data-jp-days]').innerHTML=jalaliCalendarDays(y,m,day);
+  hidden.value=day?y+'/'+String(m).padStart(2,'0')+'/'+String(day).padStart(2,'0'):'';
+});
+document.addEventListener('click',e=>{
+  const dayButton=e.target.closest('[data-jp-day]'); if(!dayButton)return;
+  const picker=dayButton.closest('[data-jalali-picker]'); if(!picker)return;
+  const y=Number(picker.querySelector('[data-jp-year]').value),m=Number(picker.querySelector('[data-jp-month]').value),d=Number(dayButton.dataset.jpDay);
   const hidden=picker.parentElement.querySelector('input[type="hidden"]');
-  const max=y.value&&m.value?jalaliMonthDays(Number(y.value),Number(m.value)):31, old=Number(d.value);
-  d.innerHTML='<option value="">روز</option>'+Array.from({length:max},(_,i)=>'<option value="'+(i+1)+'">'+fa(i+1)+'</option>').join('');
-  if(old>0&&old<=max)d.value=String(old);
-  hidden.value=y.value&&m.value&&d.value?y.value+'/'+String(m.value).padStart(2,'0')+'/'+String(d.value).padStart(2,'0'):'';
+  hidden.value=y+'/'+String(m).padStart(2,'0')+'/'+String(d).padStart(2,'0');
+  picker.querySelector('[data-jp-days]').innerHTML=jalaliCalendarDays(y,m,d);
 });
 
 
@@ -2300,9 +2322,7 @@ function txModal(t, units) {
       <label class="f" style="grid-column:1/-1">مبلغ (تومان)
         <input id="t-amt" inputmode="numeric" required value="${t.amount ? fmt(t.amount) : ''}">
       </label>
-      <label class="f">سال<select id="t-y">${yearOptions(t.year)}</select></label>
-      <label class="f">ماه<select id="t-m">${monthOptions(t.month)}</select></label>
-      <label class="f">روز<select id="t-d">${Array.from({length:jalaliMonthDays(Number(t.year)||TODAY.y,Number(t.month)||TODAY.m)},(_,i)=>'<option value="'+(i+1)+'" '+(i+1===(Number(t.day)||1)?'selected':'')+'>'+fa(i+1)+'</option>').join('')}</select></label>
+      ${jalaliDatePicker('تاریخ تراکنش','',String(t.year||TODAY.y)+'/'+String(t.month||TODAY.m).padStart(2,'0')+'/'+String(t.day||TODAY.d).padStart(2,'0'),'tx-date',true)}
       <section id="bill-period-fields" class="card" style="grid-column:1/-1;display:none;padding:12px">
         <div style="font-weight:900;margin-bottom:8px">دوره مصرف قبض (شمسی)</div>
         <div class="grid g2">${jalaliDatePicker('از تاریخ','',t.bill_period_start ? gregorianToJalaliDate(t.bill_period_start) : '', 'bill-period-start',false)}
@@ -2352,10 +2372,6 @@ function txModal(t, units) {
   unitSelect.addEventListener('change',()=>{updateFormUI();updateBillPeriodUI();});
   $$('input[name="expense-kind"]',m).forEach(x=>x.addEventListener('change',updateFormUI));
   updateFormUI();updateBillPeriodUI();
-  const refreshTransactionDay=()=>{const y=Number($('#t-y',m).value),mo=Number($('#t-m',m).value),day=$('#t-d',m),old=Number(day.value)||1,max=jalaliMonthDays(y,mo);day.innerHTML=Array.from({length:max},(_,i)=>'<option value="'+(i+1)+'">'+fa(i+1)+'</option>').join('');day.value=String(Math.min(old,max));};
-  $('#t-y',m).addEventListener('change',refreshTransactionDay);
-  $('#t-m',m).addEventListener('change',refreshTransactionDay);
-
   $('#tf',m).addEventListener('submit',async e=>{
     e.preventDefault();
     const txType=$('#t-type',m).value;
@@ -2368,7 +2384,7 @@ function txModal(t, units) {
       if(txType==='درآمد'){
         await T('app_admin_save_transaction',{
           p_id:isNew?null:t.id,
-          p_year:+$('#t-y',m).value,p_month:+$('#t-m',m).value,p_day:+$('#t-d',m).value||1,
+          p_year:Number($('#tx-date',m).value.split('/')[0]),p_month:Number($('#tx-date',m).value.split('/')[1]),p_day:Number($('#tx-date',m).value.split('/')[2]),
           p_unit_no:unitNo,p_tx_type:txType,p_category:category,p_location:$('#t-loc',m).value,
           p_description:desc,p_amount:amount,p_occupancy:$('#t-occ',m).value,p_force:false
         });
@@ -2385,7 +2401,7 @@ function txModal(t, units) {
         if(isBill){billStart=jalaliToGregorianDate($('#bill-period-start',m).value);billEnd=jalaliToGregorianDate($('#bill-period-end',m).value);if(billEnd<billStart)throw new Error('تاریخ پایان دوره قبض نباید قبل از شروع باشد');}
         const saved=await T('app_admin_save_expense',{
           p_id:isNew?null:t.id,
-          p_year:+$('#t-y',m).value,p_month:+$('#t-m',m).value,p_day:+$('#t-d',m).value||1,
+          p_year:Number($('#tx-date',m).value.split('/')[0]),p_month:Number($('#tx-date',m).value.split('/')[1]),p_day:Number($('#tx-date',m).value.split('/')[2]),
           p_unit_no:unitNo,p_category:category,p_location:$('#t-loc',m).value,
           p_description:desc,p_amount:amount,
           p_expense_scope:unitNo?'unit':'building',
