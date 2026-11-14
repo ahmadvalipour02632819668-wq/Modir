@@ -337,6 +337,24 @@ body{overflow-x:clip;overflow-y:visible;min-height:100vh;height:auto}
 #modir-ai-send:disabled{opacity:.55}
 @media(max-width:480px){#modir-ai-panel{right:8px;top:50%;transform:translateY(-50%);width:calc(100vw - 76px);height:min(72dvh,570px)}#modir-ai-launch{right:8px;top:46%;width:54px;height:54px}}
 
+
+/* Monthly report: clear cell grid and compact single-page print */
+.report-table-wrap table{border-collapse:collapse!important;border-spacing:0!important}
+.report-table-wrap th,.report-table-wrap td{border:1px solid #cbd3df!important;text-align:center;vertical-align:middle}
+.report-table-wrap tbody tr:nth-child(even) td{box-shadow:inset 0 0 0 999px rgba(45,52,99,.018)}
+@media print{
+  @page{size:A4 landscape;margin:7mm}
+  html,body{background:#fff!important;width:100%!important;height:auto!important;overflow:visible!important}
+  body *{visibility:hidden!important}
+  .report-table-wrap,.report-table-wrap *{visibility:visible!important}
+  .report-table-wrap{position:absolute!important;top:0!important;right:0!important;left:0!important;width:100%!important;max-height:none!important;overflow:visible!important;border:0!important;border-radius:0!important;box-shadow:none!important;background:#fff!important;zoom:var(--report-print-scale,.82)}
+  .report-table-wrap table{width:100%!important;min-width:0!important;table-layout:fixed!important;border-collapse:collapse!important;font-size:8px!important}
+  .report-table-wrap th,.report-table-wrap td{padding:3px 4px!important;line-height:1.2!important;border:1px solid #9aa5b5!important;white-space:normal!important;overflow-wrap:anywhere!important}
+  .report-table-wrap thead{display:table-header-group}
+  .report-table-wrap tr{break-inside:avoid!important;page-break-inside:avoid!important}
+  .report-table-wrap th:first-child,.report-table-wrap td:first-child{width:13%}
+}
+
 </style>
 </head>
 <body>
@@ -2441,15 +2459,15 @@ async function viewReport(el) {
   const rep=await T('app_report',{p_year:S.y,p_month:S.m});
   const reportTransactions=await T('app_get_transactions',{p_year:S.y,p_month:S.m,p_unit:null});
   el.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;gap:12px;flex-wrap:wrap"><div><h1 style="margin:0">گزارش `+rep.month_name+` `+fa(rep.year)+`</h1></div><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">`+periodPicker()+`<button class="btn lt" id="report-range-mode">گزارش بازه‌ای</button><button class="btn sf no-print" id="bale-btn">ارسال به بله 📤</button><button class="btn lt no-print" id="pr-btn">چاپ</button></div></div>
-  <div class="tbl-wrap report-table-wrap" style="border-radius:16px;overflow-x:auto;border:1px solid #e5e9f0;background:#fff;width:100%;box-shadow:0 5px 18px rgba(35,45,80,.06)"><table style="width:max-content;min-width:100%;border-collapse:separate;border-spacing:0;font-size:14px;font-weight:600;text-align:center;direction:rtl;background:#fff"><thead><tr><th colspan="7" style="background:#303b70;color:white;padding:13px;border:0;font-size:15px">گزارش `+rep.month_name+` ماه - `+fa(rep.year)+`/`+String(rep.month).padStart(2,'0')+`</th></tr><tr>`+['واحد','شارژ','قبض آب','قبض گاز','پس‌انداز','بدهی قبلی','جمع مبلغ قابل پرداخت'].map(x=>`<th style="background:#eef1f8;color:#394366;border:0;border-bottom:1px solid #dfe4ee;padding:11px 9px;font-size:12px">`+x+`</th>`).join('')+`</tr></thead><tbody>`+(rep.rows||[]).map(r=>{
+  <div class="tbl-wrap report-table-wrap" style="border-radius:16px;overflow-x:auto;border:1px solid #e5e9f0;background:#fff;width:100%;box-shadow:0 5px 18px rgba(35,45,80,.06)"><table style="width:max-content;min-width:100%;border-collapse:separate;border-spacing:0;font-size:14px;font-weight:600;text-align:center;direction:rtl;background:#fff"><thead><tr><th colspan="7" style="background:#303b70;color:white;padding:13px;border:0;font-size:15px">گزارش `+rep.month_name+` ماه - `+fa(rep.year)+`/`+String(rep.month).padStart(2,'0')+`</th></tr><tr>`+['واحد','شارژ','قبض آب','قبض گاز','پس‌انداز','بدهی قبلی','جمع مبلغ قابل پرداخت'].map(x=>`<th style="background:#eef1f8;color:#394366;border:1px solid #cbd3df;padding:8px 6px;font-size:12px">`+x+`</th>`).join('')+`</tr></thead><tbody>`+(rep.rows||[]).map(r=>{
     const shared=(reportTransactions||[]).flatMap(t=>{if(t.tx_type!=='هزینه'||Number(t.ym)!==Number(S.y)*100+Number(S.m))return[];let a=t.expense_shares;if(typeof a==='string'){try{a=JSON.parse(a)}catch(_){a=[]}}if(!Array.isArray(a))return[];const sh=a.find(x=>String(x.account_id||'')===String(r.account_id||''));return sh?[{id:t.id,cat:String(t.category||'').toLowerCase(),amount:Number(sh.amount)||0}]:[]});
     const items=c=>shared.filter(x=>x.cat===c),sum=a=>a.reduce((n,x)=>n+x.amount,0),status=(base,paid,cat)=>({amount:(Number(base)||0)+sum(items(cat)),paid:(Number(base)<=0||!!paid)&&items(cat).every(x=>(reportTransactions||[]).filter(t=>Number(t.ym)===Number(S.y)*100+Number(S.m)&&String(t.account_id||'')===String(r.account_id||'')&&t.tx_type==='درآمد'&&String(t.category||'')==='expense:'+x.id).reduce((n,t)=>n+(Number(t.amount)||0),0)>=x.amount)});
-    const c=status(r.charge,r.ok_charge,'charge'),w=status(r.water,r.ok_water,'water'),g=status(r.gas,r.ok_gas,'gas'),p=status(r.repair,r.ok_repair,'repair'),bg=(a,ok)=>Number(a)<=0?'#f1f3f6':(ok?'#e1f3e8':'#fde8e7'),cell=(color,val)=>`<td style="background:`+color+`;border-bottom:1px solid #e8ebf2;padding:11px 13px;color:#25304a;font-weight:700">`+fmt(val)+`</td>`;
-    return `<tr><td style="border:1px solid #333;padding:6px 10px">واحد `+fa(r.unit_no)+`<div style="font-size:12px;font-weight:normal">`+esc(r.occupancy||'')+`</div></td>`+cell(bg(c.amount,c.paid),c.amount)+cell(bg(w.amount,w.paid),w.amount)+cell(bg(g.amount,g.paid),g.amount)+cell(bg(p.amount,p.paid),p.amount)+cell(Number(r.prev_debt)>0?'#FFC000':'#fff',r.prev_debt)+cell(Number(r.remaining)<=0?'#00B050':Number(r.prev_debt)>0?'#FFC000':'#fff',r.remaining)+`</tr>`;
+    const c=status(r.charge,r.ok_charge,'charge'),w=status(r.water,r.ok_water,'water'),g=status(r.gas,r.ok_gas,'gas'),p=status(r.repair,r.ok_repair,'repair'),bg=(a,ok)=>Number(a)<=0?'#f1f3f6':(ok?'#dff3e6':'#fde5e5'),cell=(color,val)=>`<td style="background:`+color+`;border:1px solid #cbd3df;padding:8px 7px;color:#25304a;font-weight:700">`+fmt(val)+`</td>`;
+    return `<tr><td style="background:#f5f6fa;border:1px solid #cbd3df;padding:6px 5px;font-weight:800">واحد `+fa(r.unit_no)+`<div style="font-size:11px;font-weight:normal">`+esc(r.occupancy||'')+`</div></td>`+cell(bg(c.amount,c.paid),c.amount)+cell(bg(w.amount,w.paid),w.amount)+cell(bg(g.amount,g.paid),g.amount)+cell(bg(p.amount,p.paid),p.amount)+cell(Number(r.prev_debt)>0?'#fff0d6':'#f1f3f6',r.prev_debt)+cell(Number(r.remaining)<=0?'#dff3e6':'#fde5e5',r.remaining)+`</tr>`;
   }).join('')||'<tr><td colspan="7">اطلاعاتی برای این دوره وجود ندارد.</td></tr>'`+</tbody></table></div>`;
   bindPeriod(()=>go('report'));
   $('#report-range-mode')?.addEventListener('click',()=>{S.reportMode='range';S.rangeFromYear=S.y;S.rangeFromMonth=S.m;S.rangeToYear=S.y;S.rangeToMonth=S.m;go('report')});
-  $('#pr-btn')?.addEventListener('click',()=>window.print());
+  $('#pr-btn')?.addEventListener('click',()=>{const table=$('.report-table-wrap table');const rows=table?.querySelectorAll('tbody tr').length||1;const estimatedHeight=rows*21+78;const scale=Math.max(.55,Math.min(.9,700/estimatedHeight));document.documentElement.style.setProperty('--report-print-scale',String(scale));window.print();});
   $('#bale-btn')?.addEventListener('click',async()=>{const b=$('#bale-btn'),table=$('.tbl-wrap table');if(!b||!table)return;const old=b.textContent;b.disabled=true;try{b.textContent='در حال ساخت تصویر...';const canvas=await html2canvas(table,{backgroundColor:'#fff',scale:2,useCORS:true,logging:false});const ok=await notifyBale(`📊 گزارش ماهانه `+rep.month_name+` `+fa(rep.year)+`\n`+(S.me?.building_name||S.building),canvas.toDataURL('image/jpeg',0.88));if(!ok)throw new Error('ارسال گزارش به بله ناموفق بود');toast('گزارش با موفقیت به گروه بله ارسال شد')}catch(err){showErr(err)}finally{b.textContent=old;b.disabled=false}});
 }
 
