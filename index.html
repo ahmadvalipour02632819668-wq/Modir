@@ -570,14 +570,14 @@ function jalaliToday() {
   }
 }
 const TODAY = jalaliToday();
-function jalaliDatePicker(label, name, value='', id='') {
+function jalaliDatePicker(label, name, value='', id='', required=true) {
   const v=normalizeJalaliDigits(value), p=/^(\\d{4})\\/(\\d{2})\\/(\\d{2})$/.exec(v);
   const y=p?+p[1]:0, mo=p?+p[2]:0, d=p?+p[3]:0, years=Array.from({length:201},(_,i)=>1300+i);
   const yearOpts='<option value="">سال</option>'+years.map(n=>'<option value="'+n+'" '+(n===y?'selected':'')+'>'+fa(n)+'</option>').join('');
   const monthOpts='<option value="">ماه</option>'+MONTHS.map((n,i)=>'<option value="'+(i+1)+'" '+(i+1===mo?'selected':'')+'>'+n+'</option>').join('');
   const max= y&&mo ? jalaliMonthDays(y,mo) : 31;
   const dayOpts='<option value="">روز</option>'+Array.from({length:max},(_,i)=>i+1).map(n=>'<option value="'+n+'" '+(n===d?'selected':'')+'>'+fa(n)+'</option>').join('');
-  return '<label class="f">'+label+'<div class="grid g3" data-jalali-picker><select data-jp-year>'+yearOpts+'</select><select data-jp-month>'+monthOpts+'</select><select data-jp-day>'+dayOpts+'</select></div><input type="hidden" '+(id?'id="'+id+'" ':'')+(name?'name="'+name+'" ':'')+'value="'+(p?v:'')+'"></label>';
+  return '<label class="f">'+label+'<div class="grid g3" data-jalali-picker><select data-jp-year '+(required?'required':'')+'>'+yearOpts+'</select><select data-jp-month '+(required?'required':'')+'>'+monthOpts+'</select><select data-jp-day '+(required?'required':'')+'>'+dayOpts+'</select></div><input type="hidden" '+(id?'id="'+id+'" ':'')+(name?'name="'+name+'" ':'')+'value="'+(p?v:'')+'"></label>';
 }
 document.addEventListener('change',e=>{
   const picker=e.target.closest('[data-jalali-picker]'); if(!picker)return;
@@ -1973,7 +1973,7 @@ function replyModal(r) {
         <input id="pf-custom" inputmode="numeric" placeholder="مثلاً 5,000,000" style="font-weight:900;font-size:20px;text-align:center;">
       </label>
       <label class="f">کد پیگیری<input id="pf-r" dir="ltr"></label>
-      ${jalaliDatePicker('تاریخ واریز','',TODAY.y+'/'+String(TODAY.m).padStart(2,'0')+'/'+String(TODAY.d).padStart(2,'0'),'pf-d')}
+      ${jalaliDatePicker('تاریخ واریز','',TODAY.y+'/'+String(TODAY.m).padStart(2,'0')+'/'+String(TODAY.d).padStart(2,'0'),'pf-d',false)}
       <label class="f" style="grid-column:1/-1">بارگذاری تصویر فیش (اختیاری)<input id="pf-img" type="file" accept="image/*"></label>
       <label class="f" style="grid-column:1/-1">توضیحات<input id="pf-n"></label>
       <button class="btn sf" style="grid-column:1/-1" id="pf-submit">ثبت پرداخت</button>
@@ -2286,8 +2286,8 @@ function txModal(t, units) {
       <label class="f">روز<select id="t-d">${Array.from({length:jalaliMonthDays(Number(t.year)||TODAY.y,Number(t.month)||TODAY.m)},(_,i)=>'<option value="'+(i+1)+'" '+(i+1===(Number(t.day)||1)?'selected':'')+'>'+fa(i+1)+'</option>').join('')}</select></label>
       <section id="bill-period-fields" class="card" style="grid-column:1/-1;display:none;padding:12px">
         <div style="font-weight:900;margin-bottom:8px">دوره مصرف قبض (شمسی)</div>
-        <div class="grid g2">${jalaliDatePicker('از تاریخ','','${t.bill_period_start ? gregorianToJalaliDate(t.bill_period_start) : ''}','bill-period-start')}
-        ${jalaliDatePicker('تا تاریخ','','${t.bill_period_end ? gregorianToJalaliDate(t.bill_period_end) : ''}','bill-period-end')}</div>
+        <div class="grid g2">${jalaliDatePicker('از تاریخ','','${t.bill_period_start ? gregorianToJalaliDate(t.bill_period_start) : ''}','bill-period-start',false)}
+        ${jalaliDatePicker('تا تاریخ','','${t.bill_period_end ? gregorianToJalaliDate(t.bill_period_end) : ''}','bill-period-end',false)}</div>
         <p class="sub" style="margin:6px 0 0">سهم هر ساکن بر اساس روزهای حضور در این بازه محاسبه می‌شود.</p>
       </section>
       <div style="grid-column:1/-1;margin-top:8px">
