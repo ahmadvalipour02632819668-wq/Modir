@@ -570,6 +570,25 @@ function jalaliToday() {
   }
 }
 const TODAY = jalaliToday();
+function jalaliDatePicker(label, name, value='', id='') {
+  const v=normalizeJalaliDigits(value), p=/^(\\d{4})\\/(\\d{2})\\/(\\d{2})$/.exec(v);
+  const y=p?+p[1]:0, mo=p?+p[2]:0, d=p?+p[3]:0, years=Array.from({length:201},(_,i)=>1300+i);
+  const yearOpts='<option value="">سال</option>'+years.map(n=>'<option value="'+n+'" '+(n===y?'selected':'')+'>'+fa(n)+'</option>').join('');
+  const monthOpts='<option value="">ماه</option>'+MONTHS.map((n,i)=>'<option value="'+(i+1)+'" '+(i+1===mo?'selected':'')+'>'+n+'</option>').join('');
+  const max= y&&mo ? jalaliMonthDays(y,mo) : 31;
+  const dayOpts='<option value="">روز</option>'+Array.from({length:max},(_,i)=>i+1).map(n=>'<option value="'+n+'" '+(n===d?'selected':'')+'>'+fa(n)+'</option>').join('');
+  return '<label class="f">'+label+'<div class="grid g3" data-jalali-picker><select data-jp-year>'+yearOpts+'</select><select data-jp-month>'+monthOpts+'</select><select data-jp-day>'+dayOpts+'</select></div><input type="hidden" '+(id?'id="'+id+'" ':'')+(name?'name="'+name+'" ':'')+'value="'+(p?v:'')+'"></label>';
+}
+document.addEventListener('change',e=>{
+  const picker=e.target.closest('[data-jalali-picker]'); if(!picker)return;
+  const y=picker.querySelector('[data-jp-year]'),m=picker.querySelector('[data-jp-month]'),d=picker.querySelector('[data-jp-day]');
+  const hidden=picker.parentElement.querySelector('input[type="hidden"]');
+  const max=y.value&&m.value?jalaliMonthDays(Number(y.value),Number(m.value)):31, old=Number(d.value);
+  d.innerHTML='<option value="">روز</option>'+Array.from({length:max},(_,i)=>'<option value="'+(i+1)+'">'+fa(i+1)+'</option>').join('');
+  if(old>0&&old<=max)d.value=String(old);
+  hidden.value=y.value&&m.value&&d.value?y.value+'/'+String(m.value).padStart(2,'0')+'/'+String(d.value).padStart(2,'0'):'';
+});
+
 
 function debounce(fn, ms = 300) {
   let t; return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
@@ -843,7 +862,7 @@ async function renderLogin() {
 
   const specific=$('#reg-specific'), type=$('#reg-type');
   const input=(label,name,attrs)=>'<label class="f">'+label+'<input name="'+name+'" '+(attrs||'')+'></label>';
-  const date=(label,name)=>'<label class="f">'+label+'<div class="grid g3" data-jalali-date="'+name+'"><select data-jyear required><option value="">سال</option>'+Array.from({length:116},(_,i)=>'<option value="'+(1300+i)+'" '+(1300+i===1405?'selected':'')+'>'+(1300+i)+'</option>').join('')+'</select><select data-jmonth required><option value="">ماه</option>'+['فروردین','اردیبهشت','خرداد','تیر','مرداد','شهریور','مهر','آبان','آذر','دی','بهمن','اسفند'].map((m,i)=>'<option value="'+(i+1)+'">'+m+'</option>').join('')+'</select><select data-jday required><option value="">روز</option>'+Array.from({length:31},(_,i)=>'<option value="'+(i+1)+'">'+(i+1)+'</option>').join('')+'</select></div><input type="hidden" name="'+name+'"></label>';
+  const date=(label,name)=>jalaliDatePicker(label,name);
   let buildings=[];
   const loadBuildings=async()=>{
     const info=await api('app_public_info'); buildings=Array.isArray(info?.buildings)?info.buildings:[];
@@ -867,15 +886,7 @@ async function renderLogin() {
       loadBuildings().catch(()=>{const sel=specific.querySelector('[name="building_id"]');if(sel)sel.innerHTML='<option value="">خطا در دریافت ساختمان‌ها</option>';});
     } else specific.innerHTML='';
   };
-  specific.addEventListener('change',e=>{
-    if(!e.target.matches('[data-jyear],[data-jmonth],[data-jday]'))return;
-    const wrap=e.target.closest('[data-jalali-date]');if(!wrap)return;
-    const y=wrap.querySelector('[data-jyear]'),m=wrap.querySelector('[data-jmonth]'),d=wrap.querySelector('[data-jday]'),hidden=wrap.parentElement.querySelector('input[type="hidden"]');
-    const max=Number(m.value)>=7?30:31;
-    const oldDay=Number(d.value);d.innerHTML='<option value="">روز</option>'+Array.from({length:max},(_,i)=>'<option value="'+(i+1)+'">'+(i+1)+'</option>').join('');
-    if(oldDay>0&&oldDay<=max)d.value=String(oldDay);
-    hidden.value=y.value&&m.value&&d.value?y.value+'/'+String(m.value).padStart(2,'0')+'/'+String(d.value).padStart(2,'0'):'';
-  });
+
   type.addEventListener('change',draw);
   $('#tab-login').addEventListener('click',()=>{$('#login-panel').classList.remove('hidden');$('#register-panel').classList.add('hidden');$('#tab-login').className='btn sf';$('#tab-register').className='btn lt';});
   $('#tab-register').addEventListener('click',()=>{$('#login-panel').classList.add('hidden');$('#register-panel').classList.remove('hidden');$('#tab-login').className='btn lt';$('#tab-register').className='btn sf';});
@@ -1962,7 +1973,7 @@ function replyModal(r) {
         <input id="pf-custom" inputmode="numeric" placeholder="مثلاً 5,000,000" style="font-weight:900;font-size:20px;text-align:center;">
       </label>
       <label class="f">کد پیگیری<input id="pf-r" dir="ltr"></label>
-      <label class="f">تاریخ واریز<input id="pf-d" dir="ltr" value="${TODAY.y}/${String(TODAY.m).padStart(2,'0')}/${String(TODAY.d).padStart(2,'0')}"></label>
+      ${jalaliDatePicker('تاریخ واریز','',TODAY.y+'/'+String(TODAY.m).padStart(2,'0')+'/'+String(TODAY.d).padStart(2,'0'),'pf-d')}
       <label class="f" style="grid-column:1/-1">بارگذاری تصویر فیش (اختیاری)<input id="pf-img" type="file" accept="image/*"></label>
       <label class="f" style="grid-column:1/-1">توضیحات<input id="pf-n"></label>
       <button class="btn sf" style="grid-column:1/-1" id="pf-submit">ثبت پرداخت</button>
@@ -2272,11 +2283,11 @@ function txModal(t, units) {
       </label>
       <label class="f">سال<select id="t-y">${yearOptions(t.year)}</select></label>
       <label class="f">ماه<select id="t-m">${monthOptions(t.month)}</select></label>
-      <label class="f">روز<input id="t-d" type="number" min="1" max="31" value="${t.day || 1}"></label>
+      <label class="f">روز<select id="t-d">${Array.from({length:jalaliMonthDays(Number(t.year)||TODAY.y,Number(t.month)||TODAY.m)},(_,i)=>'<option value="'+(i+1)+'" '+(i+1===(Number(t.day)||1)?'selected':'')+'>'+fa(i+1)+'</option>').join('')}</select></label>
       <section id="bill-period-fields" class="card" style="grid-column:1/-1;display:none;padding:12px">
         <div style="font-weight:900;margin-bottom:8px">دوره مصرف قبض (شمسی)</div>
-        <div class="grid g2"><label class="f">از تاریخ<input id="bill-period-start" dir="ltr" placeholder="۱۴۰۵/۰۷/۱۵" value="${t.bill_period_start ? gregorianToJalaliDate(t.bill_period_start) : ''}"></label>
-        <label class="f">تا تاریخ<input id="bill-period-end" dir="ltr" placeholder="۱۴۰۵/۰۸/۱۵" value="${t.bill_period_end ? gregorianToJalaliDate(t.bill_period_end) : ''}"></label></div>
+        <div class="grid g2">${jalaliDatePicker('از تاریخ','','${t.bill_period_start ? gregorianToJalaliDate(t.bill_period_start) : ''}','bill-period-start')}
+        ${jalaliDatePicker('تا تاریخ','','${t.bill_period_end ? gregorianToJalaliDate(t.bill_period_end) : ''}','bill-period-end')}</div>
         <p class="sub" style="margin:6px 0 0">سهم هر ساکن بر اساس روزهای حضور در این بازه محاسبه می‌شود.</p>
       </section>
       <div style="grid-column:1/-1;margin-top:8px">
@@ -2460,7 +2471,7 @@ function addAccountStandalone(units) {
       <label class="f">رمز اولیه<input name="password" type="password" inputmode="numeric" required pattern="[0-9]{4,8}" minlength="4" maxlength="8" autocomplete="new-password" autocorrect="off" autocapitalize="off" spellcheck="false"></label>
       <label class="f">متراژ واحد (مترمربع)<input name="area" type="number" min="1" step="0.01" required></label>
       <label class="f" id="manager-add-persons-wrap">تعداد نفرات<input name="persons" type="number" min="1" max="30"></label>
-      <label class="f">تاریخ شروع <input name="start_date_jalali" value="${defaultDate}" placeholder="۱۴۰۵/۰۱/۰۱" required pattern="[0-9۰-۹]{4}/[0-9۰-۹]{2}/[0-9۰-۹]{2}"><small class="sub" id="manager-add-date-label">تاریخ شروع پرداخت هزینه‌های ساختمان</small></label>
+      <div>${jalaliDatePicker('تاریخ شروع','start_date_jalali',defaultDate)}<small class="sub" id="manager-add-date-label">تاریخ شروع پرداخت هزینه‌های ساختمان</small></div>
       <div style="grid-column:1/-1;display:flex;gap:8px;justify-content:flex-end"><button type="button" class="btn lt" data-close-modal>انصراف</button><button class="btn sf" type="submit">ایجاد حساب</button></div>
       <p id="manager-add-account-error" class="sub" style="grid-column:1/-1;color:var(--danger)"></p>
     </form>`);
@@ -2494,7 +2505,7 @@ function gregorianToJalaliDate(value){const d=String(value||'').slice(0,10);if(!
 function jalaliMonthDays(y,m){const a=jalaliToGregorianDate(y+'/'+String(m).padStart(2,'0')+'/01'),ny=m===12?y+1:y,nm=m===12?1:m+1,b=jalaliToGregorianDate(ny+'/'+String(nm).padStart(2,'0')+'/01');return Math.round((Date.parse(b+'T00:00:00Z')-Date.parse(a+'T00:00:00Z'))/86400000);}
 async function settleAccountModal(acc){
  const td=jalaliToday();const today=td.y+'/'+String(td.m).padStart(2,'0')+'/'+String(td.d).padStart(2,'0');
- const m=modal('<h2>تسویه و آرشیو حساب</h2><p class="sub">'+esc(acc.full_name)+' · واحد '+fa(acc.unit_no)+' · '+esc(acc.occupancy)+'</p><div class="grid g2"><label class="f">تاریخ خروج (شمسی)<input id="exit-date" dir="ltr" value="'+today+'" required></label></div><p class="sub">شارژ، آب، گاز و پس‌انداز فقط در ماه خروج تا روز خروج محاسبه می‌شوند. پارکینگ و هزینه تعمیرات روزشمار نمی‌شوند.</p><div id="exit-preview"></div><div style="display:flex;gap:8px;margin-top:16px"><button class="btn sf" id="exit-calc" style="flex:1">محاسبه پیش‌نمایش</button><button class="btn lt" id="exit-close">انصراف</button></div>');
+ const m=modal('<h2>تسویه و آرشیو حساب</h2><p class="sub">'+esc(acc.full_name)+' · واحد '+fa(acc.unit_no)+' · '+esc(acc.occupancy)+'</p><div class="grid g2">'+jalaliDatePicker('تاریخ خروج (شمسی)','',''+today+'','exit-date')+'</div><p class="sub">شارژ، آب، گاز و پس‌انداز فقط در ماه خروج تا روز خروج محاسبه می‌شوند. پارکینگ و هزینه تعمیرات روزشمار نمی‌شوند.</p><div id="exit-preview"></div><div style="display:flex;gap:8px;margin-top:16px"><button class="btn sf" id="exit-calc" style="flex:1">محاسبه پیش‌نمایش</button><button class="btn lt" id="exit-close">انصراف</button></div>');
  const q=s=>$(s,m);let args=null;
   q('#exit-close').addEventListener('click',()=>closeModal(m));
  q('#exit-calc').addEventListener('click',async()=>{const b=q('#exit-calc');b.disabled=true;b.textContent='در حال محاسبه...';try{
@@ -2517,7 +2528,7 @@ function openingBalanceModal(acc) {
         <select name="balance_type" required><option value="debit">بدهکار (مبلغ به بدهی اضافه می‌شود)</option><option value="credit">بستانکار (از بدهی کسر می‌شود)</option></select>
       </label>
       <label class="f">مبلغ (تومان)<input name="amount" inputmode="numeric" required placeholder="مثلاً ۵۰۰۰۰۰"></label>
-      <label class="f" style="grid-column:1/-1">تاریخ مربوط به مانده (شمسی)<input name="date" dir="ltr" value="${today}" required placeholder="۱۴۰۵/۰۸/۰۱"></label>
+      <div style="grid-column:1/-1">${jalaliDatePicker('تاریخ مربوط به مانده (شمسی)','date',today)}</div>
       <label class="f" style="grid-column:1/-1">بابت / توضیحات<input name="note" maxlength="250" placeholder="مثلاً بدهی شارژ ماه‌های قبل"></label>
       <div style="grid-column:1/-1;display:flex;gap:8px;justify-content:flex-end"><button type="button" class="btn lt" data-opening-close>انصراف</button><button type="submit" class="btn sf">ثبت مانده</button></div>
       <p id="opening-balance-error" class="sub" style="grid-column:1/-1;color:var(--danger)"></p>
@@ -2548,7 +2559,7 @@ function openingBalanceModal(acc) {
 
 function unitModal(u) {
   const activeAccounts = u.accounts.filter(a => a.is_active !== false); const archivedAccounts = u.accounts.filter(a => a.is_active === false);
-  const m = modal(`<h2>واحد ${fa(u.unit_no)}</h2>${u.residency_issue ? `<div class="card" style="margin:12px 0 18px;background:var(--bg)"><label class="f">وضعیت سکونت واحد<select id="unit-residency-status"><option value="" disabled ${u.residency_status==='pending'?'selected':''}>انتخاب وضعیت...</option><option value="owner_occupied" ${u.residency_status==='owner_occupied'?'selected':''}>مالک ساکن</option><option value="tenant_occupied" ${u.residency_status==='tenant_occupied'?'selected':''}>مالک + مستأجر</option><option value="vacant_confirmed" ${u.residency_status==='vacant_confirmed'?'selected':''}>واحد خالی (مالک غیرساکن)</option></select></label><p class="sub" style="margin:8px 0">${esc(u.residency_issue || 'وضعیت فعلی این واحد تأیید شده است.')}</p><button type="button" class="btn sf" id="unit-residency-save">ثبت و تأیید وضعیت</button></div>` : ''}<div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap"><button class="btn sf" id="quick-change">🔄 تغییر وضعیت واحد</button></div><h3 style="margin:24px 0 12px;font-size:16px">حساب‌های فعال (${fa(activeAccounts.length)})</h3><div id="active-acc">${activeAccounts.map(a => `<form class="acc grid g3" data-id="${a.id}" data-name="${esc(a.full_name)}" data-occ="${esc(a.occupancy)}" style="background:var(--bg);padding:16px;border-radius:12px;margin-bottom:12px"><label class="f">نام<input name="full_name" value="${esc(a.full_name || '')}" required></label><label class="f">موبایل<input name="phone" dir="ltr" value="${esc(a.phone || '')}"></label><label class="f">تاریخ شروع محاسبات<input name="start_date_jalali" dir="ltr" value="${esc(a.start_date_jalali || '')}" placeholder="۱۴۰۵/۰۸/۱۵" required pattern="[0-9۰-۹]{4}/[0-9۰-۹]{2}/[0-9۰-۹]{2}"></label><label class="f">سکونت<select name="occupancy">${OCC.map(o => `<option ${a.occupancy === o ? 'selected' : ''}>${o}</option>`).join('')}</select></label><label class="f">نام کاربری<input name="username" dir="ltr" value="${esc(a.username || '')}"></label><label class="f">رمز جدید<input name="pass" type="password" placeholder="بدون تغییر" autocomplete="new-password" autocorrect="off" autocapitalize="off" spellcheck="false" inputmode="numeric"></label><div style="align-self:end;display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm" type="submit">ذخیره</button><button type="button" class="btn lt sm" data-reset="${a.id}">ریست رمز</button><button type="button" class="btn lt sm" data-opening="${a.id}">ثبت مانده اولیه</button><button type="button" class="btn rd sm" data-archive="${a.id}">آرشیو</button></div></form>`).join('') || '<p class="sub">حسابی برای این واحد ثبت نشده.</p>'}</div>${archivedAccounts.length ? `<details style="margin-top:20px"><summary style="cursor:pointer;color:var(--muted);font-size:13px;padding:8px 0">📦 سابقه (${fa(archivedAccounts.length)} حساب آرشیو شده — دائمی)</summary><div style="margin-top:12px;opacity:.7"><p style="font-size:11px;color:var(--muted);margin:0 0 8px;background:#fef3c7;padding:6px 10px;border-radius:6px">⚠️ این حساب‌ها غیرفعال دائمی هستند. تراکنش‌هایشان حفظ شده، ولی دسترسی ورود ندارند.</p>${archivedAccounts.map(a => `<div style="background:var(--bg);padding:12px;border-radius:8px;margin-bottom:8px;font-size:13px"><b>${esc(a.full_name || '—')}</b> · ${esc(a.occupancy)} · ${esc(a.phone || '—')}<div style="font-size:12px;color:var(--muted);margin-top:4px">شروع محاسبات: ${esc(a.start_date_jalali || 'ثبت نشده')} · تاریخ خروج: ${esc(a.exit_date_jalali || '—')}</div><div style="margin-top:8px"><span class="chip ex">آرشیو</span></div></div>`).join('')}</div></details>` : ''}`);
+  const m = modal(`<h2>واحد ${fa(u.unit_no)}</h2>${u.residency_issue ? `<div class="card" style="margin:12px 0 18px;background:var(--bg)"><label class="f">وضعیت سکونت واحد<select id="unit-residency-status"><option value="" disabled ${u.residency_status==='pending'?'selected':''}>انتخاب وضعیت...</option><option value="owner_occupied" ${u.residency_status==='owner_occupied'?'selected':''}>مالک ساکن</option><option value="tenant_occupied" ${u.residency_status==='tenant_occupied'?'selected':''}>مالک + مستأجر</option><option value="vacant_confirmed" ${u.residency_status==='vacant_confirmed'?'selected':''}>واحد خالی (مالک غیرساکن)</option></select></label><p class="sub" style="margin:8px 0">${esc(u.residency_issue || 'وضعیت فعلی این واحد تأیید شده است.')}</p><button type="button" class="btn sf" id="unit-residency-save">ثبت و تأیید وضعیت</button></div>` : ''}<div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap"><button class="btn sf" id="quick-change">🔄 تغییر وضعیت واحد</button></div><h3 style="margin:24px 0 12px;font-size:16px">حساب‌های فعال (${fa(activeAccounts.length)})</h3><div id="active-acc">${activeAccounts.map(a => `<form class="acc grid g3" data-id="${a.id}" data-name="${esc(a.full_name)}" data-occ="${esc(a.occupancy)}" style="background:var(--bg);padding:16px;border-radius:12px;margin-bottom:12px"><label class="f">نام<input name="full_name" value="${esc(a.full_name || '')}" required></label><label class="f">موبایل<input name="phone" dir="ltr" value="${esc(a.phone || '')}"></label>${jalaliDatePicker('تاریخ شروع محاسبات','start_date_jalali',esc(a.start_date_jalali || ''))}<label class="f">سکونت<select name="occupancy">${OCC.map(o => `<option ${a.occupancy === o ? 'selected' : ''}>${o}</option>`).join('')}</select></label><label class="f">نام کاربری<input name="username" dir="ltr" value="${esc(a.username || '')}"></label><label class="f">رمز جدید<input name="pass" type="password" placeholder="بدون تغییر" autocomplete="new-password" autocorrect="off" autocapitalize="off" spellcheck="false" inputmode="numeric"></label><div style="align-self:end;display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm" type="submit">ذخیره</button><button type="button" class="btn lt sm" data-reset="${a.id}">ریست رمز</button><button type="button" class="btn lt sm" data-opening="${a.id}">ثبت مانده اولیه</button><button type="button" class="btn rd sm" data-archive="${a.id}">آرشیو</button></div></form>`).join('') || '<p class="sub">حسابی برای این واحد ثبت نشده.</p>'}</div>${archivedAccounts.length ? `<details style="margin-top:20px"><summary style="cursor:pointer;color:var(--muted);font-size:13px;padding:8px 0">📦 سابقه (${fa(archivedAccounts.length)} حساب آرشیو شده — دائمی)</summary><div style="margin-top:12px;opacity:.7"><p style="font-size:11px;color:var(--muted);margin:0 0 8px;background:#fef3c7;padding:6px 10px;border-radius:6px">⚠️ این حساب‌ها غیرفعال دائمی هستند. تراکنش‌هایشان حفظ شده، ولی دسترسی ورود ندارند.</p>${archivedAccounts.map(a => `<div style="background:var(--bg);padding:12px;border-radius:8px;margin-bottom:8px;font-size:13px"><b>${esc(a.full_name || '—')}</b> · ${esc(a.occupancy)} · ${esc(a.phone || '—')}<div style="font-size:12px;color:var(--muted);margin-top:4px">شروع محاسبات: ${esc(a.start_date_jalali || 'ثبت نشده')} · تاریخ خروج: ${esc(a.exit_date_jalali || '—')}</div><div style="margin-top:8px"><span class="chip ex">آرشیو</span></div></div>`).join('')}</div></details>` : ''}`);
 
   $('#unit-residency-save',m)?.addEventListener('click',async()=>{const b=$('#unit-residency-save',m),status=$('#unit-residency-status',m)?.value;if(!status||status==='pending'){toast('یکی از سه وضعیت سکونت را انتخاب کنید',true);return;}b.disabled=true;b.textContent='در حال بررسی و ثبت...';try{await T('app_admin_set_unit_residency',{p_unit_no:u.unit_no,p_residency_status:status});toast('وضعیت سکونت واحد تأیید شد');closeModal(m);go('units');}catch(err){showErr(err);}finally{b.disabled=false;b.textContent='ثبت و تأیید وضعیت';}});
   $$('form.acc', m).forEach(f => {
@@ -2563,7 +2574,7 @@ function unitModal(u) {
 function addAccountForm(m, u) {
   const list = $('#active-acc', m); const form = document.createElement('form');
   form.className = 'acc grid g3'; form.style.cssText = 'background:var(--bg);padding:16px;border-radius:12px;margin-bottom:12px;border:2px dashed var(--accent)';
-  form.innerHTML = `<label class="f">نام<input name="full_name" required></label><label class="f">موبایل<input name="phone" dir="ltr" required></label><label class="f">سکونت<select name="occupancy">${OCC.map(o => `<option>${o}</option>`).join('')}</select></label><label class="f">تعداد نفرات<input name="persons" type="number" min="1" max="30" value="1" required></label><label class="f">تاریخ شروع سکونت<input name="start_date" dir="ltr" value="${(()=>{const d=jalaliToday();return d.y+'/'+String(d.m).padStart(2,'0')+'/'+String(d.d).padStart(2,'0')})()}" required></label><label class="f">نام کاربری<input name="username" dir="ltr" required></label><label class="f">رمز اولیه<input name="pass" type="password" required autocomplete="new-password" autocorrect="off" autocapitalize="off" spellcheck="false" inputmode="numeric"></label><div style="align-self:end;display:flex;gap:8px"><button class="btn sm" type="submit">ایجاد</button><button type="button" class="btn lt sm" data-cancel>انصراف</button></div>`;
+  form.innerHTML = `<label class="f">نام<input name="full_name" required></label><label class="f">موبایل<input name="phone" dir="ltr" required></label><label class="f">سکونت<select name="occupancy">${OCC.map(o => `<option>${o}</option>`).join('')}</select></label><label class="f">تعداد نفرات<input name="persons" type="number" min="1" max="30" value="1" required></label>${jalaliDatePicker('تاریخ شروع سکونت','start_date',(()=>{const d=jalaliToday();return d.y+'/'+String(d.m).padStart(2,'0')+'/'+String(d.d).padStart(2,'0')})())}<label class="f">نام کاربری<input name="username" dir="ltr" required></label><label class="f">رمز اولیه<input name="pass" type="password" required autocomplete="new-password" autocorrect="off" autocapitalize="off" spellcheck="false" inputmode="numeric"></label><div style="align-self:end;display:flex;gap:8px"><button class="btn sm" type="submit">ایجاد</button><button type="button" class="btn lt sm" data-cancel>انصراف</button></div>`;
   list.appendChild(form); form.querySelector('[data-cancel]').onclick = () => forcloseModal(m);
   form.addEventListener('submit', async e => { e.preventDefault(); try { const occ=form.elements.occupancy.value, jt=jalaliToday(), start=jt.y+'/'+String(jt.m).padStart(2,'0')+'/'+String(jt.d).padStart(2,'0'); const created=await T('app_admin_create_account',{p_unit_no:u.unit_no,p_occupancy:occ,p_username:form.elements.username.value.trim(),p_password:form.elements.pass.value,p_full_name:form.elements.full_name.value.trim(),p_phone:form.elements.phone.value.trim(),p_email:null,p_area:Number(u.area||1),p_persons:occ==='مالک'?0:Number(form.elements.persons.value),p_start_date_jalali:normalizeJalaliDigits(form.elements.start_date.value)}); if(!created?.ok)throw new Error(created?.error||'ساخت حساب انجام نشد'); toast('حساب ایجاد شد'); go('units'); } catch (err) { showErr(err); } });
 }
