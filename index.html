@@ -868,7 +868,7 @@ async function renderLogin() {
     const info=await api('app_public_info'); buildings=Array.isArray(info?.buildings)?info.buildings:[];
     const sel=specific.querySelector('[name="building_id"]');
     if(sel){
-      sel.innerHTML='<option value="">انتخاب ساختمان</option>'+buildings.map(b=>'<option value="'+Number(b.id)+'">'+esc(b.name)+' ('+fa(b.units_count)+' واحد)</option>').join('');
+      sel.innerHTML=buildings.length?'<option value="">انتخاب ساختمان</option>'+buildings.map(b=>'<option value="'+Number(b.id)+'">'+esc(b.name)+' ('+fa(b.units_count)+' واحد)</option>').join(''):'<option value="">در حال حاضر ساختمانِ دارای ظرفیت ثبت‌نام وجود ندارد</option>';
       sel.addEventListener('change',()=>{
         const u=specific.querySelector('[name="unit_no"]'),b=buildings.find(x=>Number(x.id)===Number(sel.value));
         if(u){const n=Math.min(40,Number(b?.units_count||0));u.innerHTML='<option value="">انتخاب واحد</option>'+Array.from({length:n},(_,i)=>'<option value="'+(i+1)+'">واحد '+fa(i+1)+'</option>').join('');}
@@ -2286,8 +2286,8 @@ function txModal(t, units) {
       <label class="f">روز<select id="t-d">${Array.from({length:jalaliMonthDays(Number(t.year)||TODAY.y,Number(t.month)||TODAY.m)},(_,i)=>'<option value="'+(i+1)+'" '+(i+1===(Number(t.day)||1)?'selected':'')+'>'+fa(i+1)+'</option>').join('')}</select></label>
       <section id="bill-period-fields" class="card" style="grid-column:1/-1;display:none;padding:12px">
         <div style="font-weight:900;margin-bottom:8px">دوره مصرف قبض (شمسی)</div>
-        <div class="grid g2">${jalaliDatePicker('از تاریخ','','${t.bill_period_start ? gregorianToJalaliDate(t.bill_period_start) : ''}','bill-period-start',false)}
-        ${jalaliDatePicker('تا تاریخ','','${t.bill_period_end ? gregorianToJalaliDate(t.bill_period_end) : ''}','bill-period-end',false)}</div>
+        <div class="grid g2">${jalaliDatePicker('از تاریخ','',t.bill_period_start ? gregorianToJalaliDate(t.bill_period_start) : '', 'bill-period-start',false)}
+        ${jalaliDatePicker('تا تاریخ','',t.bill_period_end ? gregorianToJalaliDate(t.bill_period_end) : '', 'bill-period-end',false)}</div>
         <p class="sub" style="margin:6px 0 0">سهم هر ساکن بر اساس روزهای حضور در این بازه محاسبه می‌شود.</p>
       </section>
       <div style="grid-column:1/-1;margin-top:8px">
