@@ -571,7 +571,7 @@ function jalaliToday() {
 }
 const TODAY = jalaliToday();
 function jalaliDatePicker(label, name, value='', id='', required=true) {
-  const v=normalizeJalaliDigits(value), p=/^(\\d{4})\\/(\\d{2})\\/(\\d{2})$/.exec(v);
+  const v=normalizeJalaliDigits(value), p=/^(\d{4})\/(\d{2})\/(\d{2})$/.exec(v);
   const y=p?+p[1]:0, mo=p?+p[2]:0, d=p?+p[3]:0, years=Array.from({length:201},(_,i)=>1300+i);
   const yearOpts='<option value="">سال</option>'+years.map(n=>'<option value="'+n+'" '+(n===y?'selected':'')+'>'+fa(n)+'</option>').join('');
   const monthOpts='<option value="">ماه</option>'+MONTHS.map((n,i)=>'<option value="'+(i+1)+'" '+(i+1===mo?'selected':'')+'>'+n+'</option>').join('');
@@ -2333,6 +2333,9 @@ function txModal(t, units) {
   unitSelect.addEventListener('change',()=>{updateFormUI();updateBillPeriodUI();});
   $$('input[name="expense-kind"]',m).forEach(x=>x.addEventListener('change',updateFormUI));
   updateFormUI();updateBillPeriodUI();
+  const refreshTransactionDay=()=>{const y=Number($('#t-y',m).value),mo=Number($('#t-m',m).value),day=$('#t-d',m),old=Number(day.value)||1,max=jalaliMonthDays(y,mo);day.innerHTML=Array.from({length:max},(_,i)=>'<option value="'+(i+1)+'">'+fa(i+1)+'</option>').join('');day.value=String(Math.min(old,max));};
+  $('#t-y',m).addEventListener('change',refreshTransactionDay);
+  $('#t-m',m).addEventListener('change',refreshTransactionDay);
 
   $('#tf',m).addEventListener('submit',async e=>{
     e.preventDefault();
