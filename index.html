@@ -1736,9 +1736,8 @@ async function viewAnnouncements(el) {
     });
     $$('[data-del]').forEach(b => b.addEventListener('click', async () => { if (!confirm('حذف شود؟')) return; try { await T('app_admin_delete_announcement', { p_id: +b.dataset.del }); toast('حذف شد'); go('announcements'); } catch (e) { showErr(e); } }));
   }
-}
-
   await renderPollsInAnnouncements(el);
+}
 
 async function viewNeighborAlerts(el) {
   const categoryLabels = {
