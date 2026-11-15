@@ -252,22 +252,22 @@ tr:hover td{background:var(--bg)}
 .quick .tile{box-shadow:none;border:0;background:transparent}
 .quick .tile:hover{background:var(--bg);box-shadow:none}
 
-/* ---------- Bottom nav: raised center / label-only tabs ---------- */
-.bnav{position:fixed;bottom:0;left:0;right:0;z-index:30;height:112px;padding-bottom:env(safe-area-inset-bottom,0px);pointer-events:none}
+/* ---------- Bottom nav: compact sculpted bar with raised center ---------- */
+.bnav{position:fixed;bottom:0;left:0;right:0;z-index:30;height:94px;padding-bottom:env(safe-area-inset-bottom,0px);pointer-events:none}
 .bnav-in{position:relative;width:100%;max-width:none;margin:0 auto;height:100%;pointer-events:auto}
-.bnav-bg{position:absolute;inset:auto 0 0 0;height:88px;background:var(--card);border:1px solid rgba(120,120,120,.12);border-bottom:0;border-radius:30px 30px 0 0;box-shadow:0 -8px 28px rgba(0,0,0,.10)}
-.bnav-bg:before{content:"";position:absolute;top:-1px;left:var(--notch-x,50%);transform:translateX(-50%);width:116px;height:54px;background:var(--bg);clip-path:polygon(0 0,100% 0,94% 18%,86% 38%,76% 60%,65% 80%,56% 94%,50% 100%,44% 94%,35% 80%,24% 60%,14% 38%,6% 18%)}
-.bnav-items{position:absolute;inset:auto 0 0 0;height:88px;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));align-items:center}
-.bnav-items button{min-width:0;height:100%;background:none;border:0;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;color:var(--ink);font-size:clamp(11px,3.2vw,14px);font-weight:750;white-space:nowrap;transition:opacity .3s,transform .3s var(--ease);padding:18px 2px 4px}
+.bnav-bg{position:absolute;inset:auto 0 0 0;height:72px;background:var(--card);border:1px solid rgba(120,120,120,.12);border-bottom:0;border-radius:24px 24px 0 0;box-shadow:0 -5px 18px rgba(0,0,0,.09)}
+.bnav-bg:before{content:"";position:absolute;top:-1px;left:var(--notch-x,50%);transform:translateX(-50%);width:104px;height:38px;background:var(--bg);border-radius:0 0 52% 52% / 0 0 100% 100%}
+.bnav-items{position:absolute;inset:auto 0 0 0;height:72px;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));align-items:center}
+.bnav-items button{min-width:0;height:100%;background:none;border:0;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;color:var(--ink);font-size:clamp(11px,3vw,13px);font-weight:750;white-space:nowrap;transition:opacity .3s,transform .3s var(--ease);padding:12px 2px 2px}
 .bnav-items button svg{display:none}
 .bnav-items button span{display:block;max-width:100%;overflow:hidden;text-overflow:ellipsis}
-.bnav-items button.on{opacity:0;transform:translateY(-8px);pointer-events:none}
-.bnav-diamond{position:absolute;top:-48px;width:88px;height:88px;margin-right:-44px;border-radius:24px;background:var(--card);border:1px solid rgba(120,120,120,.16);box-shadow:0 12px 28px rgba(0,0,0,.20);display:grid;place-items:center;transform:rotate(45deg);transition:right .5s var(--ease),top .35s var(--ease);animation:pop .55s var(--ease) both}
-.bnav-diamond > span{transform:rotate(-45deg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:var(--peach);font-size:10px;font-weight:850;white-space:nowrap}
-.bnav-diamond svg{width:28px;height:28px}
-.bnav-diamond small{font-size:9px;line-height:1.2;color:var(--ink);max-width:68px;overflow:hidden;text-overflow:ellipsis}
+.bnav-items button.on{opacity:0;transform:translateY(-6px);pointer-events:none}
+.bnav-diamond{position:absolute;top:-35px;width:68px;height:68px;margin-right:-34px;border-radius:19px;background:var(--card);border:1px solid rgba(120,120,120,.16);box-shadow:0 8px 19px rgba(0,0,0,.17);display:grid;place-items:center;transform:rotate(45deg);transition:right .5s var(--ease),top .35s var(--ease);animation:pop .55s var(--ease) both}
+.bnav-diamond > span{transform:rotate(-45deg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:var(--peach);font-size:9px;font-weight:850;white-space:nowrap}
+.bnav-diamond svg{width:23px;height:23px}
+.bnav-diamond small{font-size:8px;line-height:1.15;color:var(--ink);max-width:58px;overflow:hidden;text-overflow:ellipsis}
 .bnav-diamond.bump{animation:pop .5s var(--ease)}
-@media(max-width:380px){.bnav-items button{font-size:10.5px}.bnav-diamond{width:80px;height:80px;margin-right:-40px;top:-43px}}
+@media(max-width:380px){.bnav-items button{font-size:10px}.bnav-diamond{width:62px;height:62px;margin-right:-31px;top:-32px}}
 
 /* Dashboard: unit payment/debt and scroll-driven payment fragments */
 .animated-unit{min-width:0;overflow:hidden}
