@@ -255,7 +255,7 @@ tr:hover td{background:var(--bg)}
 /* ---------- Bottom nav ---------- */
 .bnav{position:fixed;bottom:0;left:0;right:0;z-index:30;height:84px;pointer-events:none}
 .bnav-in{position:relative;max-width:640px;margin:auto;height:100%;pointer-events:auto}
-.bnav-bg{position:absolute;inset:auto 0 0 0;height:74px;background:var(--card);border-top:1px solid var(--line);border-radius:26px 26px 0 0;box-shadow:0 -8px 30px rgba(0,0,0,.08);-webkit-mask:radial-gradient(ellipse 40px 35px at var(--notch-x,50%) 0,transparent 98%,#000 101%);mask:radial-gradient(ellipse 40px 35px at var(--notch-x,50%) 0,transparent 98%,#000 101%)}
+.bnav-bg{position:absolute;inset:auto 0 0 0;height:74px;background:var(--card);border-top:1px solid var(--line);border-radius:26px 26px 0 0;box-shadow:0 -8px 30px rgba(0,0,0,.08);clip-path:polygon(0 0,calc(var(--notch-x,50%) - 38px) 0,calc(var(--notch-x,50%) - 33.4px) 6.1px,calc(var(--notch-x,50%) - 27.4px) 12.9px,calc(var(--notch-x,50%) - 19.8px) 20.4px,calc(var(--notch-x,50%) - 11.4px) 27.2px,calc(var(--notch-x,50%) - 4.2px) 32px,var(--notch-x,50%) 34px,calc(var(--notch-x,50%) + 4.2px) 32px,calc(var(--notch-x,50%) + 11.4px) 27.2px,calc(var(--notch-x,50%) + 19.8px) 20.4px,calc(var(--notch-x,50%) + 27.4px) 12.9px,calc(var(--notch-x,50%) + 33.4px) 6.1px,calc(var(--notch-x,50%) + 38px) 0,100% 0,100% 100%,0 100%)}
 .bnav-bg:before{content:none}
 .bnav-items{position:absolute;inset:auto 0 0 0;height:74px;display:grid;grid-template-columns:repeat(5,1fr)}
 .bnav-items button{background:none;border:0;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:var(--ink);font-size:11.5px;font-weight:700;transition:opacity .3s,transform .3s var(--ease);padding-bottom:6px}
