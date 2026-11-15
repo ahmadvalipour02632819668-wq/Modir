@@ -1651,7 +1651,7 @@ async function renderPollsInAnnouncements(el) {
         } else {
           toast('نظرسنجی به‌صورت غیرفعال ایجاد شد');
         }
-        go('requests');
+        go('announcements');
       } catch (err) { showErr(err); }
     });
 
@@ -1662,7 +1662,7 @@ async function renderPollsInAnnouncements(el) {
           p_active: b.dataset.next === 'true'
         });
         toast('وضعیت نظرسنجی تغییر کرد');
-        go('requests');
+        go('announcements');
       } catch (err) { showErr(err); }
     }));
 
@@ -1673,7 +1673,7 @@ async function renderPollsInAnnouncements(el) {
       try {
         await T('app_admin_delete_poll', { p_poll_id: Number(b.dataset.pollDelete) });
         toast('نظرسنجی به‌طور کامل حذف شد');
-        go('requests');
+        go('announcements');
       } catch (err) {
         b.disabled = false;
         showErr(err);
@@ -1711,7 +1711,7 @@ async function renderPollsInAnnouncements(el) {
           : 'رأی شما ثبت شد؛ ارسال نتیجه به بله انجام نشد',
         !baleSent
       );
-      go('requests');
+      go('announcements');
     } catch (err) {
       if (submit) submit.disabled = false;
       showErr(err);
