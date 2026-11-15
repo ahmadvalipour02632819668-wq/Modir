@@ -58,6 +58,11 @@ window.supabase = window.supabase || {
 </script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js" onerror="this.onerror=null;this.src='https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js'"></script>
 <style>
+/* Emergency-style neighbor reminder button */
+.neighbor-emergency-btn{background:linear-gradient(135deg,#dc2626,#991b1b)!important;color:#fff!important;border:1px solid #7f1d1d!important;box-shadow:0 5px 16px rgba(220,38,38,.32),inset 0 1px 0 rgba(255,255,255,.18)!important;font-weight:900!important}
+.neighbor-emergency-btn:hover{background:linear-gradient(135deg,#b91c1c,#7f1d1d)!important;transform:translateY(-1px)}
+.neighbor-emergency-btn:active{transform:scale(.98);box-shadow:0 2px 8px rgba(220,38,38,.28)!important}
+.neighbor-emergency-btn:disabled{opacity:.65;filter:saturate(.65);transform:none}
 /* ---------- Theme Variables ---------- */
 :root {
   --navy: #2d3463; --navy-2: #3b4380; --navy-3: #232850; --peach: #f7ae74; --peach-2: #fbd2ae;
@@ -1617,7 +1622,7 @@ async function viewNeighborAlerts(el) {
           <option value="other">سایر موارد همسایگی</option>
         </select>
       </label>
-      <button class="btn sf" id="neighbor-alert-submit" type="submit" ${options ? '' : 'disabled'}>ارسال یادآوری محرمانه</button>
+      <button class="btn neighbor-emergency-btn" id="neighbor-alert-submit" type="submit" ${options ? '' : 'disabled'}>🚨 ارسال یادآوری محرمانه</button>
       <p class="sub" style="margin:0;line-height:1.9">نام ارسال‌کننده به گیرنده و در گزارش مدیر نمایش داده نمی‌شود. هر حساب حداکثر ۳ هشدار در ۲۴ ساعت و هر واحد حداکثر ۵ هشدار در ۲۴ ساعت دریافت می‌کند؛ ارسال دوباره همان موضوع از سوی یک حساب برای همان واحد تا ۶ ساعت محدود است.</p>
     </form>`;
   const history = `
@@ -1656,6 +1661,27 @@ async function viewNeighborAlerts(el) {
     const category = $('#neighbor-category')?.value;
     if (!Number.isInteger(target) || target < 1 || !category) return toast('واحد و موضوع هشدار را انتخاب کنید', true);
     if (!confirm('یادآوری محرمانه برای واحد ' + fa(target) + ' ارسال شود؟')) return;
+    // Short emergency-style feedback; vibration is supported on compatible mobile browsers.
+    try {
+      if (typeof navigator.vibrate === 'function') navigator.vibrate([900, 160, 550]);
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (AudioCtx) {
+        const audio = new AudioCtx();
+        const osc = audio.createOscillator();
+        const gain = audio.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(880, audio.currentTime);
+        osc.frequency.linearRampToValueAtTime(560, audio.currentTime + 0.48);
+        osc.frequency.linearRampToValueAtTime(880, audio.currentTime + 0.92);
+        gain.gain.setValueAtTime(0.0001, audio.currentTime);
+        gain.gain.linearRampToValueAtTime(0.10, audio.currentTime + 0.06);
+        gain.gain.setValueAtTime(0.10, audio.currentTime + 0.92);
+        gain.gain.linearRampToValueAtTime(0.0001, audio.currentTime + 1.18);
+        osc.connect(gain); gain.connect(audio.destination);
+        osc.start(); osc.stop(audio.currentTime + 1.2);
+        osc.onended = () => audio.close();
+      }
+    } catch (feedbackError) { console.warn('Neighbor alert feedback unavailable:', feedbackError); }
     button.disabled = true;
     button.textContent = 'در حال ارسال...';
     try {
