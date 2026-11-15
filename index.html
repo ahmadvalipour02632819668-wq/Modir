@@ -252,22 +252,23 @@ tr:hover td{background:var(--bg)}
 .quick .tile{box-shadow:none;border:0;background:transparent}
 .quick .tile:hover{background:var(--bg);box-shadow:none}
 
-/* ---------- Bottom navigation: curved dock with raised orange active button ---------- */
-.bnav{position:fixed;bottom:0;left:0;right:0;z-index:30;height:108px;padding-bottom:env(safe-area-inset-bottom,0px);pointer-events:none}
+/* ---------- Bottom nav: reference-inspired curved bar with icon labels ---------- */
+.bnav{position:fixed;bottom:0;left:0;right:0;z-index:30;height:96px;padding-bottom:env(safe-area-inset-bottom,0px);pointer-events:none}
 .bnav-in{position:relative;width:100%;max-width:none;margin:0 auto;height:100%;pointer-events:auto}
-.bnav-bg{position:absolute;inset:auto 0 0 0;height:78px;background:var(--card);border:1px solid rgba(120,120,120,.12);border-bottom:0;border-radius:25px 25px 0 0;box-shadow:0 -7px 24px rgba(0,0,0,.10);overflow:visible}
-.bnav-bg:before{content:"";position:absolute;top:-1px;left:var(--notch-x,50%);transform:translateX(-50%);width:104px;height:54px;background:var(--bg);border-radius:0 0 56px 56px;box-shadow:0 5px 10px rgba(0,0,0,.035)}
-.bnav-items{position:absolute;inset:auto 0 0 0;height:78px;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));align-items:center}
-.bnav-items button{min-width:0;height:100%;background:none;border:0;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:var(--ink);font-size:clamp(10px,2.9vw,12px);font-weight:750;white-space:nowrap;transition:opacity .25s,transform .25s var(--ease);padding:8px 2px 3px}
-.bnav-items button svg{display:block;width:22px;height:22px;flex:0 0 auto}
+.bnav-bg{position:absolute;inset:auto 0 0 0;height:76px;background:var(--card);border:1px solid rgba(120,120,120,.13);border-bottom:0;border-radius:26px 26px 0 0;box-shadow:0 -6px 20px rgba(0,0,0,.10)}
+.bnav-bg:before{content:"";position:absolute;top:-1px;left:var(--notch-x,50%);transform:translateX(-50%);width:108px;height:43px;background:var(--bg);border-radius:0 0 54px 54px;box-shadow:0 5px 8px rgba(0,0,0,.035)}
+.bnav-items{position:absolute;inset:auto 0 0 0;height:76px;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));align-items:center}
+.bnav-items button{min-width:0;height:100%;background:none;border:0;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:var(--ink);font-size:clamp(10px,2.9vw,12px);font-weight:750;white-space:nowrap;transition:opacity .3s,transform .3s var(--ease);padding:5px 2px 2px}
+.bnav-items button svg{display:block;width:23px;height:23px;flex:0 0 auto}
 .bnav-items button span{display:block;max-width:100%;overflow:hidden;text-overflow:ellipsis;line-height:1.35}
 .bnav-items button.on{opacity:0;transform:translateY(-5px);pointer-events:none}
-.bnav-diamond{position:absolute;top:-39px;width:72px;height:72px;margin-right:-36px;border-radius:50%;background:#f28a36;border:4px solid var(--card);box-shadow:0 7px 20px rgba(0,0,0,.22);display:grid;place-items:center;transform:none;transition:right .45s var(--ease),top .3s var(--ease);animation:pop .5s var(--ease) both}
-.bnav-diamond > span{transform:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:#fff;font-size:9px;font-weight:850;white-space:nowrap}
-.bnav-diamond svg{width:26px;height:26px;color:#fff;stroke:#fff}
-.bnav-diamond small{font-size:8px;line-height:1.15;color:#fff;max-width:60px;overflow:hidden;text-overflow:ellipsis}
-.bnav-diamond.bump{animation:pop .45s var(--ease)}
-@media(max-width:380px){.bnav{height:102px}.bnav-items button{font-size:9px;gap:3px}.bnav-items button svg{width:20px;height:20px}.bnav-diamond{width:66px;height:66px;margin-right:-33px;top:-35px}}
+.bnav-diamond{position:absolute;top:-36px;width:70px;height:70px;margin-right:-35px;border-radius:20px;background:var(--card);border:1px solid rgba(120,120,120,.17);box-shadow:0 9px 20px rgba(0,0,0,.18);display:grid;place-items:center;transform:rotate(45deg);transition:right .5s var(--ease),top .35s var(--ease);animation:pop .55s var(--ease) both}
+.bnav-diamond > span{transform:rotate(-45deg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:var(--peach);font-size:9px;font-weight:850;white-space:nowrap}
+.bnav-diamond svg{width:25px;height:25px}
+.bnav-diamond small{font-size:8px;line-height:1.15;color:var(--ink);max-width:60px;overflow:hidden;text-overflow:ellipsis}
+.bnav-diamond.bump{animation:pop .5s var(--ease)}
+@media(max-width:380px){.bnav-items button{font-size:9.5px;gap:2px}.bnav-items button svg{width:21px;height:21px}.bnav-diamond{width:64px;height:64px;margin-right:-32px;top:-33px}}
+
 /* Dashboard: unit payment/debt and scroll-driven payment fragments */
 .animated-unit{min-width:0;overflow:hidden}
 .unit-finance{display:flex;flex-direction:column;gap:7px;width:100%;margin-top:10px}
