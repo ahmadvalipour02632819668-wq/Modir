@@ -1641,7 +1641,7 @@ async function viewNeighborAlerts(el) {
   const managerReport = S.me?.is_admin ? `
     <section class="card" style="margin:14px 0">
       <h2 style="margin:0 0 6px">گزارش تجمیعی مدیر</h2>
-      <p class="sub" style="margin:0 0 10px">آمار ۳۰ روز گذشته؛ هویت ارسال‌کنندگان در این گزارش ذخیره نمایشی نمی‌شود.</p>
+      <p class="sub" style="margin:0 0 10px">آمار ۳۰ روز گذشته؛ هویت ارسال‌کنندگان در این گزارش نمایش داده نمی‌شود.</p>
       ${managerRows.length ? managerRows.map(r => `
         <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px 0;border-top:1px solid var(--line)">
           <div><b>واحد ${fa(r.target_unit_no)}</b><div class="sub" style="font-size:11px">${esc(categoryLabels[r.category] || 'سایر موارد')}</div></div>
@@ -1662,6 +1662,7 @@ async function viewNeighborAlerts(el) {
     const target = Number($('#neighbor-target-unit')?.value);
     const category = $('#neighbor-category')?.value;
     if (!Number.isInteger(target) || target < 1 || !category) return toast('واحد و موضوع هشدار را انتخاب کنید', true);
+    if (!confirm('یادآوری محرمانه برای واحد ' + fa(target) + ' ارسال شود؟')) return;
     button.disabled = true;
     button.textContent = 'در حال ارسال...';
     try {
