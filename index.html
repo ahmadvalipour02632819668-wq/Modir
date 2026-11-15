@@ -252,19 +252,19 @@ tr:hover td{background:var(--bg)}
 .quick .tile{box-shadow:none;border:0;background:transparent}
 .quick .tile:hover{background:var(--bg);box-shadow:none}
 
-/* ---------- Bottom nav ---------- */
-.bnav{position:fixed;bottom:0;left:0;right:0;z-index:30;height:84px;pointer-events:none}
+/* ---------- Bottom nav: sculpted raised center ---------- */
+.bnav{position:fixed;bottom:0;left:0;right:0;z-index:30;height:102px;pointer-events:none}
 .bnav-in{position:relative;max-width:640px;margin:auto;height:100%;pointer-events:auto}
 .bnav-bg{position:absolute;inset:auto 0 0 0;height:74px;background:var(--card);border-top:1px solid var(--line);border-radius:26px 26px 0 0;box-shadow:0 -8px 30px rgba(0,0,0,.08)}
-.bnav-bg:before{content:"";position:absolute;top:0;left:var(--notch-x,50%);transform:translateX(-50%);width:76px;height:34px;background:var(--bg);clip-path:polygon(0 0,100% 0,66% 72%,63% 82%,59% 90%,55% 96%,50% 100%,45% 96%,41% 90%,37% 82%,34% 72%)}
-.bnav-items{position:absolute;inset:auto 0 0 0;height:74px;display:grid;grid-template-columns:repeat(5,1fr)}
+.bnav-bg:before{content:"";position:absolute;top:-1px;left:var(--notch-x,50%);transform:translateX(-50%);width:148px;height:104px;border-radius:0 0 50% 50% / 0 0 100% 100%;background:linear-gradient(145deg,#bcbcbc 0%,#eeeeee 48%,#b5b5b5 100%);box-shadow:inset 0 -9px 15px rgba(70,70,70,.28),0 5px 12px rgba(0,0,0,.12)}
+.bnav-items{position:absolute;inset:auto 0 0 0;height:74px;display:grid;grid-template-columns:repeat(5,1fr);z-index:2}
 .bnav-items button{background:none;border:0;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:var(--ink);font-size:11.5px;font-weight:700;transition:opacity .3s,transform .3s var(--ease);padding-bottom:6px}
 .bnav-items button svg{width:28px;height:28px}
 .bnav-items button.on{opacity:0;transform:translateY(-8px)}
-.bnav-diamond{position:absolute;top:-46px;width:66px;height:66px;margin-right:-33px;border-radius:20px;background:var(--card);border:1px solid var(--line);box-shadow:0 10px 26px rgba(0,0,0,.15);display:grid;place-items:center;transform:rotate(45deg);transition:right .5s var(--ease),top .35s var(--ease);animation:pop .55s var(--ease) both}
-.bnav-diamond > span{transform:rotate(-45deg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:var(--peach);font-size:9px;font-weight:800;white-space:nowrap}
-.bnav-diamond svg{width:22px;height:22px}
-.bnav-diamond small{font-size:9px;line-height:1.2;color:var(--ink);max-width:64px;overflow:hidden;text-overflow:ellipsis}
+.bnav-diamond{position:absolute;z-index:3;top:-57px;width:78px;height:78px;margin-right:-39px;border-radius:22px;background:linear-gradient(145deg,#ffffff,#e9e9e9);border:1px solid rgba(255,255,255,.9);box-shadow:0 13px 25px rgba(0,0,0,.28),inset 0 1px 2px rgba(255,255,255,.95);display:grid;place-items:center;transform:rotate(45deg);transition:right .5s var(--ease),top .35s var(--ease);animation:pop .55s var(--ease) both}
+.bnav-diamond > span{transform:rotate(-45deg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:#e85b16;font-size:9px;font-weight:800;white-space:nowrap}
+.bnav-diamond svg{width:30px;height:30px}
+.bnav-diamond small{display:none}
 .bnav-diamond.bump{animation:pop .5s var(--ease)}
 
 /* Dashboard: unit payment/debt and scroll-driven payment fragments */
