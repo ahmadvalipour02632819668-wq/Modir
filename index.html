@@ -58,6 +58,12 @@ window.supabase = window.supabase || {
 </script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js" onerror="this.onerror=null;this.src='https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js'"></script>
 <style>
+/* Interlocking animated settings gears */
+.settings-gear-icon .gear-main{transform-box:fill-box;transform-origin:18px 18px;animation:settingsGearClockwise 9s linear infinite}
+.settings-gear-icon .gear-small{transform-box:fill-box;transform-origin:33px 32px;animation:settingsGearCounter 7s linear infinite}
+@keyframes settingsGearClockwise{to{transform:rotate(360deg)}}
+@keyframes settingsGearCounter{to{transform:rotate(-360deg)}}
+@media(prefers-reduced-motion:reduce){.settings-gear-icon .gear-main,.settings-gear-icon .gear-small{animation:none}}
 /* Emergency-style neighbor reminder button */
 .neighbor-emergency-btn{background:linear-gradient(135deg,#dc2626,#991b1b)!important;color:#fff!important;border:1px solid #7f1d1d!important;box-shadow:0 5px 16px rgba(220,38,38,.32),inset 0 1px 0 rgba(255,255,255,.18)!important;font-weight:900!important}
 .neighbor-emergency-btn:hover{background:linear-gradient(135deg,#b91c1c,#7f1d1d)!important;transform:translateY(-1px)}
@@ -868,7 +874,7 @@ const LINE_ICONS = {
   report:`<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"><path d="M12 7h24v34l-4-3-4 3-4-3-4 3-4-3-4 3z"/><path d="M18 16h12M18 23h12" stroke-linecap="round"/></svg>`,
   services: null,
 };
-LINE_ICONS.services = ICONS.services;
+LINE_ICONS.services = ICONS.services;\nLINE_ICONS.settings = ICONS.settings;
 const ico = k => ICONS[k] || ICONS.services;
 
 document.addEventListener('pointerdown', e => {
