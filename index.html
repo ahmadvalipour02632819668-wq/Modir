@@ -1689,7 +1689,7 @@ async function viewNeighborAlerts(el) {
       button.textContent = 'ارسال یادآوری محرمانه';
     }
   });
-  $('[data-neighbor-ack]').forEach(button => button.addEventListener('click', async () => {
+  $$('[data-neighbor-ack]').forEach(button => button.addEventListener('click', async () => {
     button.disabled = true;
     try {
       await T('app_neighbor_alert_ack', { p_alert_id: Number(button.dataset.neighborAck) });
