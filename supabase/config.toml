@@ -1,0 +1,2 @@
+[functions.send-neighbor-alert]
+verify_jwt = false

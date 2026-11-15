@@ -845,6 +845,7 @@ const ICONS = {
   units:`<svg viewBox="0 0 48 48"><rect x="8" y="8" width="20" height="34" rx="3" fill="${N}"/><rect x="24" y="18" width="16" height="24" rx="3" fill="${P}"/><g fill="#fff"><rect x="12" y="13" width="4" height="4" rx="1"/><rect x="19" y="13" width="4" height="4" rx="1"/><rect x="12" y="21" width="4" height="4" rx="1"/><rect x="19" y="21" width="4" height="4" rx="1"/><rect x="12" y="29" width="4" height="4" rx="1"/></g></svg>`,
   announcements:`<svg viewBox="0 0 48 48"><rect x="8" y="14" width="30" height="22" rx="5" fill="${N}"/><path d="M10 17l13 9 13-9" stroke="#fff" stroke-width="2.4" fill="none" stroke-linecap="round"/><circle cx="38" cy="13" r="5" fill="${P}"/></svg>`,
   requests:`<svg viewBox="0 0 48 48"><path d="M8 12a4 4 0 0 1 4-4h24a4 4 0 0 1 4 4v16a4 4 0 0 1-4 4H20l-8 7v-7a4 4 0 0 1-4-4z" fill="${N}"/><g fill="${P}"><circle cx="17" cy="20" r="2.6"/><circle cx="24" cy="20" r="2.6"/><circle cx="31" cy="20" r="2.6"/></g></svg>`,
+  'neighbor-alerts':`<svg viewBox="0 0 48 48"><path d="M24 5 42 38H6L24 5Z" fill="${P}"/><path d="M24 17v10" stroke="${N}" stroke-width="3.5" stroke-linecap="round"/><circle cx="24" cy="33" r="2" fill="${N}"/></svg>`,
   tx:`<svg viewBox="0 0 48 48"><rect x="6" y="12" width="30" height="20" rx="4" fill="${P}"/><rect x="12" y="18" width="30" height="20" rx="4" fill="${N}"/><path d="M18 26h10M18 31h6" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/></svg>`,
   pay:`<svg viewBox="0 0 48 48"><rect x="7" y="12" width="30" height="22" rx="4" fill="${N}"/><path d="M12 19h10M12 24h6" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/><circle cx="35" cy="33" r="8" fill="${P}"/><path d="M31.5 33l2.5 2.5 4.5-5" stroke="#fff" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
   report:`<svg viewBox="0 0 48 48"><path d="M12 6h24v36l-4-3-4 3-4-3-4 3-4-3-4 3z" fill="${N}"/><g stroke="${P}" stroke-width="2.6" stroke-linecap="round"><path d="M18 15h12M18 21h12M18 27h12"/></g></svg>`,
@@ -1050,7 +1051,7 @@ function getMenuItems() {
   const a = S.me?.is_admin;
   return [
     ['dash', 'داشبورد'], a && ['units', 'مدیریت واحدها'], ['announcements', 'اعلانات'],
-    ['requests', a ? 'درخواست‌ها' : 'ارتباط با مدیر'], ['tx', 'تراکنش‌ها'],
+    ['neighbor-alerts', 'زنگ همسایگی'], ['requests', a ? 'درخواست‌ها' : 'ارتباط با مدیر'], ['tx', 'تراکنش‌ها'],
     a && ['pay', 'تایید پرداخت‌ها'], ['report', 'گزارش ماهانه'],
     a && ['rates', 'نرخ‌ها و تنظیمات'], a && ['activity', 'گزارش فعالیت‌ها'], ['profile', 'پروفایل'],
   ].filter(Boolean);
@@ -1069,7 +1070,7 @@ async function viewServices(el) {
   const a = S.me?.is_admin;
   const groups = [
     ['امور مالی', ['tx', 'pay', 'report']],
-    ['ساختمان و ساکنین', ['units', 'announcements', 'requests']],
+    ['ساختمان و ساکنین', ['units', 'announcements', 'neighbor-alerts', 'requests']],
     [a ? 'مدیریت سامانه' : 'حساب کاربری', ['rates', 'activity', 'profile']],
   ];
   el.innerHTML = groups.map(([t, keys]) => {
@@ -1194,7 +1195,7 @@ async function renderShell() {
 
 function go(v, isBackNavigation = false) {
   const views = {
-    dash: viewDash, announcements: viewAnnouncements, requests: viewRequests, tx: viewTx, pay: viewPay,
+    dash: viewDash, announcements: viewAnnouncements, 'neighbor-alerts': viewNeighborAlerts, requests: viewRequests, tx: viewTx, pay: viewPay,
     report: viewReport, units: viewUnits, rates: viewRates, activity: viewActivity, profile: viewProfile, services: viewServices,
   };
   if (!views[v]) v = 'dash';
@@ -1585,6 +1586,117 @@ async function viewAnnouncements(el) {
     });
     $$('[data-del]').forEach(b => b.addEventListener('click', async () => { if (!confirm('حذف شود؟')) return; try { await T('app_admin_delete_announcement', { p_id: +b.dataset.del }); toast('حذف شد'); go('announcements'); } catch (e) { showErr(e); } }));
   }
+}
+
+
+async function viewNeighborAlerts(el) {
+  const categoryLabels = {
+    noise: 'سروصدای غیرمتعارف',
+    quiet_hours: 'رعایت ساعات استراحت',
+    common_areas: 'رعایت فضای مشاع',
+    other: 'سایر موارد همسایگی'
+  };
+  const [units, received, summary] = await Promise.all([
+    T('app_neighbor_alert_units'),
+    T('app_neighbor_alert_list'),
+    S.me?.is_admin ? T('app_manager_neighbor_alert_summary') : Promise.resolve([])
+  ]);
+  const unitList = Array.isArray(units) ? units : [];
+  const incoming = Array.isArray(received) ? received : [];
+  const managerRows = Array.isArray(summary) ? summary : [];
+  const options = unitList.map(n => `<option value="${Number(n)}">واحد ${fa(n)}</option>`).join('');
+  const form = `
+    <form id="neighbor-alert-form" class="card grid" style="gap:12px;margin:14px 0;border-color:var(--accent)">
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="font-size:30px">🔔</span>
+        <div><h2 style="margin:0">ارسال زنگ همسایگی</h2><p class="sub" style="margin:3px 0 0">یک یادآوری محترمانه و محرمانه برای یک واحد</p></div>
+      </div>
+      <label class="f">واحد مقصد
+        <select id="neighbor-target-unit" required ${options ? '' : 'disabled'}>
+          <option value="">انتخاب واحد</option>${options}
+        </select>
+      </label>
+      <label class="f">موضوع
+        <select id="neighbor-category" required>
+          <option value="noise">سروصدای غیرمتعارف</option>
+          <option value="quiet_hours">رعایت ساعات استراحت</option>
+          <option value="common_areas">رعایت فضای مشاع</option>
+          <option value="other">سایر موارد همسایگی</option>
+        </select>
+      </label>
+      <button class="btn sf" id="neighbor-alert-submit" type="submit" ${options ? '' : 'disabled'}>ارسال یادآوری محرمانه</button>
+      <p class="sub" style="margin:0;line-height:1.9">نام ارسال‌کننده به گیرنده و در گزارش مدیر نمایش داده نمی‌شود. هر حساب حداکثر ۳ هشدار در ۲۴ ساعت و هر واحد حداکثر ۵ هشدار در ۲۴ ساعت دریافت می‌کند؛ ارسال دوباره همان موضوع از سوی یک حساب برای همان واحد تا ۶ ساعت محدود است.</p>
+    </form>`;
+  const history = `
+    <section class="card" style="margin:14px 0">
+      <h2 style="margin:0 0 10px">یادآوری‌های دریافت‌شده برای واحد شما</h2>
+      ${S.me?.unit_no ? (incoming.length ? incoming.map(a => `
+        <div style="padding:12px 0;border-top:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+          <div><b>${esc(categoryLabels[a.category] || 'یادآوری همسایگی')}</b>
+            <div class="sub" style="font-size:11px;margin-top:4px">${new Date(a.created_at).toLocaleString('fa-IR')}</div>
+          </div>
+          ${a.status === 'acknowledged' ? '<span class="chip ok">دریافت و بررسی شد</span>' : `<button class="btn lt sm" data-neighbor-ack="${Number(a.id)}">دریافت و بررسی شد</button>`}
+        </div>`).join('') : '<p class="sub">در ۳۰ روز گذشته یادآوری جدیدی برای واحد شما ثبت نشده است.</p>') : '<p class="sub">این حساب به واحد مسکونی متصل نیست؛ بخش دریافت هشدار برای حساب‌های دارای واحد نمایش داده می‌شود.</p>'}
+    </section>`;
+  const managerReport = S.me?.is_admin ? `
+    <section class="card" style="margin:14px 0">
+      <h2 style="margin:0 0 6px">گزارش تجمیعی مدیر</h2>
+      <p class="sub" style="margin:0 0 10px">آمار ۳۰ روز گذشته؛ هویت ارسال‌کنندگان در این گزارش نمایش داده نمی‌شود.</p>
+      ${managerRows.length ? managerRows.map(r => `
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px 0;border-top:1px solid var(--line)">
+          <div><b>واحد ${fa(r.target_unit_no)}</b><div class="sub" style="font-size:11px">${esc(categoryLabels[r.category] || 'سایر موارد')}</div></div>
+          <div style="text-align:left;white-space:nowrap"><b>${fa(r.total)} هشدار</b><div class="sub" style="font-size:11px">${fa(r.pending)} بررسی‌نشده</div></div>
+        </div>`).join('') : '<p class="sub">هنوز گزارشی ثبت نشده است.</p>'}
+    </section>` : '';
+  el.innerHTML = `
+    <h1>زنگ همسایگی</h1>
+    <p class="sub">راهی آرام و محترمانه برای یادآوری نکات مربوط به آسایش ساختمان، بدون واسطه‌کردن مدیر</p>
+    ${form}${history}${managerReport}
+    <div class="card" style="background:var(--bg);line-height:1.9">
+      <b>قواعد استفاده</b>
+      <p class="sub" style="margin:5px 0 0">این ابزار برای تذکر محترمانه است، نه تهدید یا تسویه‌حساب شخصی. متن آزاد یا نام افراد ارسال نمی‌شود و هشدارها به‌تنهایی اثبات‌کننده تخلف نیستند.</p>
+    </div>`;
+  $('#neighbor-alert-form')?.addEventListener('submit', async e => {
+    e.preventDefault();
+    const button = $('#neighbor-alert-submit');
+    const target = Number($('#neighbor-target-unit')?.value);
+    const category = $('#neighbor-category')?.value;
+    if (!Number.isInteger(target) || target < 1 || !category) return toast('واحد و موضوع هشدار را انتخاب کنید', true);
+    if (!confirm('یادآوری محرمانه برای واحد ' + fa(target) + ' ارسال شود؟')) return;
+    button.disabled = true;
+    button.textContent = 'در حال ارسال...';
+    try {
+      const { data, error } = await sb.functions.invoke('send-neighbor-alert', {
+        body: { token: S.token, target_unit_no: target, category, url: new URL('./', document.baseURI).pathname }
+      });
+      if (error) {
+        let message = error.message || 'ارسال هشدار انجام نشد';
+        try {
+          const response = error.context;
+          if (response && typeof response.clone === 'function') {
+            const payload = await response.clone().json();
+            if (payload?.error) message = payload.error;
+          }
+        } catch (_) {}
+        throw new Error(message);
+      }
+      if (!data?.success) throw new Error(data?.error || 'ارسال هشدار انجام نشد');
+      toast(data.sent > 0 ? 'یادآوری محرمانه ارسال شد' : 'هشدار ثبت شد؛ هنوز اعلان فعالی برای این واحد در دسترس نیست');
+      go('neighbor-alerts');
+    } catch (error) {
+      showErr(error);
+      button.disabled = false;
+      button.textContent = 'ارسال یادآوری محرمانه';
+    }
+  });
+  $$('[data-neighbor-ack]').forEach(button => button.addEventListener('click', async () => {
+    button.disabled = true;
+    try {
+      await T('app_neighbor_alert_ack', { p_alert_id: Number(button.dataset.neighborAck) });
+      toast('وضعیت یادآوری ثبت شد');
+      go('neighbor-alerts');
+    } catch (error) { showErr(error); button.disabled = false; }
+  }));
 }
 
 async function viewRequests(el) {
