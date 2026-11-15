@@ -2819,10 +2819,10 @@ async function viewSettings(el) {
   } else {
     el.innerHTML = '<h1>تنظیمات</h1>' + accountLinks + themePanel;
   }
-  $('[data-settings-go]', el).forEach(b => b.addEventListener('click', () => go(b.dataset.settingsGo)));
-  $('[data-settings-theme]', el).forEach(b => b.addEventListener('click', () => {
+  $$('[data-settings-go]', el).forEach(b => b.addEventListener('click', () => go(b.dataset.settingsGo)));
+  $$('[data-settings-theme]', el).forEach(b => b.addEventListener('click', () => {
     setTheme(b.dataset.settingsTheme);
-    $('[data-settings-theme]', el).forEach(x => x.classList.toggle('active', x === b));
+    $$('[data-settings-theme]', el).forEach(x => x.classList.toggle('active', x === b));
   }));
 }
 
