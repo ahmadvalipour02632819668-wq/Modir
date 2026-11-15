@@ -121,6 +121,7 @@ a{color:var(--navy);text-decoration:none;font-weight:700}
 
 /* ---------- App bar (navy) ---------- */
 header.top{background:var(--navy);position:sticky;top:0;z-index:70;color:#fff}
+.alert-center-backdrop{position:fixed;inset:0;background:rgba(10,15,30,.28);z-index:9998}.alert-center-panel{position:fixed;z-index:9999;top:68px;right:12px;width:min(390px,calc(100vw - 24px));max-height:min(70vh,560px);overflow:hidden;background:var(--card);color:var(--text);border:1px solid var(--line);border-radius:18px;box-shadow:0 16px 50px rgba(0,0,0,.22)}.alert-center-head{display:flex;align-items:center;justify-content:space-between;padding:13px 16px;border-bottom:1px solid var(--line)}.alert-center-head .ic-btn{font-size:24px;line-height:1}.alert-center-list{max-height:calc(min(70vh,560px) - 54px);overflow:auto}.alert-center-item{width:100%;display:flex;align-items:flex-start;gap:11px;text-align:right;padding:13px 16px;border:0;border-bottom:1px solid var(--line);background:transparent;color:inherit;cursor:pointer}.alert-center-item:active{background:var(--bg)}.alert-center-item small{display:block;color:var(--muted);margin-top:4px;font-size:12px}.alert-center-dot{width:9px;height:9px;flex:0 0 9px;border-radius:50%;background:#ef4444;margin-top:6px}
 .top-in{max-width:1100px;margin:auto;display:flex;align-items:center;justify-content:space-between;padding:16px 20px 30px;gap:12px}
 .appbar-title{font-weight:900;font-size:17px;letter-spacing:-.2px;text-align:center;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .appbar-title small{display:block;font-weight:500;font-size:11.5px;color:#b9bde0;line-height:1.3}
@@ -1114,36 +1115,92 @@ async function viewServices(el) {
   $$('.tile', el).forEach(b => b.addEventListener('click', () => go(b.dataset.v)));
 }
 
-async function refreshManagerAlertBadge(markAsRead = false) {
-  if (!S.me?.is_admin) return;
-  const badge = $('#manager-alert-count');
-  if (!badge) return;
+function alertSeenKey() {
+  return 'bm_alerts_seen:' + String(S.me?.id || S.me?.account_id || S.me?.username || S.me?.building_id || 'account');
+}
+function getSeenAlertIds() {
   try {
-    const [registrations, payments, requests] = await Promise.all([
-      T('app_admin_list_membership_registrations'),
-      T('app_get_payment_requests'),
-      T('app_get_requests')
-    ]);
-    const items = [
-      ...(Array.isArray(registrations) ? registrations.map(x => 'registration:' + x.id) : []),
-      ...(Array.isArray(payments) ? payments.filter(x => x.status === 'pending').map(x => 'payment:' + x.id) : []),
-      ...(Array.isArray(requests) ? requests.filter(x => !['done','rejected','closed'].includes(String(x.status || '').toLowerCase())).map(x => 'request:' + x.id) : [])
-    ];
-    const seenKey = 'bm_manager_alerts_seen:' + String(S.me.id || S.me.account_id || S.me.username || S.me.building_id);
-    let seen = [];
-    try { seen = JSON.parse(localStorage.getItem(seenKey) || '[]'); } catch (_) { seen = []; }
-    if (!Array.isArray(seen)) seen = [];
-    if (markAsRead) {
-      seen = [...new Set([...seen, ...items])].slice(-2000);
-      localStorage.setItem(seenKey, JSON.stringify(seen));
-    }
-    const seenSet = new Set(seen);
-    const unread = markAsRead ? 0 : items.filter(id => !seenSet.has(id)).length;
+    const value = JSON.parse(localStorage.getItem(alertSeenKey()) || '[]');
+    return new Set(Array.isArray(value) ? value : []);
+  } catch (_) { return new Set(); }
+}
+function saveSeenAlertIds(seen) {
+  localStorage.setItem(alertSeenKey(), JSON.stringify([...seen].slice(-3000)));
+}
+function markAlertSeen(id) {
+  const seen = getSeenAlertIds();
+  seen.add(String(id));
+  saveSeenAlertIds(seen);
+}
+function markAlertPrefixSeen(prefix) {
+  const seen = getSeenAlertIds();
+  (window.__modirCurrentAlerts || []).filter(item => item.id.startsWith(prefix)).forEach(item => seen.add(item.id));
+  saveSeenAlertIds(seen);
+}
+async function collectAlertItems() {
+  const jobs = [
+    T('app_get_announcements').catch(() => []),
+    T('app_neighbor_alert_list').catch(() => [])
+  ];
+  if (S.me?.is_admin) jobs.push(
+    T('app_admin_list_membership_registrations').catch(() => []),
+    T('app_get_payment_requests').catch(() => []),
+    T('app_get_requests').catch(() => []),
+    T('app_manager_neighbor_alert_summary').catch(() => [])
+  );
+  const data = await Promise.all(jobs);
+  const announcements = Array.isArray(data[0]) ? data[0] : [];
+  const neighborAlerts = Array.isArray(data[1]) ? data[1] : [];
+  const items = [
+    ...announcements.map(x => ({ id:'announcement:'+x.id, type:'announcement', title:'اعلان جدید', detail:x.title || 'اعلان ساختمان', date:x.created_at, view:'announcements' })),
+    ...neighborAlerts.filter(x => String(x.status || '').toLowerCase() !== 'acknowledged').map(x => ({ id:'neighbor:'+x.id, type:'neighbor', title:'هشدار همسایگی جدید', detail:'یادآوری جدید برای واحد شما', date:x.created_at, view:'neighbor-alerts' }))
+  ];
+  if (S.me?.is_admin) {
+    const registrations = Array.isArray(data[2]) ? data[2] : [];
+    const payments = Array.isArray(data[3]) ? data[3] : [];
+    const requests = Array.isArray(data[4]) ? data[4] : [];
+    const summary = Array.isArray(data[5]) ? data[5] : [];
+    items.push(
+      ...registrations.map(x => ({ id:'registration:'+x.id, type:'registration', title:'درخواست عضویت جدید', detail:(x.full_name || 'عضو جدید') + (x.unit_no ? ' · واحد '+x.unit_no : ''), date:x.created_at, view:'requests' })),
+      ...payments.filter(x => String(x.status || '').toLowerCase() === 'pending').map(x => ({ id:'payment:'+x.id, type:'payment', title:'پرداخت جدید برای تأیید', detail:x.full_name || x.description || 'درخواست تأیید پرداخت', date:x.created_at, view:'pay' })),
+      ...requests.filter(x => !['done','rejected','closed'].includes(String(x.status || '').toLowerCase())).map(x => ({ id:'request:'+x.id, type:'request', title:'درخواست جدید', detail:x.subject || x.title || x.description || 'درخواست ساکن', date:x.created_at, view:'requests' })),
+      ...summary.filter(x => Number(x.pending) > 0).map(x => ({ id:'neighbor-summary:'+x.target_unit_no+':'+x.category+':'+x.pending, type:'neighbor', title:'هشدار همسایگی بررسی‌نشده', detail:'واحد '+x.target_unit_no+' · '+x.pending+' مورد', date:null, view:'neighbor-alerts' }))
+    );
+  }
+  return items.filter(x => x.id && x.id.split(':').length > 1);
+}
+function renderAlertCenter(items) {
+  const seen = getSeenAlertIds();
+  const unread = items.filter(x => !seen.has(x.id));
+  window.__modirCurrentAlerts = items;
+  const panel = $('#alert-center');
+  if (!panel) return;
+  panel.innerHTML = `<div class="alert-center-backdrop" data-alert-close></div><section class="alert-center-panel" role="dialog" aria-label="موارد جدید">
+    <div class="alert-center-head"><b>موارد جدید</b><button type="button" class="ic-btn" data-alert-close aria-label="بستن">×</button></div>
+    <div class="alert-center-list">${unread.length ? unread.map(x => `<button type="button" class="alert-center-item" data-alert-id="${esc(x.id)}" data-alert-view="${esc(x.view)}"><span class="alert-center-dot"></span><span><b>${esc(x.title)}</b><small>${esc(x.detail || '')}</small></span></button>`).join('') : '<p class="sub" style="padding:20px;text-align:center">مورد جدیدی برای نمایش وجود ندارد.</p>'}</div>
+  </section>`;
+  panel.style.display = 'block';
+  panel.querySelectorAll('[data-alert-close]').forEach(b => b.addEventListener('click', () => { panel.style.display='none'; }));
+  panel.querySelectorAll('[data-alert-id]').forEach(b => b.addEventListener('click', async () => {
+    markAlertSeen(b.dataset.alertId);
+    panel.style.display = 'none';
+    await refreshManagerAlertBadge();
+    go(b.dataset.alertView || 'dash');
+  }));
+}
+async function refreshManagerAlertBadge() {
+  const badge = $('#manager-alert-count');
+  if (!badge || !S.me) return;
+  try {
+    const items = await collectAlertItems();
+    window.__modirCurrentAlerts = items;
+    const seen = getSeenAlertIds();
+    const unread = items.filter(x => !seen.has(x.id)).length;
     badge.textContent = unread > 99 ? '99+' : String(unread);
     badge.style.display = unread ? 'block' : 'none';
-    badge.title = markAsRead ? 'همه اعلان‌های فعلی خوانده شدند' : `${unread} مورد خوانده‌نشده`;
+    badge.title = unread + ' مورد جدید';
   } catch (error) {
-    console.warn('Manager alert count could not be refreshed:', error);
+    console.warn('Alert count could not be refreshed:', error);
   }
 }
 
@@ -1172,6 +1229,7 @@ async function renderShell() {
         <div class="appbar-title" id="appbar-title"></div>
         <button class="ic-btn" id="go-req" aria-label="${S.me.is_admin ? 'اعلان‌های مدیر' : 'پیام‌ها'}" title="${S.me.is_admin ? 'موارد نیازمند رسیدگی' : 'پیام‌ها'}" style="position:relative">${S.me.is_admin ? '<svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg>' : '<svg width="26" height="26" viewBox="0 0 48 48" fill="none" stroke="#fff" stroke-width="3" stroke-linejoin="round"><path d="M8 12a4 4 0 0 1 4-4h24a4 4 0 0 1 4 4v16a4 4 0 0 1-4 4H20l-8 7v-7a4 4 0 0 1-4-4z"/><g fill="#fff" stroke="none"><circle cx="17" cy="20" r="2.4"/><circle cx="24" cy="20" r="2.4"/><circle cx="31" cy="20" r="2.4"/></g></svg>'}<span id="manager-alert-count" style="display:none;position:absolute;top:-3px;right:-3px;min-width:19px;height:19px;padding:0 5px;border-radius:99px;background:#ef4444;color:#fff;font-size:11px;font-weight:900;line-height:19px;text-align:center;border:2px solid var(--navy)"></span></button>
         <button class="ic-btn logout-top" id="direct-logout" title="خروج از حساب">${ICONS.logout.replace('<svg','<svg width="22" height="22"')}</button>
+        <div id="alert-center" style="display:none"></div>
       </div>
     </header>
     <main id="view"></main>
@@ -1189,16 +1247,18 @@ async function renderShell() {
   $$('.theme-dot').forEach(d => d.addEventListener('click', () => setTheme(d.dataset.t)));
 
   $('#go-req').addEventListener('click', async () => {
-    if (S.me?.is_admin) await refreshManagerAlertBadge(true);
-    go('requests');
+    const panel = $('#alert-center');
+    if (panel?.style.display === 'block') { panel.style.display = 'none'; return; }
+    try { renderAlertCenter(await collectAlertItems()); }
+    catch (error) { console.warn('Alert center could not be opened:', error); }
   });
   refreshManagerAlertBadge();
   if (window.__modirManagerAlertTimer) clearInterval(window.__modirManagerAlertTimer);
   window.__modirManagerAlertTimer = setInterval(() => {
-    if (S.me?.is_admin && document.visibilityState === 'visible') refreshManagerAlertBadge();
+    if (document.visibilityState === 'visible') refreshManagerAlertBadge();
   }, 15000);
   document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible' && S.me?.is_admin) refreshManagerAlertBadge();
+    if (document.visibilityState === 'visible') refreshManagerAlertBadge();
   });
   document.querySelectorAll('.bnav-items button').forEach(b => b.addEventListener('click', () => go(b.dataset.v)));
   window.addEventListener('resize', debounce(() => renderShellHeaderState(false), 100));
@@ -1747,6 +1807,7 @@ async function renderPollsInAnnouncements(el) {
 }
 
 async function viewAnnouncements(el) {
+  markAlertPrefixSeen('announcement:');
   const list = await T('app_get_announcements');
   const adminForm = S.me.is_admin ? `<form id="af" class="card grid g3" style="margin-bottom:20px;border-color:var(--accent)"><h2 style="grid-column:1/-1;margin:0">ارسال اعلان جدید</h2><label class="f">عنوان<input id="a-title" required></label><label class="f">نوع<select id="a-type"><option value="general">اطلاعیه عمومی</option><option value="meeting">دعوت به جلسه</option></select></label><label class="f" style="grid-column:1/-1">متن کامل<textarea id="a-content" rows="3" required></textarea></label><div style="grid-column:1/-1"><button class="btn">ثبت اعلان</button></div></form>` : '';
   el.innerHTML = `<h1>اعلانات ساختمان</h1><p class="sub">اطلاعیه‌ها و دعوت‌نامه‌ها</p>${adminForm}<div class="grid g2">${list.map(a => `<div class="card"><div style="display:flex;justify-content:space-between;margin-bottom:8px;gap:8px;flex-wrap:wrap"><h2 style="margin:0">${esc(a.title)}</h2><span class="chip ${a.type === 'meeting' ? 'pd' : 'ex'}">${a.type === 'meeting' ? 'جلسه' : (a.type === 'resident_message' ? 'پیام گروهی ساکن' : 'اطلاعیه')}</span></div><p style="white-space:pre-wrap;margin:0 0 16px">${esc(a.content)}</p><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px"><span style="font-size:12px;color:var(--muted)">${new Date(a.created_at).toLocaleDateString('fa-IR')}</span>${S.me.is_admin ? `<button class="btn rd sm" data-del="${a.id}">حذف</button>` : ''}</div></div>`).join('') || '<div class="card sub">هیچ اعلانی وجود ندارد.</div>'}</div>`;
@@ -1767,6 +1828,8 @@ async function viewAnnouncements(el) {
 }
 
 async function viewNeighborAlerts(el) {
+  markAlertPrefixSeen('neighbor:');
+  markAlertPrefixSeen('neighbor-summary:');
   const categoryLabels = {
     noise: 'سروصدای غیرمتعارف',
     quiet_hours: 'رعایت ساعات استراحت',
@@ -1898,6 +1961,8 @@ async function viewNeighborAlerts(el) {
 }
 
 async function viewRequests(el) {
+  markAlertPrefixSeen('request:');
+  markAlertPrefixSeen('registration:');
   const admin = !!S.me.is_admin;
   // Keep registration requests independent from other request/poll endpoints.
   let list = [], registrations = [];
