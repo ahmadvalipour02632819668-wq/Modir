@@ -1144,13 +1144,6 @@ async function renderShell() {
         <div class="who-pop" id="who-pop">
           <b>${esc(S.me.full_name || S.me.username)}</b>
           <span>واحد ${fa(S.me.unit_no || '—')}${S.me.is_admin ? ' · مدیر ساختمان' : ''}</span>
-          <div style="margin-top:12px;font-size:12px;font-weight:bold;color:var(--muted)">انتخاب تم رنگی:</div>
-          <div class="theme-picker">
-            <div class="theme-dot default ${curTheme==='default'?'active':''}" data-t="default" title="سرمه‌ای"></div>
-            <div class="theme-dot emerald ${curTheme==='emerald'?'active':''}" data-t="emerald" title="زمردی"></div>
-            <div class="theme-dot dark ${curTheme==='dark'?'active':''}" data-t="dark" title="تیره"></div>
-            <div class="theme-dot ocean ${curTheme==='ocean'?'active':''}" data-t="ocean" title="اقیانوسی"></div>
-          </div>
           <button class="btn lt sm" id="go-prof">پروفایل کاربری</button>
           <button class="btn rd" id="lo">خروج از حساب</button>
         </div>
