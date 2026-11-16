@@ -1,0 +1,342 @@
+
+// Apply Theme from LocalStorage
+const savedTheme = localStorage.getItem('bm_theme') || 'default';
+if (savedTheme !== 'default') document.documentElement.setAttribute('data-theme', savedTheme);
+
+const SUPABASE_URL = 'https://fvhzshtgtkqzrgmblczh.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_RPqoUxTZxx-pCp06bwh0pg_dGjF5daZ';
+if (!window.supabase || typeof window.supabase.createClient !== 'function') {
+  document.getElementById('app').innerHTML = '<div style="max-width:560px;margin:12vh auto;padding:24px;text-align:center;background:#fff;border-radius:18px;color:#23264a;font-family:Vazirmatn,sans-serif"><h2>خطا در بارگذاری کتابخانه اتصال</h2><p>ارتباط با سرور کتابخانه برقرار نشد. اینترنت یا دسترسی به CDN را بررسی و صفحه را دوباره بارگذاری کنید.</p><button onclick="location.reload()" style="padding:10px 20px;border:0;border-radius:10px;background:#2d3463;color:#fff">تلاش مجدد</button></div>';
+  throw new Error('Supabase client library failed to load from primary and fallback CDNs');
+}
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: false } });
+
+// Register the PWA service worker on every normal visit, not only when push notifications are enabled.
+if ('serviceWorker' in navigator && window.isSecureContext) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register(new URL('./sw.js', document.baseURI), { scope: new URL('./', document.baseURI).pathname })
+      .then(() => navigator.serviceWorker.ready)
+      .catch(error => console.warn('PWA service worker registration failed:', error));
+  }, { once: true });
+}
+
+let deferredInstallPrompt = null;
+let installPromptDismissed = false;
+function isAppInstalled() {
+  return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+}
+async function installPwa() {
+  if (isAppInstalled()) return;
+  if (deferredInstallPrompt) {
+    const promptEvent = deferredInstallPrompt;
+    deferredInstallPrompt = null;
+    promptEvent.prompt();
+    const choice = await promptEvent.userChoice;
+    if (choice?.outcome === 'accepted') {
+      document.querySelectorAll('[data-install]').forEach(button => button.remove());
+      document.getElementById('pwa-install-banner')?.remove();
+    }
+    return;
+  }
+  const help = /iphone|ipad|ipod/i.test(navigator.userAgent)
+    ? 'برای نصب در آیفون، دکمه اشتراک‌گذاری Safari را بزنید و «افزودن به صفحه اصلی» را انتخاب کنید.'
+    : 'برای نصب، منوی سه‌نقطه مرورگر را باز کنید و «Install app» یا «Add to Home screen» را انتخاب کنید.';
+  alert(help);
+}
+function installTileHtml() {
+  if (isAppInstalled()) return '';
+  return `<button class="tile" type="button" data-install aria-label="نصب برنامه">
+    <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><rect x="10" y="5" width="28" height="38" rx="5"/><path d="M24 14v15m-7-7 7 7 7-7M19 36h10"/></svg>
+    <span>نصب برنامه</span>
+  </button>`;
+}
+function renderInstallBanner() {
+  const view = document.getElementById('view');
+  if (!view || S.view !== 'dash' || isAppInstalled() || installPromptDismissed || !deferredInstallPrompt || document.getElementById('pwa-install-banner')) return;
+  const banner = document.createElement('section');
+  banner.id = 'pwa-install-banner';
+  banner.style.cssText = 'margin:14px 16px 18px;padding:16px;border-radius:18px;background:linear-gradient(135deg,#2d3463,#46528f);color:#fff;display:flex;align-items:center;justify-content:space-between;gap:12px;box-shadow:0 8px 24px #20264a22';
+  banner.innerHTML = '<div style="min-width:0"><b style="display:block;font-size:15px;margin-bottom:5px">📲 نصب اپلیکیشن ساختمان</b><span style="font-size:12px;opacity:.9">برای دسترسی سریع‌تر، برنامه را روی گوشی نصب کنید.</span></div><div style="display:flex;align-items:center;gap:8px;flex-shrink:0"><button id="pwa-install-action" style="border:0;border-radius:12px;padding:10px 16px;background:#fff;color:#2d3463;font:inherit;font-weight:800">نصب</button><button id="pwa-install-close" aria-label="بستن" style="border:0;background:transparent;color:#fff;font-size:22px;padding:2px 5px">×</button></div>';
+  view.prepend(banner);
+  document.getElementById('pwa-install-action').addEventListener('click', async () => {
+    if (!deferredInstallPrompt) return;
+    deferredInstallPrompt.prompt();
+    await deferredInstallPrompt.userChoice;
+    deferredInstallPrompt = null;
+    banner.remove();
+  });
+  document.getElementById('pwa-install-close').addEventListener('click', () => { installPromptDismissed = true; banner.remove(); });
+}
+window.addEventListener('beforeinstallprompt', event => {
+  event.preventDefault();
+  deferredInstallPrompt = event;
+  renderInstallBanner();
+});
+window.addEventListener('appinstalled', () => {
+  deferredInstallPrompt = null;
+  document.getElementById('pwa-install-banner')?.remove();
+});
+
+const PUSH_VAPID_PUBLIC_KEY = 'BMb3MKzCKqT82g57EkjMcb2b8pu3bH3UNmxZ5rtubHvXIM08iGJKOuFyYyaeH41UbbLQ5uXI2PGrgJa90u0mvzs';
+let pushServiceWorkerRegistration = null;
+let pushPromptShown = false;
+function pushBase64UrlToBytes(value) {
+  const padding = '='.repeat((4 - value.length % 4) % 4);
+  const raw = atob((value + padding).replace(/-/g, '+').replace(/_/g, '/'));
+  return Uint8Array.from([...raw].map(ch => ch.charCodeAt(0)));
+}
+async function getPushServiceWorker() {
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) throw new Error('مرورگر شما اعلان مستقیم را پشتیبانی نمی‌کند');
+  if (!window.isSecureContext) throw new Error('برای اعلان موبایلی باید سایت با HTTPS باز شود');
+  if (!pushServiceWorkerRegistration) {
+    pushServiceWorkerRegistration = await navigator.serviceWorker.register(new URL('./sw.js', document.baseURI), { scope: new URL('./', document.baseURI).pathname });
+    await navigator.serviceWorker.ready;
+  }
+  return pushServiceWorkerRegistration;
+}
+async function enableMobilePush() {
+  if (!S.token) throw new Error('ابتدا وارد حساب شوید');
+  if (!('Notification' in window)) throw new Error('مرورگر شما اعلان را پشتیبانی نمی‌کند');
+  const permission = Notification.permission === 'default'
+    ? await Notification.requestPermission()
+    : Notification.permission;
+  if (permission !== 'granted') throw new Error('اجازه نمایش اعلان داده نشد. می‌توانید از تنظیمات مرورگر آن را فعال کنید.');
+  const registration = await getPushServiceWorker();
+  const applicationServerKey = pushBase64UrlToBytes(PUSH_VAPID_PUBLIC_KEY);
+  let subscription = await registration.pushManager.getSubscription();
+  if (subscription) {
+    const currentKey = subscription.options?.applicationServerKey;
+    const currentBytes = currentKey ? new Uint8Array(currentKey) : null;
+    const sameKey = currentBytes && currentBytes.length === applicationServerKey.length &&
+      applicationServerKey.every((byte, index) => byte === currentBytes[index]);
+    if (!sameKey) {
+      await subscription.unsubscribe();
+      subscription = null;
+    }
+  }
+  if (!subscription) subscription = await registration.pushManager.subscribe({
+    userVisibleOnly: true, applicationServerKey
+  });
+  const json = subscription.toJSON();
+  const { error } = await sb.rpc('app_push_save_subscription', {
+    p_token: S.token, p_endpoint: json.endpoint, p_p256dh: json.keys?.p256dh,
+    p_auth: json.keys?.auth, p_user_agent: navigator.userAgent
+  });
+  if (error) throw error;
+}
+async function detachPushSubscription(token) {
+  if (!token || !('serviceWorker' in navigator)) return;
+  const registration = await getPushServiceWorker();
+  const subscription = await registration.pushManager.getSubscription();
+  if (!subscription?.endpoint) return;
+  const { error } = await sb.rpc('app_push_remove_subscription', {
+    p_token: token, p_endpoint: subscription.endpoint
+  });
+  if (error) throw error;
+}
+function maybeAskForPushPermission() {
+  if (!S.token || !('Notification' in window) || pushPromptShown) return;
+  // Refresh a previously granted subscription after VAPID key rotation.
+  if (Notification.permission === 'granted') {
+    enableMobilePush().catch(error => {
+      console.warn('Push subscription refresh failed:', error);
+      if (String(error?.message || '').includes('این اشتراک اعلان قبلاً به حساب دیگری متصل شده است')) {
+        toast('اعلان‌های این گوشی برای حساب دیگری فعال است. برای جابه‌جایی، ابتدا از حساب قبلی خارج شوید و دوباره وارد شوید.', true);
+      }
+    });
+    return;
+  }
+  pushPromptShown = true;
+  const permissionBlocked = Notification.permission === 'denied';
+  const message = permissionBlocked
+    ? 'دسترسی اعلان‌ها در تنظیمات مرورگر مسدود شده است. برای فعال‌سازی، مجوز اعلان این سایت را از تنظیمات مرورگر روی اجازه قرار دهید.'
+    : 'برای دریافت اطلاعیه‌ها و پیام‌های مهم ساختمان، اجازه نمایش اعلان‌ها را صادر کنید.';
+  const actionButton = permissionBlocked ? '' : '<button type="button" class="btn sf" id="allow-push-now" style="width:100%;margin-top:10px">اجازه می‌دهم</button>';
+  const closeLabel = permissionBlocked ? 'متوجه شدم' : 'فعلاً نه';
+  const prompt = modal('<div style="text-align:center;padding:10px 4px"><div style="font-size:38px;margin-bottom:8px">🔔</div><h2 style="margin:0 0 8px">فعال‌سازی اعلان‌های ساختمان</h2><p class="sub" style="line-height:1.9">' + esc(message) + '</p>' + actionButton + '<button type="button" class="btn lt" id="skip-push-now" style="width:100%;margin-top:8px">' + closeLabel + '</button><p id="push-prompt-status" class="sub" style="margin:8px 0 0"></p></div>');
+  $('#skip-push-now', prompt)?.addEventListener('click', () => prompt.remove());
+  $('#allow-push-now', prompt)?.addEventListener('click', async e => {
+    const button = e.currentTarget;
+    const status = $('#push-prompt-status', prompt);
+    button.disabled = true;
+    button.textContent = 'در حال فعال‌سازی...';
+    try {
+      await enableMobilePush();
+      prompt.remove();
+      toast('اعلان‌های موبایلی فعال شد');
+    } catch (error) {
+      if (status) status.textContent = error.message || 'فعال‌سازی اعلان‌ها ناموفق بود';
+      button.disabled = false;
+      button.textContent = 'تلاش دوباره';
+    }
+  });
+}
+async function sendMobilePush(event, title, body, targetAccountId = null) {
+  if (!S.token) return null;
+  try {
+    const { data, error } = await sb.functions.invoke('send-web-push', {
+      body: { token: S.token, event, title, body, target_account_id: targetAccountId, url: new URL('./', document.baseURI).pathname }
+    });
+    if (error) throw error;
+    if (!data?.success) throw new Error(data?.error || 'ارسال اعلان انجام نشد');
+    if (data.sent === 0) console.info('Mobile push had no active recipient subscriptions:', data);
+    return data;
+  } catch (error) {
+    console.warn('Mobile push failed:', error);
+    return null;
+  }
+}
+
+
+const MONTHS = ['فروردین','اردیبهشت','خرداد','تیر','مرداد','شهریور','مهر','آبان','آذر','دی','بهمن','اسفند'];
+const CATS = { charge:'شارژ ماهیانه', water:'قبض آب', gas:'قبض گاز', electric:'برق عمومی', repair:'دریافت هزینه تعمیرات و بازسازی', parking:'اجاره پارکینگ', debt:'پرداخت بدهی معوق', other:'سایر درآمدها', bill:'کل صورتحساب ماه' };
+const OCC = ['مالک ساکن','مالک','مستأجر'];
+
+const $ = (s, el = document) => el.querySelector(s);
+const $$ = (s, el = document) => [...el.querySelectorAll(s)];
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt = n => new Intl.NumberFormat('fa-IR').format(Math.round(Number(n) || 0));
+const fa = v => String(v ?? '').replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[d]);
+const money = n => `<span style="font-feature-settings:'tnum';white-space:nowrap;color:${Number(n)<0?'var(--danger)':'inherit'}">${fmt(n)}</span>`;
+
+const toNum = v => {
+  if (!v) return 0;
+  const str = String(v).replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d)).replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[,\u066C\u066B\s]/g, '').replace(/[^\d.-]/g, '');
+  return Number(str) || 0;
+};
+
+function setTheme(theme) {
+  if (theme === 'default') document.documentElement.removeAttribute('data-theme');
+  else document.documentElement.setAttribute('data-theme', theme);
+  localStorage.setItem('bm_theme', theme);
+  $$('.theme-dot').forEach(d => d.classList.toggle('active', d.dataset.t === theme));
+}
+
+function jalaliToday() {
+  try {
+    const p = new Intl.DateTimeFormat('en-US-u-ca-persian-nu-latn', { year:'numeric', month:'numeric', day:'numeric' }).formatToParts(new Date());
+    const g = t => Number(p.find(x => x.type === t)?.value);
+    return { y: g('year'), m: g('month'), d: g('day') };
+  } catch {
+    const d = new Date();
+    return { y: d.getFullYear() - 621, m: d.getMonth() + 1, d: d.getDate() };
+  }
+}
+const TODAY = jalaliToday();
+function jalaliDatePicker(label, name, value='', id='', required=true) {
+  const v=normalizeJalaliDigits(value), p=/^(\d{4})\/(\d{2})\/(\d{2})$/.exec(v);
+  const y=p?+p[1]:TODAY.y, mo=p?+p[2]:TODAY.m, d=p?+p[3]:0, years=Array.from({length:201},(_,i)=>1300+i);
+  const yearOpts=years.map(n=>'<option value="'+n+'" '+(n===y?'selected':'')+'>'+fa(n)+'</option>').join('');
+  const monthOpts=MONTHS.map((n,i)=>'<option value="'+(i+1)+'" '+(i+1===mo?'selected':'')+'>'+n+'</option>').join('');
+  return '<label class="f">'+label+'<div class="jalali-calendar" data-jalali-picker><div class="jalali-calendar-head"><select data-jp-month aria-label="ماه">'+monthOpts+'</select><select data-jp-year aria-label="سال">'+yearOpts+'</select></div><div class="jalali-calendar-week">'+['ش','ی','د','س','چ','پ','ج'].map(x=>'<span>'+x+'</span>').join('')+'</div><div class="jalali-calendar-days" data-jp-days>'+jalaliCalendarDays(y,mo,d)+'</div></div><input type="hidden" '+(id?'id="'+id+'" ':'')+(name?'name="'+name+'" ':'')+(required?'required ':'')+'value="'+(p?v:'')+'"></label>';
+}
+function jalaliCalendarDays(y,m,selected) {
+  const first=jalaliToGregorianDate(y+'/'+String(m).padStart(2,'0')+'/01');
+  const offset=(new Date(first+'T00:00:00Z').getUTCDay()+1)%7, count=jalaliMonthDays(y,m);
+  return Array.from({length:offset},()=>'<span class="jalali-calendar-empty"></span>').join('')+
+    Array.from({length:count},(_,i)=>{const day=i+1;return '<button type="button" class="jalali-day '+(day===selected?'selected':'')+'" data-jp-day="'+day+'" aria-label="روز '+fa(day)+'">'+fa(day)+'</button>';}).join('');
+}
+document.addEventListener('change',e=>{
+  const picker=e.target.closest('[data-jalali-picker]'); if(!picker)return;
+  const y=Number(picker.querySelector('[data-jp-year]').value),m=Number(picker.querySelector('[data-jp-month]').value);
+  const hidden=picker.parentElement.querySelector('input[type="hidden"]'),old=Number(hidden.value.split('/')[2])||0,max=jalaliMonthDays(y,m),day=Math.min(old,max);
+  picker.querySelector('[data-jp-days]').innerHTML=jalaliCalendarDays(y,m,day);
+  hidden.value=day?y+'/'+String(m).padStart(2,'0')+'/'+String(day).padStart(2,'0'):'';
+});
+document.addEventListener('click',e=>{
+  const dayButton=e.target.closest('[data-jp-day]'); if(!dayButton)return;
+  const picker=dayButton.closest('[data-jalali-picker]'); if(!picker)return;
+  const y=Number(picker.querySelector('[data-jp-year]').value),m=Number(picker.querySelector('[data-jp-month]').value),d=Number(dayButton.dataset.jpDay);
+  const hidden=picker.parentElement.querySelector('input[type="hidden"]');
+  hidden.value=y+'/'+String(m).padStart(2,'0')+'/'+String(d).padStart(2,'0');
+  picker.querySelector('[data-jp-days]').innerHTML=jalaliCalendarDays(y,m,d);
+});
+
+
+function debounce(fn, ms = 300) {
+  let t; return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
+}
+
+function toast(msg, err = false) {
+  const t = $('#toast'); if (!t) return;
+  t.textContent = msg; t.className = 'toast on' + (err ? ' err' : '');
+  clearTimeout(t._h); t._h = setTimeout(() => t.className = 'toast', 3200);
+}
+const showErr = e => toast(e?.message === 'NETWORK_ERROR' ? 'اتصال به سرور برقرار نیست' : (e?.message || 'خطا'), true);
+
+function attachNumericInputIn(root, ...selectors) {
+  selectors.forEach(sel => {
+    $$(sel, root).forEach(el => {
+      el.addEventListener('input', e => {
+        const n = toNum(e.target.value); e.target.value = n ? fmt(n) : '';
+      });
+    });
+  });
+}
+const attachNumericInput = (...sels) => attachNumericInputIn(document, ...sels);
+
+async function notifyBale(msg, imageBase64 = null) {
+  try {
+    if (!S.token || !S.me?.building_id) throw new Error('اطلاعات ساختمان یا نشست کاربر موجود نیست');
+    const payload = { app_token: S.token, building_id: Number(S.me.building_id), text: msg };
+    if (imageBase64) payload.image = imageBase64;
+    const { data, error } = await sb.functions.invoke('send-bale', { body: payload });
+    if (error) {
+      let detail = error.message || 'ارسال به بله ناموفق بود';
+      try {
+        const response = error.context;
+        if (response && typeof response.clone === 'function') {
+          const body = await response.clone().json();
+          if (body?.error) detail = body.error;
+        }
+      } catch (_) {}
+      throw new Error(detail);
+    }
+    if (!data?.success) throw new Error(data?.error || 'ارسال به بله ناموفق بود');
+    S.lastBaleError = '';
+    console.log('✅ Bale: پیام با موفقیت ارسال شد');
+    return true;
+  } catch(e) {
+    S.lastBaleError = e?.message || 'ارسال به بله ناموفق بود';
+    console.warn('❌ Bale: ارسال پیام ناموفق بود:', e);
+    return false;
+  }
+}
+
+const S = {
+  unitCount: 10,
+  token: sessionStorage.getItem('bm_token'),
+  me: JSON.parse(sessionStorage.getItem('bm_me') || 'null'),
+  view: 'dash', y: TODAY.y, m: TODAY.m, building: 'مجتمع نگین ۲', txFilter: null, renderId: 0, lastBaleError: '',
+};
+localStorage.removeItem('bm_token');
+
+function isNetworkError(msg) { return !!msg && /failed to fetch|network|fetch|timeout|ECONN|ERR_NETWORK|ERR_INTERNET/i.test(String(msg)); }
+async function api(fn, args = {}) {
+  let timeoutId;
+  try {
+    const request = sb.rpc(fn, args);
+    const timeout = new Promise((_, reject) => {
+      timeoutId = setTimeout(() => reject(new Error('NETWORK_ERROR')), 20000);
+    });
+    const { data, error } = await Promise.race([request, timeout]);
+    if (error) {
+      const rawMsg = error.message || '';
+      if (rawMsg.includes('AUTH_REQUIRED')) { logout(true); throw new Error('AUTH_ERROR'); }
+      if (isNetworkError(rawMsg)) throw new Error('NETWORK_ERROR');
+      throw new Error(rawMsg.replace(/^AUTH_REQUIRED:\s*/, '') || 'خطا در ارتباط با سرور');
+    }
+    return data;
+  } catch (e) {
+    if (isNetworkError(e.message) || e.message === 'NETWORK_ERROR') throw new Error('NETWORK_ERROR');
+    throw e;
+  } finally {
+    if (timeoutId) clearTimeout(timeoutId);
+  }
+}
+const T = (fn, args = {}) => api(fn, { p_token: S.token, ...args });
+
+/* Modir AI assistant: short-lived conversational context; no private account/finance data is sent. */
+let modirAiBusy = false;
+let modirAiHistory = [];
+let modirAiHistoryToken = '';
