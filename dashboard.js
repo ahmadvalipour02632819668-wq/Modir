@@ -1,3 +1,4 @@
+(function (window) {
 function billCard(r, rep) {
   // RPC JSON may arrive as an array or as a serialized JSON string; normalize before calculating shares.
   let rawExpenses = r.expenses;
@@ -471,3 +472,10 @@ async function renderPollsInAnnouncements(el) {
   }));
 }
 
+  // Public dashboard API: only functions consumed by other application areas.
+  window.ModirDashboard = Object.freeze({
+    reqTable,
+    viewDash,
+    renderPollsInAnnouncements
+  });
+})(window);
