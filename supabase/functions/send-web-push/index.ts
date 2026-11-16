@@ -48,15 +48,20 @@ Deno.serve(async (req: Request) => {
     if(!response.ok) throw new Error("Database request failed ("+response.status+")");return data;
   };
   try{
-    const now=encodeURIComponent(new Date().toISOString());
-    const sessions=await rest("sessions?token=eq."+encodeURIComponent(token)+"&revoked_at=is.null&expires_at=gt."+now+"&select=account_id,building_id&limit=1");
-    if(!Array.isArray(sessions)||!sessions.length||!sessions[0].account_id) return json({error:"نشست کاربر معتبر نیست"},401);
-    const session=sessions[0];
-    const accounts=await rest("accounts?id=eq."+encodeURIComponent(session.account_id)+"&building_id=eq."+encodeURIComponent(session.building_id)+"&is_active=eq.true&select=id,building_id,is_admin&limit=1");
-    if(!Array.isArray(accounts)||!accounts.length) return json({error:"حساب کاربر فعال نیست"},403);
-    const activeBuilding=await rest("buildings?id=eq."+encodeURIComponent(session.building_id)+"&status=eq.active&select=id&limit=1");
+    // Validate the custom session through the guarded RPC. Never put session tokens
+    // in REST query strings, where request URLs may be recorded in infrastructure logs.
+    let actor:any;
+    try {
+      actor=await rest("rpc/app_me","POST",{p_token:token});
+    } catch {
+      return json({error:"نشست کاربر معتبر نیست"},401);
+    }
+    if(!actor||typeof actor.id!=="string"||!Number.isInteger(Number(actor.building_id))||actor.is_active!==true) {
+      return json({error:"نشست کاربر معتبر نیست"},401);
+    }
+    const activeBuilding=await rest("buildings?id=eq."+encodeURIComponent(String(actor.building_id))+"&status=eq.active&select=id&limit=1");
     if(!Array.isArray(activeBuilding)||!activeBuilding.length) return json({error:"ساختمان فعال نیست"},403);
-    const actor=accounts[0];let recipients:any[]=[];
+    let recipients:any[]=[];
     const allowedEvents = ["resident_login","resident_request_created","payment_request_created","announcement_created","poll_created","group_message_created","manager_reply_created","payment_reviewed"];
     if(!allowedEvents.includes(event)) return json({error:"رویداد اعلان مجاز نیست"},400);
     if(title.length>100 || body.length>1000) return json({error:"متن اعلان بیش از حد مجاز است"},400);
