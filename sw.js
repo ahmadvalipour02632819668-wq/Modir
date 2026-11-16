@@ -1,6 +1,19 @@
 self.addEventListener('install', event => { self.skipWaiting(); });
 self.addEventListener('activate', event => { event.waitUntil(self.clients.claim()); });
 
+function safeNotificationTarget(value) {
+  try {
+    const raw = typeof value === 'string' ? value : '/';
+    const target = new URL(raw, self.location.origin);
+    if (target.origin !== self.location.origin || target.username || target.password) {
+      return new URL('/', self.location.origin).href;
+    }
+    return target.href;
+  } catch (_) {
+    return new URL('/', self.location.origin).href;
+  }
+}
+
 /* Mobile web push service worker */
 self.addEventListener('push', event => {
   let data = {};
@@ -14,7 +27,7 @@ self.addEventListener('push', event => {
     badge: new URL('./icone-192.png', self.registration.scope).href,
     dir: 'rtl',
     lang: 'fa',
-    data: { url: data.url || '/' },
+    data: { url: safeNotificationTarget(data.url || '/') },
     tag: data.tag || 'building-notification',
     renotify: false
   };
@@ -23,7 +36,7 @@ self.addEventListener('push', event => {
 
 self.addEventListener('notificationclick', event => {
   event.notification.close();
-  const target = new URL(event.notification.data?.url || '/', self.location.origin).href;
+  const target = safeNotificationTarget(event.notification.data?.url || '/');
   event.waitUntil((async () => {
     const windows = await clients.matchAll({ type: 'window', includeUncontrolled: true });
     for (const client of windows) {
