@@ -1,0 +1,70 @@
+import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
+const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const corsHeaders = {"Access-Control-Allow-Origin":"*","Access-Control-Allow-Headers":"authorization, x-client-info, apikey, content-type","Access-Control-Allow-Methods":"POST, OPTIONS"};
+async function rpc(name:string,body:Record<string,unknown>,service=false){
+ const key=service?SERVICE_ROLE_KEY:SUPABASE_ANON_KEY;
+ return await fetch(`${SUPABASE_URL}/rest/v1/rpc/${name}`,{method:"POST",headers:{apikey:key,Authorization:`Bearer ${key}`,"Content-Type":"application/json"},body:JSON.stringify(body)});
+}
+function json(data:unknown,status=200){return new Response(JSON.stringify(data),{status,headers:{...corsHeaders,"Content-Type":"application/json"}});}
+serve(async(req:Request)=>{
+ if(req.method==="OPTIONS")return new Response("ok",{headers:corsHeaders});
+ if(req.method!=="POST")return json({error:"Method not allowed"},405);
+ try{
+  if(!SERVICE_ROLE_KEY)throw new Error("تنظیم امن سرور برای اتصال بله انجام نشده است");
+  const body=await req.json(),token=String(body.app_token||""),buildingId=Number(body.building_id),message=String(body.text||"").trim(),image=body.image?String(body.image):"",action=String(body.action||"send");
+  if(!token||!Number.isInteger(buildingId)||buildingId<=0)return json({error:"نشست یا شناسه ساختمان معتبر نیست"},401);
+  if(action!=="send"&&action!=="discover")return json({error:"عملیات بله معتبر نیست"},400);
+  if(action!=="discover"&&(!message||message.length>4000))return json({error:"متن اعلان نامعتبر است"},400);
+  if(image.length>11200000)return json({error:"حجم تصویر بیشتر از حد مجاز است"},413);
+  const auth=await rpc("app_bale_authorize",{p_token:token,p_building_id:buildingId});
+  if(!auth.ok||(await auth.json())!==true)return json({error:"دسترسی به اعلان‌های این ساختمان تأیید نشد"},403);
+  if(action==="discover"){ 
+   const discoverAuth=await rpc("app_bale_discover_authorize",{p_token:token,p_building_id:buildingId});
+   if(!discoverAuth.ok||(await discoverAuth.json())!==true)return json({error:"یافتن گروه‌های بله فقط برای مدیر ساختمان مجاز است"},403);
+  }
+  const rate=await rpc("app_claim_bale_dispatch",{p_token:token,p_action:action});
+  if(!rate.ok)throw new Error("بررسی محدودیت ارسال بله ناموفق بود");
+  if((await rate.json())!==true)return json({error:"تعداد درخواست‌های بله در مدت کوتاه بیش از حد مجاز است؛ کمی بعد دوباره تلاش کنید."},429);
+  const cfgRes=await rpc("app_internal_get_bale_config",{p_building_id:buildingId},true);
+  if(!cfgRes.ok)throw new Error("خواندن تنظیمات اتصال بله ناموفق بود");
+  const cfg=await cfgRes.json();
+  if(action==="discover"){
+   const discoveryToken=String(body.bot_token||cfg?.bot_token||"").trim();
+   if(!discoveryToken)return json({success:false,error:"ابتدا توکن ربات را وارد کنید"},400);
+   const updatesResponse=await fetch(`https://tapi.bale.ai/bot${discoveryToken}/getUpdates`);
+   const updatesData=await updatesResponse.json().catch(()=>({}));
+   if(!updatesResponse.ok||updatesData.ok===false){
+    const detail=updatesData.description||"";
+    return json({success:false,error:updatesResponse.status===404?"سرویس دریافت خودکار پیام‌ها در این نشانی بله پاسخ نمی‌دهد؛ اتصال فعلی دست‌نخورده باقی مانده است.":(detail||"دریافت پیام‌های ربات ناموفق بود")});
+   }
+   const updates=Array.isArray(updatesData.result)?updatesData.result:[];
+   const chats=new Map<string,{id:string,title:string,type:string}>();
+   for(const u of updates){
+    const chat=u?.message?.chat||u?.edited_message?.chat||u?.channel_post?.chat||u?.my_chat_member?.chat||u?.chat_member?.chat;
+    if(chat&&chat.id!==undefined&&chat.type!=="private"){
+     const id=String(chat.id);
+     chats.set(id,{id,title:String(chat.title||chat.username||("گروه "+id)),type:String(chat.type||"group")});
+    }
+   }
+   return json({success:true,chats:[...chats.values()],message:updates.length?"در پیام‌های دریافتی ربات، گروهی پیدا نشد. در گروه یک پیام تازه بفرستید و دوباره تلاش کنید.":"هنوز پیامی به ربات نرسیده است. در گروه یک پیام تازه بفرستید و دوباره تلاش کنید."});
+  }
+  if(!cfg?.bot_token||!cfg?.chat_id)return json({error:"اتصال بله برای این ساختمان هنوز تنظیم نشده است"},409);
+  let sent:Response;
+  if(image){
+   const match=image.match(/^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/=]+)$/);
+   if(!match)return json({error:"فرمت تصویر گزارش معتبر نیست"},400);
+   const binary=atob(match[2]); if(binary.length>8*1024*1024)return json({error:"حجم تصویر بیشتر از حد مجاز است"},413);
+   const bytes=new Uint8Array(binary.length); for(let i=0;i<binary.length;i++)bytes[i]=binary.charCodeAt(i);
+   const form=new FormData(); form.append("chat_id",String(cfg.chat_id)); form.append("caption",message.slice(0,1000));
+   form.append("photo",new Blob([bytes],{type:match[1]}),"report.jpg");
+   sent=await fetch(`https://tapi.bale.ai/bot${cfg.bot_token}/sendPhoto`,{method:"POST",body:form});
+  }else{
+   sent=await fetch(`https://tapi.bale.ai/bot${cfg.bot_token}/sendMessage`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({chat_id:cfg.chat_id,text:message})});
+  }
+  const result=await sent.json().catch(()=>({}));
+  if(!sent.ok||result.ok===false||result.error)return json({error:result.description||result.error||"ارسال به بله ناموفق بود"},502);
+  return json({success:true});
+ }catch(e){return json({error:e instanceof Error?e.message:"خطای نامشخص"},500);}
+});
