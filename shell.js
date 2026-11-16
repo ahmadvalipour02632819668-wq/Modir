@@ -593,7 +593,7 @@ async function renderShell() {
 
 function go(v, isBackNavigation = false) {
   const views = {
-    dash: viewDash, announcements: viewAnnouncements, 'neighbor-alerts': viewNeighborAlerts, requests: viewRequests, tx: viewTx, pay: viewPay,
+    dash: ModirDashboard.viewDash, announcements: viewAnnouncements, 'neighbor-alerts': viewNeighborAlerts, requests: viewRequests, tx: viewTx, pay: viewPay,
     report: viewReport, units: viewUnits, rates: viewRates, charge: viewRates, settings: viewSettings, activity: viewActivity, profile: viewProfile, services: viewServices,
   };
   if (!views[v]) v = 'dash';
