@@ -3121,7 +3121,45 @@ async function viewProfile(el) {
     finally { btn.disabled = false; }
   });
   $('#go-profile')?.addEventListener('click', e => e.preventDefault());
-  $('#pf2').addEventListener('submit', async e => { e.preventDefault(); if ($('#p-np').value !== $('#p-np2').value) { toast('تکرار رمز یکسان نیست', true); return; } try { S.me = await T('app_update_profile', { p_full_name: $('#p-n').value, p_phone: $('#p-ph').value, p_email: $('#p-e').value, p_username: $('#p-u').value, p_current_password: $('#p-c').value || null, p_new_password: $('#p-np').value || null }); sessionStorage.setItem('bm_me', JSON.stringify(S.me)); toast('ذخیره شد'); renderShell(); } catch (err) { showErr(err); } });
+  $('#pf2').addEventListener('submit', async e => {
+    e.preventDefault();
+    if ($('#p-np').value !== $('#p-np2').value) { toast('تکرار رمز یکسان نیست', true); return; }
+    const passwordChanged = !!$('#p-np').value;
+    let hadPushSubscription = false;
+    if (passwordChanged && 'Notification' in window && Notification.permission === 'granted' && 'serviceWorker' in navigator) {
+      try {
+        const registration = await getPushServiceWorker();
+        hadPushSubscription = !!(await registration.pushManager.getSubscription());
+      } catch (_) {}
+    }
+    try {
+      const updated = await T('app_update_profile', {
+        p_full_name: $('#p-n').value,
+        p_phone: $('#p-ph').value,
+        p_email: $('#p-e').value,
+        p_username: $('#p-u').value,
+        p_current_password: $('#p-c').value || null,
+        p_new_password: $('#p-np').value || null
+      });
+      if (updated?.ok === false) throw new Error(updated.error || 'ذخیره مشخصات انجام نشد');
+      S.me = updated;
+      sessionStorage.setItem('bm_me', JSON.stringify(S.me));
+      if (passwordChanged && hadPushSubscription) {
+        try {
+          await enableMobilePush();
+        } catch (pushErr) {
+          const message = String(pushErr?.message || '');
+          if (message.includes('این اشتراک اعلان قبلاً به حساب دیگری متصل شده است')) {
+            toast('رمز تغییر کرد؛ اعلان‌های این گوشی برای حساب دیگری فعال است.', true);
+          } else {
+            toast('رمز تغییر کرد؛ برای فعال‌سازی دوباره اعلان‌ها صفحه را تازه‌سازی کنید.', true);
+          }
+        }
+      }
+      toast('ذخیره شد');
+      renderShell();
+    } catch (err) { showErr(err); }
+  });
 }
 
 window.addEventListener('online', () => toast('اتصال اینترنت برقرار شد'));
