@@ -1,10 +1,9 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const corsHeaders = {"Access-Control-Allow-Origin":"*","Access-Control-Allow-Headers":"authorization, x-client-info, apikey, content-type","Access-Control-Allow-Methods":"POST, OPTIONS"};
-async function rpc(name:string,body:Record<string,unknown>,service=false){
- const key=service?SERVICE_ROLE_KEY:SUPABASE_ANON_KEY;
+async function rpc(name:string,body:Record<string,unknown>){
+ const key=SERVICE_ROLE_KEY;
  return await fetch(`${SUPABASE_URL}/rest/v1/rpc/${name}`,{method:"POST",headers:{apikey:key,Authorization:`Bearer ${key}`,"Content-Type":"application/json"},body:JSON.stringify(body)});
 }
 function json(data:unknown,status=200){return new Response(JSON.stringify(data),{status,headers:{...corsHeaders,"Content-Type":"application/json"}});}
@@ -28,16 +27,16 @@ serve(async(req:Request)=>{
   if(action!=="send"&&action!=="discover")return json({error:"عملیات بله معتبر نیست"},400);
   if(action!=="discover"&&(!message||message.length>4000))return json({error:"متن اعلان نامعتبر است"},400);
   if(image.length>11200000)return json({error:"حجم تصویر بیشتر از حد مجاز است"},413);
-  const auth=await rpc("app_bale_authorize",{p_token:token,p_building_id:buildingId},true);
+  const auth=await rpc("app_bale_authorize",{p_token:token,p_building_id:buildingId});
   if(!auth.ok||(await auth.json())!==true)return json({error:"دسترسی به اعلان‌های این ساختمان تأیید نشد"},403);
   if(action==="discover"){ 
-   const discoverAuth=await rpc("app_bale_discover_authorize",{p_token:token,p_building_id:buildingId},true);
+   const discoverAuth=await rpc("app_bale_discover_authorize",{p_token:token,p_building_id:buildingId});
    if(!discoverAuth.ok||(await discoverAuth.json())!==true)return json({error:"یافتن گروه‌های بله فقط برای مدیر ساختمان مجاز است"},403);
   }
-  const rate=await rpc("app_claim_bale_dispatch",{p_token:token,p_action:action},true);
+  const rate=await rpc("app_claim_bale_dispatch",{p_token:token,p_action:action});
   if(!rate.ok)throw new Error("بررسی محدودیت ارسال بله ناموفق بود");
   if((await rate.json())!==true)return json({error:"تعداد درخواست‌های بله در مدت کوتاه بیش از حد مجاز است؛ کمی بعد دوباره تلاش کنید."},429);
-  const cfgRes=await rpc("app_internal_get_bale_config",{p_building_id:buildingId},true);
+  const cfgRes=await rpc("app_internal_get_bale_config",{p_building_id:buildingId});
   if(!cfgRes.ok)throw new Error("خواندن تنظیمات اتصال بله ناموفق بود");
   const cfg=await cfgRes.json();
   if(action==="discover"){
