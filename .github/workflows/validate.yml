@@ -20,7 +20,7 @@ jobs:
       - name: Check JavaScript syntax
         run: |
           set -e
-          for file in core.js shell.js dashboard.js community.js finance.js management.js navigation.js; do
+          for file in core.js assistant.js shell.js dashboard.js community.js finance.js management.js navigation.js; do
             echo "Checking $file"
             node --check "$file"
           done
@@ -31,7 +31,7 @@ jobs:
           const fs = require('node:fs');
           const html = fs.readFileSync('index.html', 'utf8');
           const expected = [
-            'core.js', 'shell.js', 'dashboard.js', 'community.js',
+            'core.js', 'assistant.js', 'shell.js', 'dashboard.js', 'community.js',
             'finance.js', 'management.js', 'navigation.js'
           ];
           const actual = [...html.matchAll(/<script\s+src=["']\.\/([^"'?]+)(?:\?[^"']*)?["']/g)]
@@ -58,6 +58,7 @@ jobs:
           node <<'NODE'
           const fs = require('node:fs');
           const contracts = {
+            'assistant.js': ['ModirAssistant', 'mount'],
             'dashboard.js': ['ModirDashboard', 'reqTable', 'viewDash', 'renderPollsInAnnouncements'],
             'community.js': ['ModirCommunity', 'viewAnnouncements', 'viewNeighborAlerts', 'viewRequests', 'payModal', 'viewPay'],
             'finance.js': ['ModirFinance', 'viewTx', 'viewReport'],
