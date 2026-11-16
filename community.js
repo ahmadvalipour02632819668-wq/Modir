@@ -16,7 +16,7 @@ async function viewAnnouncements(el) {
     });
     $$('[data-del]').forEach(b => b.addEventListener('click', async () => { if (!confirm('حذف شود؟')) return; try { await T('app_admin_delete_announcement', { p_id: +b.dataset.del }); toast('حذف شد'); go('announcements'); } catch (e) { showErr(e); } }));
   }
-  await renderPollsInAnnouncements(el);
+  await ModirDashboard.renderPollsInAnnouncements(el);
 }
 
 async function viewNeighborAlerts(el) {
@@ -639,7 +639,7 @@ function replyModal(r) {
   async function viewPay(el) {
   markAlertPrefixSeen('payment:');
   const admin = S.me.is_admin; const list = await T('app_get_payment_requests'); const pending = list.filter(p => p.status === 'pending');
-  el.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;gap:12px;flex-wrap:wrap"><div><h1>${admin ? 'بررسی پرداخت‌ها' : 'پرداخت بدهی'}</h1><p class="sub" style="margin:0">${admin ? 'پرداخت‌های منتظر تایید شما' : 'پرداخت خود را ثبت کنید.'}</p></div>${admin ? '' : '<button class="btn sf" id="np">ثبت پرداخت جدید</button>'}</div>${admin ? `<h2>منتظر تایید (${fa(pending.length)})</h2>${reqTable(pending, true)}<h2 style="margin-top:28px">سابقه</h2>${reqTable(list.filter(p => p.status !== 'pending'), true)}` : reqTable(list, false)}`;
+  el.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;gap:12px;flex-wrap:wrap"><div><h1>${admin ? 'بررسی پرداخت‌ها' : 'پرداخت بدهی'}</h1><p class="sub" style="margin:0">${admin ? 'پرداخت‌های منتظر تایید شما' : 'پرداخت خود را ثبت کنید.'}</p></div>${admin ? '' : '<button class="btn sf" id="np">ثبت پرداخت جدید</button>'}</div>${admin ? `<h2>منتظر تایید (${fa(pending.length)})</h2>${ModirDashboard.reqTable(pending, true)}<h2 style="margin-top:28px">سابقه</h2>${ModirDashboard.reqTable(list.filter(p => p.status !== 'pending'), true)}` : ModirDashboard.reqTable(list, false)}`;
   $('#np')?.addEventListener('click', async () => { const rep = await T('app_report', { p_year: S.y, p_month: S.m }); const r = rep.rows[0]; payModal(r); });
   $$('[data-ap]').forEach(b => b.addEventListener('click', () => approveModal(list.find(p => p.id == b.dataset.ap))));
 }
