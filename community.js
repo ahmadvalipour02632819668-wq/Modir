@@ -482,7 +482,7 @@ function replyModal(r) {
   };
 
   const bindDebtEvents = () => {
-    $('.debt-amount', m).forEach(inp => {
+    $$('.debt-amount', m).forEach(inp => {
       // هنگام تایپ مقدار را قالب‌بندی نکن؛ این کار مکان‌نما را جابه‌جا می‌کند
       // و در موبایل ویرایش عدد را دشوار یا غیرممکن می‌سازد.
       inp.setAttribute('inputmode', 'numeric');
