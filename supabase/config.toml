@@ -1,2 +1,5 @@
 [functions.send-neighbor-alert]
 verify_jwt = false
+
+[functions.send-bale]
+verify_jwt = false
