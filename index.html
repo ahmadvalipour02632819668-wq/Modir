@@ -980,9 +980,37 @@ async function renderLogin() {
   $('#tab-login').addEventListener('click',()=>{$('#login-panel').classList.remove('hidden');$('#register-panel').classList.add('hidden');$('#tab-login').className='btn sf';$('#tab-register').className='btn lt';});
   $('#tab-register').addEventListener('click',()=>{$('#login-panel').classList.add('hidden');$('#register-panel').classList.remove('hidden');$('#tab-login').className='btn lt';$('#tab-register').className='btn sf';});
 
+  let loginLockCountdownTimer=null;
+  const showLoginFeedback=r=>{
+    const el=$('#lg-err');
+    if(loginLockCountdownTimer){clearInterval(loginLockCountdownTimer);loginLockCountdownTimer=null;}
+    if(r?.code==='LOGIN_LOCKED'){
+      let left=Math.max(1,Number(r.lock_seconds)||1);
+      const draw=()=>{
+        if(left<=0){
+          el.textContent='زمان محدودیت ورود به پایان رسید. اکنون می‌توانید دوباره تلاش کنید.';
+          if(loginLockCountdownTimer){clearInterval(loginLockCountdownTimer);loginLockCountdownTimer=null;}
+          return;
+        }
+        const m=Math.floor(left/60),s=left%60;
+        const time=m?(`${m} دقیقه و ${s} ثانیه`):(`${s} ثانیه`);
+        el.textContent='ورود موقتاً به دلیل چند تلاش ناموفق مسدود شده است. زمان باقی‌مانده: '+time;
+      };
+      draw();
+      loginLockCountdownTimer=setInterval(()=>{left--;draw();},1000);
+      return;
+    }
+    if(r?.code==='INVALID_CREDENTIALS'&&Number.isFinite(Number(r.attempts_remaining))){
+      const n=Math.max(0,Number(r.attempts_remaining));
+      el.textContent='نام کاربری یا گذرواژه اشتباه است. '+(n>0?(`${n} تلاش دیگر تا محدودیت موقت باقی مانده است.`):'تلاش بعدی ممکن است باعث محدودیت ورود شود.');
+      return;
+    }
+    el.textContent=r?.error||'ورود ناموفق بود. دوباره بررسی کنید.';
+  };
   $('#lg').addEventListener('submit',async e=>{
     e.preventDefault();
     const btn=$('#lg-btn'),old=btn.textContent,login=$('#lg-user').value.trim(),password=$('#lg-pass').value;
+    if(loginLockCountdownTimer){clearInterval(loginLockCountdownTimer);loginLockCountdownTimer=null;}
     $('#lg-err').textContent='';
     const deviceId=(()=>{
       const key='modir_device_id';
@@ -1038,7 +1066,8 @@ async function renderLogin() {
             }));
             return;
           }
-          $('#lg-err').textContent=r?.error||(r.code==='SESSION_CHANGED'?'وضعیت نشست‌ها تغییر کرده است؛ دوباره تلاش کنید':'نام کاربری یا گذرواژه اشتباه است');
+          if(r.code==='INVALID_CREDENTIALS'||r.code==='LOGIN_LOCKED') showLoginFeedback(r);
+          else $('#lg-err').textContent=r?.error||(r.code==='SESSION_CHANGED'?'وضعیت نشست‌ها تغییر کرده است؛ دوباره تلاش کنید':'ورود ناموفق بود');
           return;
         }
         clearPreviousAccountData();
