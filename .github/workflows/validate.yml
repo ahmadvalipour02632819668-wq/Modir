@@ -78,5 +78,6 @@ jobs:
                 throw new Error(`${file}: public API ${apiName} does not expose ${method}`);
               }
             }
+          }
           console.log('Frontend public API contracts are present.');
           NODE
