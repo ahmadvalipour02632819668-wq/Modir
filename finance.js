@@ -108,8 +108,8 @@ function txModal(t, units) {
       ${jalaliDatePicker('تاریخ تراکنش','',String(t.year||TODAY.y)+'/'+String(t.month||TODAY.m).padStart(2,'0')+'/'+String(t.day||TODAY.d).padStart(2,'0'),'tx-date',true)}
       <section id="bill-period-fields" class="card" style="grid-column:1/-1;display:none;padding:12px">
         <div style="font-weight:900;margin-bottom:8px">دوره مصرف قبض (شمسی)</div>
-        <div class="grid g2">${jalaliDatePicker('از تاریخ','',t.bill_period_start ? gregorianToJalaliDate(t.bill_period_start) : '', 'bill-period-start',false)}
-        ${jalaliDatePicker('تا تاریخ','',t.bill_period_end ? gregorianToJalaliDate(t.bill_period_end) : '', 'bill-period-end',false)}</div>
+        <div class="grid g2">${jalaliDatePicker('از تاریخ','',t.bill_period_start ? ModirManagement.gregorianToJalaliDate(t.bill_period_start) : '', 'bill-period-start',false)}
+        ${jalaliDatePicker('تا تاریخ','',t.bill_period_end ? ModirManagement.gregorianToJalaliDate(t.bill_period_end) : '', 'bill-period-end',false)}</div>
         <p class="sub" style="margin:6px 0 0">سهم هر ساکن بر اساس روزهای حضور در این بازه محاسبه می‌شود.</p>
       </section>
       <div style="grid-column:1/-1;margin-top:8px">
@@ -181,7 +181,7 @@ function txModal(t, units) {
         const method=$('#expense-method',m).value;
         const isBill=['water','gas','electric_bill','waste','other_bill'].includes(category)&&!unitNo;
         let billStart=null,billEnd=null;
-        if(isBill){billStart=jalaliToGregorianDate($('#bill-period-start',m).value);billEnd=jalaliToGregorianDate($('#bill-period-end',m).value);if(billEnd<billStart)throw new Error('تاریخ پایان دوره قبض نباید قبل از شروع باشد');}
+        if(isBill){billStart=ModirManagement.jalaliToGregorianDate($('#bill-period-start',m).value);billEnd=ModirManagement.jalaliToGregorianDate($('#bill-period-end',m).value);if(billEnd<billStart)throw new Error('تاریخ پایان دوره قبض نباید قبل از شروع باشد');}
         const saved=await T('app_admin_save_expense',{
           p_id:isNew?null:t.id,
           p_year:Number($('#tx-date',m).value.split('/')[0]),p_month:Number($('#tx-date',m).value.split('/')[1]),p_day:Number($('#tx-date',m).value.split('/')[2]),
