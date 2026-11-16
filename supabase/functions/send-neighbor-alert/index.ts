@@ -10,6 +10,22 @@ const cors = {
 const VAPID_PUBLIC_KEY = "BMb3MKzCKqT82g57EkjMcb2b8pu3bH3UNmxZ5rtubHvXIM08iGJKOuFyYyaeH41UbbLQ5uXI2PGrgJa90u0mvzs";
 const VAPID_SUBJECT = "mailto:admin@aghayemodiir.ir";
 
+function isAllowedPushEndpoint(value: unknown): boolean {
+  try {
+    const u = new URL(String(value || ""));
+    const host = u.hostname.toLowerCase();
+    const allowed = host === "fcm.googleapis.com" ||
+      host === "updates.push.services.mozilla.com" ||
+      host === "push.services.mozilla.com" ||
+      host === "web.push.apple.com" ||
+      /^[a-z0-9-]+\.notify\.windows\.com$/.test(host);
+    return u.protocol === "https:" && !u.username && !u.password && !u.port && allowed;
+  } catch {
+    return false;
+  }
+}
+
+
 function json(data: unknown, status = 200) {
   return new Response(JSON.stringify(data), { status, headers: cors });
 }
@@ -23,12 +39,18 @@ Deno.serve(async (req: Request) => {
   if (!url || !key) return json({ error: "تنظیمات اعلان سرور کامل نیست" }, 503);
 
   let input: any;
-  try { input = await req.json(); } catch { return json({ error: "درخواست نامعتبر است" }, 400); }
+  try {
+    const declared = Number(req.headers.get("content-length") || "0");
+    if (Number.isFinite(declared) && declared > 16000) return json({ error: "حجم درخواست بیش از حد مجاز است" }, 413);
+    const raw = await req.text();
+    if (new TextEncoder().encode(raw).byteLength > 16000) return json({ error: "حجم درخواست بیش از حد مجاز است" }, 413);
+    input = JSON.parse(raw);
+  } catch { return json({ error: "درخواست نامعتبر است" }, 400); }
 
   const token = typeof input?.token === "string" ? input.token.trim() : "";
   const targetUnit = Number(input?.target_unit_no);
   const category = typeof input?.category === "string" ? input.category : "";
-  if (!token || !Number.isInteger(targetUnit) || targetUnit < 1 ||
+  if (!token || token.length > 200 || !Number.isInteger(targetUnit) || targetUnit < 1 || targetUnit > 999 ||
       !["noise", "quiet_hours", "common_areas", "other"].includes(category)) {
     return json({ error: "اطلاعات هشدار کامل یا معتبر نیست" }, 400);
   }
@@ -103,13 +125,14 @@ Deno.serve(async (req: Request) => {
       const body = "یکی از همسایه‌ها درخواست توجه به «" + labels[category] +
         "» را دارد. لطفاً به آسایش و آرامش سایر ساکنان توجه فرمایید.";
       for (const sub of subscriptions) {
+        if (!isAllowedPushEndpoint(sub.endpoint)) { await rest("push_subscriptions?id=eq." + encodeURIComponent(sub.id), "DELETE"); removed++; continue; }
         try {
           await webpush.sendNotification(
             { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
             JSON.stringify({
               title: "یادآوری همسایگی",
               body,
-              url: typeof input?.url === "string" && input.url.startsWith("/") && !input.url.includes("..") ? input.url : "/",
+              url: typeof input?.url === "string" && input.url.startsWith("/") && !input.url.startsWith("//") && !input.url.includes("\\") && !input.url.split(/[?#]/)[0].split("/").includes("..") ? input.url : "/",
               tag: "neighbor-alert-" + created.building_id + "-" + created.target_unit_no,
               renotify: false
             })
