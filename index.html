@@ -3144,19 +3144,18 @@ async function viewProfile(el) {
       if (updated?.ok === false) throw new Error(updated.error || 'ذخیره مشخصات انجام نشد');
       S.me = updated;
       sessionStorage.setItem('bm_me', JSON.stringify(S.me));
+      let pushWarning = '';
       if (passwordChanged && hadPushSubscription) {
         try {
           await enableMobilePush();
         } catch (pushErr) {
           const message = String(pushErr?.message || '');
-          if (message.includes('این اشتراک اعلان قبلاً به حساب دیگری متصل شده است')) {
-            toast('رمز تغییر کرد؛ اعلان‌های این گوشی برای حساب دیگری فعال است.', true);
-          } else {
-            toast('رمز تغییر کرد؛ برای فعال‌سازی دوباره اعلان‌ها صفحه را تازه‌سازی کنید.', true);
-          }
+          pushWarning = message.includes('این اشتراک اعلان قبلاً به حساب دیگری متصل شده است')
+            ? 'اعلان‌های این گوشی برای حساب دیگری فعال است.'
+            : 'فعال‌سازی دوباره اعلان‌ها انجام نشد؛ صفحه را تازه‌سازی کنید.';
         }
       }
-      toast('ذخیره شد');
+      toast(pushWarning ? `ذخیره شد؛ ${pushWarning}` : 'ذخیره شد', !!pushWarning);
       renderShell();
     } catch (err) { showErr(err); }
   });
