@@ -994,7 +994,7 @@ async function renderLogin() {
         }
         const m=Math.floor(left/60),s=left%60;
         const time=m?(`${m} دقیقه و ${s} ثانیه`):(`${s} ثانیه`);
-        el.textContent='ورود موقتاً به دلیل چند تلاش ناموفق مسدود شده است. زمان باقی‌مانده: '+time;
+        el.textContent=(r.error||'ورود موقتاً به دلیل چند تلاش ناموفق مسدود شده است')+'. زمان باقی‌مانده: '+time;
       };
       draw();
       loginLockCountdownTimer=setInterval(()=>{left--;draw();},1000);
