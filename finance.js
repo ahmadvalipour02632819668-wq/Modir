@@ -1,3 +1,4 @@
+(function (window) {
 async function viewTx(el) {
   const admin = S.me.is_admin; if (!S.txFilter) S.txFilter = { y: String(S.y), m: '', unit: '', type: '' }; const f = S.txFilter;
   const unitParam = admin && f.unit !== '' ? +f.unit : null;
@@ -270,3 +271,9 @@ async function viewReport(el) {
   $('#bale-btn')?.addEventListener('click',async()=>{const b=$('#bale-btn'),table=$('.tbl-wrap table');if(!b||!table)return;const old=b.textContent;b.disabled=true;try{b.textContent='در حال ساخت تصویر...';const canvas=await html2canvas(table,{backgroundColor:'#fff',scale:2,useCORS:true,logging:false});const ok=await notifyBale(`📊 گزارش ماهانه `+rep.month_name+` `+fa(rep.year)+`\n`+(S.me?.building_name||S.building),canvas.toDataURL('image/jpeg',0.88));if(!ok)throw new Error('ارسال گزارش به بله ناموفق بود');toast('گزارش با موفقیت به گروه بله ارسال شد')}catch(err){showErr(err)}finally{b.textContent=old;b.disabled=false}});
 }
 
+  // Public finance API: entry points used by the application shell.
+  window.ModirFinance = Object.freeze({
+    viewTx,
+    viewReport
+  });
+})(window);
