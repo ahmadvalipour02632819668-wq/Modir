@@ -224,22 +224,22 @@ function jalaliToday() {
 }
 const TODAY = jalaliToday();
 function jalaliDatePicker(label, name, value='', id='', required=true) {
-  const v=normalizeJalaliDigits(value), p=/^(\d{4})\/(\d{2})\/(\d{2})$/.exec(v);
+  const v=ModirManagement.normalizeJalaliDigits(value), p=/^(\d{4})\/(\d{2})\/(\d{2})$/.exec(v);
   const y=p?+p[1]:TODAY.y, mo=p?+p[2]:TODAY.m, d=p?+p[3]:0, years=Array.from({length:201},(_,i)=>1300+i);
   const yearOpts=years.map(n=>'<option value="'+n+'" '+(n===y?'selected':'')+'>'+fa(n)+'</option>').join('');
   const monthOpts=MONTHS.map((n,i)=>'<option value="'+(i+1)+'" '+(i+1===mo?'selected':'')+'>'+n+'</option>').join('');
   return '<label class="f">'+label+'<div class="jalali-calendar" data-jalali-picker><div class="jalali-calendar-head"><select data-jp-month aria-label="ماه">'+monthOpts+'</select><select data-jp-year aria-label="سال">'+yearOpts+'</select></div><div class="jalali-calendar-week">'+['ش','ی','د','س','چ','پ','ج'].map(x=>'<span>'+x+'</span>').join('')+'</div><div class="jalali-calendar-days" data-jp-days>'+jalaliCalendarDays(y,mo,d)+'</div></div><input type="hidden" '+(id?'id="'+id+'" ':'')+(name?'name="'+name+'" ':'')+(required?'required ':'')+'value="'+(p?v:'')+'"></label>';
 }
 function jalaliCalendarDays(y,m,selected) {
-  const first=jalaliToGregorianDate(y+'/'+String(m).padStart(2,'0')+'/01');
-  const offset=(new Date(first+'T00:00:00Z').getUTCDay()+1)%7, count=jalaliMonthDays(y,m);
+  const first=ModirManagement.jalaliToGregorianDate(y+'/'+String(m).padStart(2,'0')+'/01');
+  const offset=(new Date(first+'T00:00:00Z').getUTCDay()+1)%7, count=ModirManagement.jalaliMonthDays(y,m);
   return Array.from({length:offset},()=>'<span class="jalali-calendar-empty"></span>').join('')+
     Array.from({length:count},(_,i)=>{const day=i+1;return '<button type="button" class="jalali-day '+(day===selected?'selected':'')+'" data-jp-day="'+day+'" aria-label="روز '+fa(day)+'">'+fa(day)+'</button>';}).join('');
 }
 document.addEventListener('change',e=>{
   const picker=e.target.closest('[data-jalali-picker]'); if(!picker)return;
   const y=Number(picker.querySelector('[data-jp-year]').value),m=Number(picker.querySelector('[data-jp-month]').value);
-  const hidden=picker.parentElement.querySelector('input[type="hidden"]'),old=Number(hidden.value.split('/')[2])||0,max=jalaliMonthDays(y,m),day=Math.min(old,max);
+  const hidden=picker.parentElement.querySelector('input[type="hidden"]'),old=Number(hidden.value.split('/')[2])||0,max=ModirManagement.jalaliMonthDays(y,m),day=Math.min(old,max);
   picker.querySelector('[data-jp-days]').innerHTML=jalaliCalendarDays(y,m,day);
   hidden.value=day?y+'/'+String(m).padStart(2,'0')+'/'+String(day).padStart(2,'0'):'';
 });
