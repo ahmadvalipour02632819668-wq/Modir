@@ -52,3 +52,29 @@ jobs:
 
           console.log('JavaScript load order and local assets are valid.');
           NODE
+
+      - name: Check frontend module API contracts
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+          const contracts = {
+            'dashboard.js': ['ModirDashboard', 'reqTable', 'viewDash', 'renderPollsInAnnouncements'],
+            'community.js': ['ModirCommunity', 'viewAnnouncements', 'viewNeighborAlerts', 'viewRequests', 'payModal', 'viewPay'],
+            'finance.js': ['ModirFinance', 'viewTx', 'viewReport'],
+            'management.js': ['ModirManagement', 'viewUnits', 'viewRates', 'viewSettings', 'viewActivity', 'viewProfile', 'normalizeJalaliDigits', 'jalaliToGregorianDate', 'gregorianToJalaliDate', 'jalaliMonthDays']
+          };
+
+          for (const [file, names] of Object.entries(contracts)) {
+            const source = fs.readFileSync(file, 'utf8');
+            const [apiName, ...methods] = names;
+            if (!source.includes(`window.${apiName} = Object.freeze(`)) {
+              throw new Error(`${file}: missing frozen public API ${apiName}`);
+            }
+            for (const method of methods) {
+              if (!new RegExp(`\\b${method}\\b`).test(source)) {
+                throw new Error(`${file}: missing API method ${method}`);
+              }
+            }
+          }
+          console.log('Frontend public API contracts are present.');
+          NODE
