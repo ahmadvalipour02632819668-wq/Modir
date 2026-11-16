@@ -15,7 +15,8 @@ async function readJsonLimited(req:Request,maxBytes:number){
  if(new TextEncoder().encode(raw).byteLength>maxBytes)throw new Error("REQUEST_TOO_LARGE");
  return JSON.parse(raw);
 }
-const validBotToken=(v:string)=>v.length>=10&&v.length<=200&&/^[A-Za-z0-9:_-]+$/.test(v);
+const validBotToken=(v:string)=>v.length>=20&&v.length<=300&&/^[A-Za-z0-9:_-]+$/.test(v);
+const validChatId=(v:string)=>/^-?[0-9]{1,30}$/.test(v)||/^@[A-Za-z0-9_]{5,32}$/.test(v);
 
 serve(async(req:Request)=>{
  if(req.method==="OPTIONS")return new Response("ok",{headers:corsHeaders});
@@ -59,7 +60,7 @@ serve(async(req:Request)=>{
    }
    return json({success:true,chats:[...chats.values()],message:updates.length?"در پیام‌های دریافتی ربات، گروهی پیدا نشد. در گروه یک پیام تازه بفرستید و دوباره تلاش کنید.":"هنوز پیامی به ربات نرسیده است. در گروه یک پیام تازه بفرستید و دوباره تلاش کنید."});
   }
-  if(!validBotToken(String(cfg?.bot_token||""))||! /^-?[0-9]{1,30}$/.test(String(cfg?.chat_id||"")))return json({error:"تنظیمات اتصال بله معتبر نیست"},409);
+  if(!validBotToken(String(cfg?.bot_token||""))||!validChatId(String(cfg?.chat_id||"")))return json({error:"تنظیمات اتصال بله معتبر نیست"},409);
   let sent:Response;
   if(image){
    const match=image.match(/^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/=]+)$/);
