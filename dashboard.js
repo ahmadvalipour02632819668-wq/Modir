@@ -471,4 +471,3 @@ async function renderPollsInAnnouncements(el) {
   }));
 }
 
-async 
