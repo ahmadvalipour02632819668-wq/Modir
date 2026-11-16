@@ -36,7 +36,7 @@ for (const file of modules) {
   }
   const source = read(file);
   if (!source.trim()) fail(`empty module: ${file}`);
-  const ref = `src="./${file}?v=1"`;
+  const ref = `src="./${file}`;
   const position = index.indexOf(ref);
   if (position < 0) fail(`index.html does not load ${file}`);
   if (position <= previous) fail(`module order changed at ${file}`);
