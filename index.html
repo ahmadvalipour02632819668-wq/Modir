@@ -1032,16 +1032,38 @@ async function renderLogin() {
         return id;
       }
     })();
-    const deviceLabel=(()=>{
+    const getDeviceLabel=async()=>{
       const ua=navigator.userAgent||'';
       let device=/Android/i.test(ua)?'Android':/iPhone/i.test(ua)?'iPhone':/iPad/i.test(ua)?'iPad':/Windows/i.test(ua)?'Windows':/Macintosh/i.test(ua)?'Mac':/Linux/i.test(ua)?'Linux':'دستگاه';
-      if(/Android/i.test(ua)){
+      let osVersion='';
+      let browser=/Edg\//i.test(ua)?'Edge':/SamsungBrowser\//i.test(ua)?'Samsung Internet':/Firefox\//i.test(ua)?'Firefox':/Chrome\//i.test(ua)?'Chrome':/Safari\//i.test(ua)?'Safari':'مرورگر';
+      let browserVersion='';
+      try{
+        const uaData=navigator.userAgentData;
+        if(uaData&&typeof uaData.getHighEntropyValues==='function'){
+          const high=await uaData.getHighEntropyValues(['model','platform','platformVersion','fullVersionList']);
+          const platform=high.platform||uaData.platform||'';
+          if(/Android/i.test(platform)){
+            device='Android'+(high.model?' '+high.model.trim():'');
+          }else if(/Windows/i.test(platform))device='Windows';
+          else if(/macOS/i.test(platform))device='Mac';
+          if(high.platformVersion)osVersion=high.platformVersion;
+          const brands=Array.isArray(high.fullVersionList)?high.fullVersionList:[];
+          const preferred=brands.find(x=>/Microsoft Edge/i.test(x.brand))||brands.find(x=>/Google Chrome/i.test(x.brand))||brands.find(x=>/Chromium/i.test(x.brand));
+          if(preferred){browser=/Edge/i.test(preferred.brand)?'Edge':'Chrome';browserVersion=preferred.version||'';}
+        }
+      }catch(_){}
+      if(/^Android(?:\s|$)/.test(device)&&device==='Android'){
         const model=ua.match(/;\s*([^;)]+?)\s+Build\//i);
         if(model&&model[1]&&!/wv|\b(?:K|U)\d{3,}\b/i.test(model[1]))device+=' '+model[1].trim();
       }
-      const browser=/Edg\//i.test(ua)?'Edge':/Firefox\//i.test(ua)?'Firefox':/Chrome\//i.test(ua)?'Chrome':/Safari\//i.test(ua)?'Safari':'مرورگر';
-      return device+' · '+browser;
-    })();
+      if(!browserVersion){
+        const match=ua.match(/(?:Edg|SamsungBrowser|Firefox|Chrome|Version)\/([\d.]+)/i);
+        if(match)browserVersion=match[1];
+      }
+      const details=[device,osVersion?'OS '+osVersion:'',browser+(browserVersion?' '+browserVersion:'')].filter(Boolean);
+      return details.join(' · ').slice(0,80);
+    };
     const clearPreviousAccountData=()=>{
       ['bm_token','bm_me','bm_superadmin_token','bm_superadmin_account'].forEach(k=>sessionStorage.removeItem(k));
       localStorage.removeItem('bm_token');
@@ -1050,6 +1072,7 @@ async function renderLogin() {
     const attemptLogin=async replaceId=>{
       btn.disabled=true;btn.textContent='در حال بررسی...';
       try{
+        const deviceLabel=await getDeviceLabel();
         const r=await api('app_login_unified',{
           p_login:login,p_password:password,
           p_replace_session_id:replaceId||null,p_device_label:deviceLabel,p_device_id:deviceId
