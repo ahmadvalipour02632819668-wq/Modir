@@ -34,7 +34,7 @@ jobs:
             'core.js', 'shell.js', 'dashboard.js', 'community.js',
             'finance.js', 'management.js', 'navigation.js'
           ];
-          const actual = [...html.matchAll(/<script\\s+src=["']\\.\\/([^"'?]+)(?:\\?[^"']*)?["']/g)]
+          const actual = [...html.matchAll(/<script\s+src=["']\.\/([^"'?]+)(?:\?[^"']*)?["']/g)]
             .map(match => match[1])
             .filter(name => expected.includes(name));
 
