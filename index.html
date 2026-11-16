@@ -986,7 +986,9 @@ async function renderLogin() {
     if(loginLockCountdownTimer){clearInterval(loginLockCountdownTimer);loginLockCountdownTimer=null;}
     if(r?.code==='LOGIN_LOCKED'){
       let left=Math.max(1,Number(r.lock_seconds)||1);
+      const endsAt=Date.now()+left*1000;
       const draw=()=>{
+        left=Math.max(0,Math.ceil((endsAt-Date.now())/1000));
         if(left<=0){
           el.textContent='زمان محدودیت ورود به پایان رسید. اکنون می‌توانید دوباره تلاش کنید.';
           if(loginLockCountdownTimer){clearInterval(loginLockCountdownTimer);loginLockCountdownTimer=null;}
@@ -997,7 +999,7 @@ async function renderLogin() {
         el.textContent=(r.error||'ورود موقتاً به دلیل چند تلاش ناموفق مسدود شده است')+'. زمان باقی‌مانده: '+time;
       };
       draw();
-      loginLockCountdownTimer=setInterval(()=>{left--;draw();},1000);
+      loginLockCountdownTimer=setInterval(draw,1000);
       return;
     }
     if(r?.code==='INVALID_CREDENTIALS'&&Number.isFinite(Number(r.attempts_remaining))){
