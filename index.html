@@ -2430,10 +2430,15 @@ function replyModal(r) {
       go(S.view);
     } catch (err) {
       const raw = String(err?.message || '');
-      const duplicatePending = /در انتظار بررسی|در انتظار تایید|duplicate key|trg_prevent_duplicate_pending_payment|payment_requests_one_pending_per_account_period_category_uidx/i.test(raw);
-      errorBox.textContent = duplicatePending
-        ? 'شما برای این مورد یک درخواست پرداختِ در انتظار بررسی دارید. تا زمانی که مدیر درخواست قبلی را تأیید یا رد نکند، امکان ثبت درخواست جدید وجود ندارد.'
-        : (raw === 'NETWORK_ERROR' ? 'ارتباط با سرور برقرار نشد. لطفاً اتصال اینترنت را بررسی و دوباره تلاش کنید.' : (raw || 'ثبت درخواست پرداخت ناموفق بود.'));
+      const normalized = raw.toLowerCase();
+      const overBalance = /مبلغ پرداخت از مانده بدهی این هزینه بیشتر است/.test(raw);
+      const duplicatePending = /در انتظار بررسی|در انتظار تایید|trg_prevent_duplicate_pending_payment|payment_requests_one_pending_per_account_period_category_uidx/i.test(raw)
+        || /duplicate key value violates unique constraint/i.test(raw);
+      errorBox.textContent = overBalance
+        ? 'مبلغ واردشده از مانده بدهی این هزینه بیشتر است. مبلغ را حداکثر تا سقف مانده بدهی وارد کنید.'
+        : (duplicatePending
+          ? 'برای این مورد یک درخواست پرداخت قبلاً ثبت شده و هنوز در حال بررسی است. تا زمانی که مدیر آن را تأیید یا رد نکند، امکان ثبت درخواست تکراری وجود ندارد.'
+          : (raw === 'NETWORK_ERROR' ? 'ارتباط با سرور برقرار نشد. لطفاً اتصال اینترنت را بررسی و دوباره تلاش کنید.' : (raw || 'ثبت درخواست پرداخت ناموفق بود.')));
       errorBox.classList.remove('hidden');
       errorBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     } finally {
