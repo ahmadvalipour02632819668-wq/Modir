@@ -42,7 +42,7 @@ for (const file of modules) {
   if (position <= previous) fail(`module order changed at ${file}`);
   previous = position;
 
-  for (const match of source.matchAll(/^(?:async\\s+)?function\\s+([A-Za-z_$][\\w$]*)\\s*\\(/gm)) {
+  for (const match of source.matchAll(/^(?:async\s+)?function\s+([A-Za-z_$][\w$]*)\s*\(/gm)) {
     const name = match[1];
     if (seenFunctions.has(name)) {
       fail(`duplicate function declaration: ${name} in ${seenFunctions.get(name)} and ${file}`);
