@@ -1,3 +1,9 @@
+(function () {
+  const BACK_EXIT_WINDOW_MS = 2000;
+  let backPressCount = 0;
+  let backPressTimer = null;
+  let appHistoryReady = false;
+
 function resetBackPress() { backPressCount = 0; if (backPressTimer) { clearTimeout(backPressTimer); backPressTimer = null; } }
 function ensureAppHistory() {
   const current = history.state;
@@ -34,3 +40,4 @@ ensureAppHistory();
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') { resetBackPress(); } });
 document.addEventListener('click', e => { if (!e.target.closest('.menu-dropdown')) { $('#main-menu')?.classList.remove('show'); } });
 if (S.token) renderShell(); else renderLogin();
+})();
