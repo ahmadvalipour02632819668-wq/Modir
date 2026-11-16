@@ -2448,8 +2448,7 @@ function replyModal(r) {
       const raw = String(err?.message || '');
       const normalized = raw.toLowerCase();
       const overBalance = /مبلغ پرداخت از مانده بدهی این هزینه بیشتر است/.test(raw);
-      const duplicatePending = /در انتظار بررسی|در انتظار تایید|trg_prevent_duplicate_pending_payment|payment_requests_one_pending_per_account_period_category_uidx/i.test(raw)
-        || /duplicate key value violates unique constraint/i.test(raw);
+      const duplicatePending = /در انتظار بررسی|در انتظار تایید|trg_prevent_duplicate_pending_payment|payment_requests_one_pending_per_account_period_category_uidx/i.test(raw);
       errorBox.textContent = overBalance
         ? 'مبلغ واردشده از مانده بدهی این هزینه بیشتر است. مبلغ را حداکثر تا سقف مانده بدهی وارد کنید.'
         : (duplicatePending
@@ -2477,8 +2476,13 @@ function approveModal(p) {
   $('#ap-rj', m).addEventListener('click', async () => { const note = prompt('دلیل رد:') ?? null; if (note === null) return; try { await T('app_admin_review_payment', { p_id: p.id, p_approve: false, p_admin_note: note }); await sendMobilePush('payment_reviewed', 'نتیجه بررسی پرداخت', 'پرداخت شما رد شد. ' + note, p.account_id); closeModal(m); toast('رد شد'); go('pay'); } catch (e) { showErr(e); } });
   $('#ap-go', m).addEventListener('click', async () => {
     try {
-      await T('app_admin_review_payment', { p_id: p.id, p_approve: true, p_amount: toNum($('#ap-a', m).value), p_admin_note: $('#ap-n', m).value });
-      notifyBale(`✅ پرداخت تایید شد:\n\n👤 واحد ${p.unit_no} - ${p.full_name}\n💰 مبلغ: ${fmt(p.amount)} تومان\n📅 بابت: ${CATS[p.category] || p.category} - ${MONTHS[p.month-1]} ${p.year}`);
+      const approvedAmount = toNum($('#ap-a', m).value);
+      if (approvedAmount <= 0 || approvedAmount > Number(p.amount)) {
+        toast('مبلغ تأییدشده باید بیشتر از صفر و حداکثر برابر مبلغ درخواست‌شده باشد', true);
+        return;
+      }
+      await T('app_admin_review_payment', { p_id: p.id, p_approve: true, p_amount: approvedAmount, p_admin_note: $('#ap-n', m).value });
+      notifyBale(`✅ پرداخت تایید شد:\n\n👤 واحد ${p.unit_no} - ${p.full_name}\n💰 مبلغ: ${fmt(approvedAmount)} تومان\n📅 بابت: ${CATS[p.category] || p.category} - ${MONTHS[p.month-1]} ${p.year}`);
       await sendMobilePush('payment_reviewed', 'پرداخت شما تایید شد', 'پرداخت ' + fmt(p.amount) + ' تومان تایید شد.', p.account_id);
       closeModal(m); toast('تایید شد'); go('pay');
     } catch (e) { showErr(e); }
