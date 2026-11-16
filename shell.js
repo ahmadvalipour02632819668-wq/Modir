@@ -594,7 +594,7 @@ async function renderShell() {
 function go(v, isBackNavigation = false) {
   const views = {
     dash: ModirDashboard.viewDash, announcements: ModirCommunity.ModirCommunity.viewAnnouncements, 'neighbor-alerts': ModirCommunity.ModirCommunity.viewNeighborAlerts, requests: ModirCommunity.ModirCommunity.viewRequests, tx: ModirFinance.viewTx, pay: ModirCommunity.ModirCommunity.viewPay,
-    report: ModirFinance.viewReport, units: viewUnits, rates: viewRates, charge: viewRates, settings: viewSettings, activity: viewActivity, profile: viewProfile, services: viewServices,
+    report: ModirFinance.viewReport, units: ModirManagement.viewUnits, rates: ModirManagement.viewRates, charge: ModirManagement.viewRates, settings: ModirManagement.viewSettings, activity: ModirManagement.viewActivity, profile: ModirManagement.viewProfile, services: viewServices,
   };
   if (!views[v]) v = 'dash';
   S.view = v;
