@@ -428,6 +428,4 @@ async function viewProfile(el) {
 
 window.addEventListener('online', () => toast('اتصال اینترنت برقرار شد'));
 window.addEventListener('offline', () => toast('اتصال اینترنت قطع شد', true));
-const BACK_EXIT_WINDOW_MS = 2000;
-let backPressCount = 0; let backPressTimer = null; let appHistoryReady = false;
 
