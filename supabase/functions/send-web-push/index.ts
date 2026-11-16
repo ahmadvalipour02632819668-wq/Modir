@@ -13,7 +13,7 @@ function isAllowedPushEndpoint(value: unknown): boolean {
       host === "updates.push.services.mozilla.com" ||
       host === "push.services.mozilla.com" ||
       host === "web.push.apple.com" ||
-      /^[a-z0-9-]+\\.notify\\.windows\\.com$/.test(host);
+      /^[a-z0-9-]+\.notify\.windows\.com$/.test(host);
     return u.protocol === "https:" && !u.username && !u.password && !u.port && allowed;
   } catch {
     return false;
@@ -27,13 +27,20 @@ Deno.serve(async (req: Request) => {
   if (req.method!=="POST") return json({error:"Method not allowed"},405);
   const url=Deno.env.get("SUPABASE_URL")||"", key=Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||"";
   if(!url||!key) return json({error:"تنظیمات اتصال پایگاه داده ناقص است"},503);
-  let input:any; try{input=await req.json();}catch{return json({error:"Invalid JSON"},400);}
-  const token=typeof input?.token==="string"?input.token:"";
+  let input:any;
+  try{
+    const declared=Number(req.headers.get("content-length")||"0");
+    if(Number.isFinite(declared)&&declared>32000)return json({error:"حجم درخواست بیش از حد مجاز است"},413);
+    const raw=await req.text();
+    if(new TextEncoder().encode(raw).byteLength>32000)return json({error:"حجم درخواست بیش از حد مجاز است"},413);
+    input=JSON.parse(raw);
+  }catch{return json({error:"Invalid JSON"},400);}
+  const token=typeof input?.token==="string"?input.token.trim():"";
   const event=typeof input?.event==="string"?input.event:"";
   const title=typeof input?.title==="string"?input.title.trim():"";
   const body=typeof input?.body==="string"?input.body.trim():"";
   const targetId=typeof input?.target_account_id==="string"?input.target_account_id:"";
-  if(!token||!event||!title) return json({error:"token, event and title are required"},400);
+  if(!token||token.length>200||!event||!title) return json({error:"token, event and title are required"},400);
   const headers={apikey:key,Authorization:"Bearer "+key};
   const rest=async(path:string,method="GET",payload?:unknown)=>{
     const response=await fetch(url+"/rest/v1/"+path,{method,headers:{...headers,...(payload===undefined?{}:{"Content-Type":"application/json",Prefer:"return=representation"})},body:payload===undefined?undefined:JSON.stringify(payload)});
@@ -47,6 +54,8 @@ Deno.serve(async (req: Request) => {
     const session=sessions[0];
     const accounts=await rest("accounts?id=eq."+encodeURIComponent(session.account_id)+"&building_id=eq."+encodeURIComponent(session.building_id)+"&is_active=eq.true&select=id,building_id,is_admin&limit=1");
     if(!Array.isArray(accounts)||!accounts.length) return json({error:"حساب کاربر فعال نیست"},403);
+    const activeBuilding=await rest("buildings?id=eq."+encodeURIComponent(session.building_id)+"&status=eq.active&select=id&limit=1");
+    if(!Array.isArray(activeBuilding)||!activeBuilding.length) return json({error:"ساختمان فعال نیست"},403);
     const actor=accounts[0];let recipients:any[]=[];
     const allowedEvents = ["resident_login","resident_request_created","payment_request_created","announcement_created","poll_created","group_message_created","manager_reply_created","payment_reviewed"];
     if(!allowedEvents.includes(event)) return json({error:"رویداد اعلان مجاز نیست"},400);
