@@ -61,7 +61,7 @@ function billCard(r, rep) {
           <small style="color:#c9cce6">مانده قابل پرداخت (تومان)</small>
           <div style="display:flex;align-items:center;gap:10px"><button class="eye" type="button">${EYE}</button><span class="bc-amt" data-count="${rem}">${fmt(rem)}</span></div>
         </div>
-        ${rem > 0 ? `<button class="btn sf sm" onclick="ModirCommunity.ModirCommunity.payModal(${r.unit_no || 'null'}, '${r.account_id || ''}')" style="background:var(--peach);color:var(--navy);border:none;padding:8px 16px;font-size:13px;font-weight:900;box-shadow:0 4px 12px rgba(247,174,116,.3);">💸 پرداخت بدهی</button>` : ''}
+        ${rem > 0 ? `<button class="btn sf sm" onclick="ModirCommunity.payModal(${r.unit_no || 'null'}, '${r.account_id || ''}')" style="background:var(--peach);color:var(--navy);border:none;padding:8px 16px;font-size:13px;font-weight:900;box-shadow:0 4px 12px rgba(247,174,116,.3);">💸 پرداخت بدهی</button>` : ''}
       </div>
     <div style="padding:10px 24px">
       <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px dashed var(--line)">
