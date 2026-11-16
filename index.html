@@ -2307,9 +2307,17 @@ function replyModal(r) {
   };
 
   const bindDebtEvents = () => {
-    $$('.debt-amount', m).forEach(inp => {
-      inp.addEventListener('input', e => {
-        const n = toNum(e.target.value); e.target.value = n ? fmt(n) : '';
+    $('.debt-amount', m).forEach(inp => {
+      // هنگام تایپ مقدار را قالب‌بندی نکن؛ این کار مکان‌نما را جابه‌جا می‌کند
+      // و در موبایل ویرایش عدد را دشوار یا غیرممکن می‌سازد.
+      inp.setAttribute('inputmode', 'numeric');
+      inp.setAttribute('autocomplete', 'off');
+      inp.addEventListener('input', () => {
+        updateTotalDebts();
+      });
+      inp.addEventListener('blur', e => {
+        const n = toNum(e.target.value);
+        e.target.value = n > 0 ? fmt(n) : '';
         updateTotalDebts();
       });
     });
@@ -2364,9 +2372,17 @@ function replyModal(r) {
     $('#pf-a', m).value = '0';
   });
 
-  attachNumericInputIn(m, '#pf-custom');
-  $('#pf-custom', m).addEventListener('input', (e) => {
-    $('#pf-a', m).value = e.target.value;
+  const customAmountInput = $('#pf-custom', m);
+  customAmountInput.setAttribute('inputmode', 'numeric');
+  customAmountInput.setAttribute('autocomplete', 'off');
+  customAmountInput.addEventListener('input', e => {
+    // مقدار خام حین تایپ حفظ می‌شود تا مکان‌نمای صفحه‌کلید نپرد.
+    $('#pf-a', m).value = fmt(toNum(e.target.value));
+  });
+  customAmountInput.addEventListener('blur', e => {
+    const n = toNum(e.target.value);
+    e.target.value = n > 0 ? fmt(n) : '';
+    $('#pf-a', m).value = fmt(n);
   });
 
 
