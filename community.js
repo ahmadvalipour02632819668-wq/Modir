@@ -1,4 +1,4 @@
-function viewAnnouncements(el) {
+async function viewAnnouncements(el) {
   markAlertPrefixSeen('announcement:');
   const list = await T('app_get_announcements');
   const adminForm = S.me.is_admin ? `<form id="af" class="card grid g3" style="margin-bottom:20px;border-color:var(--accent)"><h2 style="grid-column:1/-1;margin:0">ارسال اعلان جدید</h2><label class="f">عنوان<input id="a-title" required maxlength="180"></label><label class="f">نوع<select id="a-type"><option value="general">اطلاعیه عمومی</option><option value="meeting">دعوت به جلسه</option></select></label><label class="f" style="grid-column:1/-1">متن کامل<textarea id="a-content" rows="3" required maxlength="5000"></textarea></label><div style="grid-column:1/-1"><button class="btn">ثبت اعلان</button></div></form>` : '';
@@ -663,4 +663,3 @@ function approveModal(p) {
   });
 }
 
-async 
