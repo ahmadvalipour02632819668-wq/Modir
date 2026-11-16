@@ -28,13 +28,13 @@ serve(async(req:Request)=>{
   if(action!=="send"&&action!=="discover")return json({error:"عملیات بله معتبر نیست"},400);
   if(action!=="discover"&&(!message||message.length>4000))return json({error:"متن اعلان نامعتبر است"},400);
   if(image.length>11200000)return json({error:"حجم تصویر بیشتر از حد مجاز است"},413);
-  const auth=await rpc("app_bale_authorize",{p_token:token,p_building_id:buildingId});
+  const auth=await rpc("app_bale_authorize",{p_token:token,p_building_id:buildingId},true);
   if(!auth.ok||(await auth.json())!==true)return json({error:"دسترسی به اعلان‌های این ساختمان تأیید نشد"},403);
   if(action==="discover"){ 
-   const discoverAuth=await rpc("app_bale_discover_authorize",{p_token:token,p_building_id:buildingId});
+   const discoverAuth=await rpc("app_bale_discover_authorize",{p_token:token,p_building_id:buildingId},true);
    if(!discoverAuth.ok||(await discoverAuth.json())!==true)return json({error:"یافتن گروه‌های بله فقط برای مدیر ساختمان مجاز است"},403);
   }
-  const rate=await rpc("app_claim_bale_dispatch",{p_token:token,p_action:action});
+  const rate=await rpc("app_claim_bale_dispatch",{p_token:token,p_action:action},true);
   if(!rate.ok)throw new Error("بررسی محدودیت ارسال بله ناموفق بود");
   if((await rate.json())!==true)return json({error:"تعداد درخواست‌های بله در مدت کوتاه بیش از حد مجاز است؛ کمی بعد دوباره تلاش کنید."},429);
   const cfgRes=await rpc("app_internal_get_bale_config",{p_building_id:buildingId},true);
