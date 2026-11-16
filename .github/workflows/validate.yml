@@ -67,12 +67,14 @@ jobs:
           for (const [file, names] of Object.entries(contracts)) {
             const source = fs.readFileSync(file, 'utf8');
             const [apiName, ...methods] = names;
-            if (!source.includes(`window.${apiName} = Object.freeze(`)) {
+            const apiPattern = new RegExp('window\\\\.' + apiName + '\\\\s*=\\\\s*Object\\\\.freeze\\\\(\\\\{([\\\\s\\\\S]*?)\\\\}\\\\)');
+            const apiMatch = source.match(apiPattern);
+            if (!apiMatch) {
               throw new Error(`${file}: missing frozen public API ${apiName}`);
             }
             for (const method of methods) {
-              if (!new RegExp(`\\b${method}\\b`).test(source)) {
-                throw new Error(`${file}: missing API method ${method}`);
+              if (!new RegExp('\\\\b' + method + '\\\\b').test(apiMatch[1])) {
+                throw new Error(`${file}: public API ${apiName} does not expose ${method}`);
               }
             }
           }
