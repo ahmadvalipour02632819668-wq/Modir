@@ -1,3 +1,4 @@
+(function (window) {
 async function viewAnnouncements(el) {
   markAlertPrefixSeen('announcement:');
   const list = await T('app_get_announcements');
@@ -663,3 +664,12 @@ function approveModal(p) {
   });
 }
 
+  // Public community API: views and payment modal used by other areas.
+  window.ModirCommunity = Object.freeze({
+    viewAnnouncements,
+    viewNeighborAlerts,
+    viewRequests,
+    payModal,
+    viewPay
+  });
+})(window);
