@@ -261,7 +261,7 @@ async function api(fn, args = {}) {
     if (error) {
       const rawMsg = error.message || '';
       if (rawMsg.includes('AUTH_REQUIRED')) { logout(true); throw new Error('AUTH_ERROR'); }
-      if (isNetworkError(rawMsg)) throw new Error('NETWORK_ERROR');
+      if (error.name === 'AbortError' || isNetworkError(rawMsg)) throw new Error('NETWORK_ERROR');
       throw new Error(rawMsg.replace(/^AUTH_REQUIRED:\s*/, '') || 'خطا در ارتباط با سرور');
     }
     return data;
