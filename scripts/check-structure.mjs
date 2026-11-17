@@ -16,6 +16,7 @@ const modules = [
   "pwa.js",
   "assistant.js",
   "shell.js",
+  "account-ui.js",
   "period-ui.js",
   "dashboard-ui.js",
   "dashboard.js",
@@ -47,6 +48,7 @@ for (const file of modules) {
 const contracts = {
   "sms.js": ["ModirSms", "smsLink", "smsBtn"],
   "dashboard-ui.js": ["ModirDashboardUi", "countUp", "bindEyes", "EYE"],
+  "account-ui.js": ["ModirAccountUi", "mustChangeBanner"],
   "period-ui.js": ["ModirPeriodUi", "monthOptions", "yearOptions", "unitOptions", "bindPeriod", "periodPicker"],
   "media.js": ["ModirMedia", "compressImage"],
   "pwa.js": ["ModirPwa", "isAppInstalled", "installPwa", "installTileHtml", "renderInstallBanner"],
@@ -84,7 +86,7 @@ const sharedContracts = {
     "modal", "closeModal", "go", "renderShell", "renderLogin", "logout",
     
     "ico",
-    "markAlertPrefixSeen", "mustChangeBanner"
+    "markAlertPrefixSeen"
   ],
 };
 for (const [file, names] of Object.entries(sharedContracts)) {
