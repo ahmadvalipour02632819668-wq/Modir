@@ -12,18 +12,18 @@ The order in `index.html` is part of the runtime contract:
 
 1. `core.js` — shared foundation: Supabase client/configuration, session and application state, API helpers, common formatting and date utilities.
 2. `alert-ui.js` — local read/unread alert tracking and prefix-based seen-state helpers.
-15. `sms.js` — isolated SMS link/button helpers used by dashboard and finance.
-15. `media.js` — isolated image compression helper used by community uploads.
-15. `pwa.js` — isolated PWA installation prompt, install tile and service-worker registration.
-15. `assistant.js` — isolated AI assistant UI and interaction controller.
-15. `shell.js` — login/shell rendering, global UI, navigation dispatch, shared interaction helpers and alert UI.
-15. `account-ui.js` — shared account-state notices, including the forced password-change banner.
-15. `period-ui.js` — shared month/year/unit selectors and period-picker binding helpers.
-15. `dashboard-ui.js` — dashboard-only balance visibility and count-up animation helpers.
-15. `dashboard.js` — dashboard cards, summaries, request table and dashboard view.
-15. `community.js` — announcements, neighbor alerts, requests and payment-related community views.
-15. `finance.js` — transactions and financial reports.
-15. `management.js` — units, rates, settings, activity/profile views and Jalali date helpers.
+3. `sms.js` — isolated SMS link/button helpers used by dashboard and finance.
+4. `media.js` — isolated image compression helper used by community uploads.
+5. `pwa.js` — isolated PWA installation prompt, install tile and service-worker registration.
+6. `assistant.js` — isolated AI assistant UI and interaction controller.
+7. `shell.js` — login/shell rendering, global UI, navigation dispatch, shared interaction helpers and alert UI.
+8. `account-ui.js` — shared account-state notices, including the forced password-change banner.
+9. `period-ui.js` — shared month/year/unit selectors and period-picker binding helpers.
+10. `dashboard-ui.js` — dashboard-only balance visibility and count-up animation helpers.
+11. `dashboard.js` — dashboard cards, summaries, request table and dashboard view.
+12. `community.js` — announcements, neighbor alerts, requests and payment-related community views.
+13. `finance.js` — transactions and financial reports.
+14. `management.js` — units, rates, settings, activity/profile views and Jalali date helpers.
 15. `navigation.js` — browser back-button/history handling.
 
 All fifteen application scripts are loaded synchronously at the end of the document body. This allows each later file to use APIs registered by earlier files.
