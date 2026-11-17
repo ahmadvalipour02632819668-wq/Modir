@@ -59,7 +59,7 @@ function billCard(r, rep) {
          <div class="bc-row" style="margin-top:16px;align-items:flex-end;justify-content:space-between;">
         <div>
           <small style="color:#c9cce6">مانده قابل پرداخت (تومان)</small>
-          <div style="display:flex;align-items:center;gap:10px"><button class="eye" type="button">${EYE}</button><span class="bc-amt" data-count="${rem}">${fmt(rem)}</span></div>
+          <div style="display:flex;align-items:center;gap:10px"><button class="eye" type="button">${ModirDashboardUi.EYE}</button><span class="bc-amt" data-count="${rem}">${fmt(rem)}</span></div>
         </div>
         ${rem > 0 ? `<button class="btn sf sm" onclick="ModirCommunity.payModal(${r.unit_no || 'null'}, '${r.account_id || ''}')" style="background:var(--peach);color:var(--navy);border:none;padding:8px 16px;font-size:13px;font-weight:900;box-shadow:0 4px 12px rgba(247,174,116,.3);">💸 پرداخت بدهی</button>` : ''}
       </div>
@@ -208,7 +208,7 @@ async function viewDash(el) {
     $('#go-profile')?.addEventListener('click', e => { e.preventDefault(); go('profile'); });
     $$('[data-go]', el).forEach(b => b.addEventListener('click', () => go(b.dataset.go)));
    $$('[data-install]', el).forEach(b => b.addEventListener('click', ModirPwa.installPwa));
-    countUp(el); bindEyes(el);
+    ModirDashboardUi.countUp(el); ModirDashboardUi.bindEyes(el);
     return;
   }
 
@@ -244,7 +244,7 @@ async function viewDash(el) {
       <div class="bank-card"><i class="shine"></i>
         <div style="display:flex;justify-content:space-between;align-items:center"><b style="font-size:15px">صندوق ساختمان</b><span style="color:#ffd27a;font-size:20px">★</span></div>
         <div class="bc-row"><span>موجودی فعلی (تومان)</span></div>
-        <div class="bc-row" style="margin-top:4px;justify-content:flex-start"><button class="eye" type="button">${EYE}</button><span class="bc-amt" data-count="${fund.balance}">${fmt(fund.balance)}</span></div>
+        <div class="bc-row" style="margin-top:4px;justify-content:flex-start"><button class="eye" type="button">${ModirDashboardUi.EYE}</button><span class="bc-amt" data-count="${fund.balance}">${fmt(fund.balance)}</span></div>
         <div class="bc-row" style="margin-top:14px"><span></span><button class="pill" type="button" data-go="tx">گردش حساب</button></div>
       </div>
       <div class="bank-card soft" id="monthly-income-card"><i class="shine"></i>
@@ -283,7 +283,7 @@ async function viewDash(el) {
   bindPeriod(() => go('dash'));
   $$('[data-go]', el).forEach(b => b.addEventListener('click', () => go(b.dataset.go)));
    $$('[data-install]', el).forEach(b => b.addEventListener('click', ModirPwa.installPwa));
-  countUp(el); bindEyes(el);
+  ModirDashboardUi.countUp(el); ModirDashboardUi.bindEyes(el);
   setupPaymentScrollAnimation(el, unitMap);
   $('#go-pay')?.addEventListener('click', () => go('pay'));
   $('#go-profile')?.addEventListener('click', e => { e.preventDefault(); go('profile'); });
