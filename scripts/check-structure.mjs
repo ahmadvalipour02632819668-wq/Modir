@@ -101,6 +101,10 @@ if (!financeSource.includes("function loadHtml2Canvas()") || (financeSource.matc
   fail("finance.js must lazy-load html2canvas only when an image export is requested");
 }
 
+if (!financeSource.includes('t.source === "payment" ?') || !financeSource.includes("پرداخت تأییدشده")) {
+  fail("approved payment transactions must not expose the generic manual edit action");
+}
+
 const serviceWorkerSource = read("sw.js");
 if (!serviceWorkerSource.includes("new URL(event.request.url).origin !== self.location.origin")) {
   fail("service worker must not intercept cross-origin GET requests");
