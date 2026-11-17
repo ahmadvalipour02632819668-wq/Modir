@@ -62,5 +62,30 @@ for (const [file, names] of Object.entries(contracts)) {
   }
 }
 
+
+const sharedContracts = {
+  "core.js": [
+    "sb", "S", "T", "api", "$", "$", "esc", "fmt", "fa", "money",
+    "toNum", "toast", "showErr", "MONTHS", "CATS", "OCC",
+    "jalaliDatePicker", "TODAY", "notifyBale", "sendMobilePush",
+    "enableMobilePush", "detachPushSubscription", "installPwa", "installTileHtml"
+  ],
+  "shell.js": [
+    "modal", "closeModal", "go", "renderShell", "renderLogin", "logout",
+    "monthOptions", "yearOptions", "unitOptions", "bindPeriod", "periodPicker",
+    "compressImage", "ico", "countUp", "bindEyes", "EYE", "smsBtn",
+    "markAlertPrefixSeen", "mustChangeBanner"
+  ],
+};
+for (const [file, names] of Object.entries(sharedContracts)) {
+  if (!fs.existsSync(path.join(root, file))) continue;
+  const source = read(file);
+  for (const name of names) {
+    const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, "\\if (process.exitCode) process.exit(process.exitCode);");
+    const declaration = new RegExp(`(?:\\b(?:const|let|var)\\s+${escaped}\\b|\\bfunction\\s+${escaped}\\s*\\()`);
+    if (!declaration.test(source)) fail(`${file}: missing shared runtime contract ${name}`);
+  }
+}
+
 if (process.exitCode) process.exit(process.exitCode);
 console.log(`Structure check passed: ${modules.length} ordered JavaScript files, public API contracts and app.css.`);
