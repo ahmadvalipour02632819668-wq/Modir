@@ -1,5 +1,5 @@
 \set ON_ERROR_STOP on
-SELECT plan(20);
+SELECT plan(25);
 
 SELECT has_table('public','payment_corrections','audit table exists');
 SELECT has_column('public','payment_corrections','original_transaction_id','stores original payment');
@@ -42,4 +42,25 @@ SELECT throws_ok(
   'P0001','سوابق اصلاح پرداخت فقط قابل ثبت هستند و امکان ویرایش یا حذف ندارند','audit record deletion is blocked'
 );
 
+SELECT throws_ok(
+  $SELECT public.app_admin_correct_approved_payment('11111111-1111-4111-8111-111111111111',4,'نه')$,
+  'P0001','دلیل اصلاح باید حداقل ۵ و حداکثر ۱۰۰۰ نویسه باشد','short correction reason is rejected'
+);
+SELECT throws_ok(
+  $SELECT public.app_admin_correct_approved_payment('11111111-1111-4111-8111-111111111111',5,'اصلاح منبع نامعتبر')$,
+  'P0001','فقط پرداخت تأییدشده و مرتبط با درخواست پرداخت از این مسیر قابل اصلاح است','non-payment source cannot be corrected'
+);
+SELECT throws_ok(
+  $SELECT public.app_admin_correct_approved_payment('11111111-1111-4111-8111-111111111111',6,'اصلاح نوع تراکنش')$,
+  'P0001','فقط پرداخت تأییدشده و مرتبط با درخواست پرداخت از این مسیر قابل اصلاح است','non-income transaction cannot be corrected'
+);
+SELECT throws_ok(
+  $SELECT public.app_admin_correct_approved_payment('11111111-1111-4111-8111-111111111111',7,'اصلاح مبلغ مغایر')$,
+  'P0001','اطلاعات درخواست و تراکنش پرداخت با هم مطابقت ندارد؛ اصلاح متوقف شد','amount mismatch between request and transaction is rejected'
+);
+SELECT is(
+  (SELECT count(*)::bigint FROM public.transactions WHERE source='payment_correction'),
+  1::bigint,
+  'rejected edge cases create no reversal transactions'
+);
 SELECT * FROM finish();
