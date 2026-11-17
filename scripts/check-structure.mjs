@@ -32,6 +32,7 @@ const modules = [
 if (!index.includes('href="./app.css?v=1"')) fail("index.html must load app.css");
 if (index.includes("./app.js")) fail("obsolete monolithic app.js reference remains");
 if (index.includes("<style>")) fail("application CSS must stay in app.css");
+if (index.includes("html2canvas")) fail("html2canvas must not block initial page loading");
 
 const actual = [...index.matchAll(/<script\s+src=["']\.\/([^"'?]+)(?:\?[^"']*)?["']/g)]
   .map((match) => match[1])
@@ -64,6 +65,11 @@ const contracts = {
   "finance.js": ["ModirFinance", "viewTx", "viewReport"],
   "management.js": ["ModirManagement", "viewUnits", "viewRates", "viewSettings", "viewActivity", "viewProfile"],
 };
+const financeSource = read("finance.js");
+if (!financeSource.includes("function loadHtml2Canvas()") || (financeSource.match(/loadHtml2Canvas\(\)/g) || []).length < 3) {
+  fail("finance.js must lazy-load html2canvas only when an image export is requested");
+}
+
 const dashboardSource = read("dashboard.js");
 if (/\$\{\s*mustChangeBanner\s*\(\s*\)\s*\}/.test(dashboardSource)) {
   fail("dashboard.js must call ModirAccountUi.mustChangeBanner(), not the removed local helper");
