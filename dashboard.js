@@ -193,7 +193,7 @@ async function viewDash(el) {
 
   if (!S.me.is_admin) {
     const r = rep.rows[0]; const reqs = await T('app_get_payment_requests');
-    el.innerHTML = `${mustChangeBanner()}
+    el.innerHTML = `${ModirAccountUi.mustChangeBanner()}
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:8px">
         <div><h1>سلام ${esc(S.me.full_name || ('واحد ' + fa(S.me.unit_no)))} 👋</h1><p class="sub" style="margin:0">صورتحساب ${rep.month_name} ${fa(rep.year)}</p></div>
         ${ModirPeriodUi.periodPicker()}
