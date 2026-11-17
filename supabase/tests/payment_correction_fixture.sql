@@ -180,4 +180,8 @@ INSERT INTO public.transactions(building_id,year,month,day,unit_no,account_id,tx
 VALUES
 (101,1405,8,10,1,'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','درآمد','شارژ',500000,'owner','payment','aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',9001),
 (202,1405,8,11,2,'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb','درآمد','شارژ',300000,'owner','payment','bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',9002),
-(101,1405,8,12,1,'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','درآمد','شارژ',200000,'owner','payment','aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',9003);
+(101,1405,8,12,1,'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','درآمد','شارژ',200000,'owner','payment','aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',9003),
+(101,1405,8,13,1,'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','درآمد','شارژ',150000,'owner','payment','aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',9004),
+(101,1405,8,14,1,'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','درآمد','شارژ',160000,'owner','manual','aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',9005),
+(101,1405,8,15,1,'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','هزینه','شارژ',170000,'owner','payment','aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',9006),
+(101,1405,8,16,1,'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','درآمد','شارژ',190000,'owner','payment','aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',9007);
