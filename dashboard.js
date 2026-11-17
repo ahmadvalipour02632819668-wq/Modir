@@ -237,7 +237,7 @@ async function viewDash(el) {
     </div>
     ${missing}
     ${residencyWarning}
-    ${mustChangeBanner()}
+    ${ModirAccountUi.mustChangeBanner()}
     <div><div class="sec-title">دسترسی سریع</div>
       <div class="quick">${[['units','واحدها'],['pay','تایید پرداخت'],['announcements','اعلانات'],['settings','تنظیمات']].map(([k,l]) => `<button class="tile" data-go="${k}">${ico(k)}${k==='pay' && +fund.pending_payments ? `<i class="badge">${fa(fund.pending_payments)}</i>` : ''}<span>${l}</span></button>`).join('') + ModirPwa.installTileHtml()}</div></div>
     <div class="grid dashboard-money-grid" style="margin:14px 0 12px">
