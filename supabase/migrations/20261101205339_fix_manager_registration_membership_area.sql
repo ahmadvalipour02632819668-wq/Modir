@@ -1,0 +1,45 @@
+create or replace function public.app_admin_review_manager_request(p_token uuid,p_request_id uuid,p_approve boolean,p_review_note text default null)
+returns jsonb language plpgsql security definer set search_path='' as $$
+declare
+ v_actor public.app_accounts;
+ v_req public.registration_requests%rowtype;
+ v_b_id uuid;
+ v_acc_id uuid;
+ v_m_id uuid;
+ v_unit_id uuid;
+begin
+ select * into v_actor from public.app_require_session(p_token);
+ if not v_actor.is_superadmin then raise exception 'دسترسی غیرمجاز'; end if;
+ select * into v_req from public.registration_requests where id=p_request_id for update;
+ if not found then raise exception 'درخواست پیدا نشد'; end if;
+ if p_approve then
+  if v_req.new_building_name is not null then
+   insert into public.buildings(name,address,floor_count,unit_count,building_status)
+   values(v_req.new_building_name,v_req.new_building_address,v_req.new_building_floor_count,v_req.new_building_unit_count,'active')
+   returning id into v_b_id;
+   insert into public.units(building_id,unit_no,area,resident_count)
+   select v_b_id,gs,null,null from generate_series(1,v_req.new_building_unit_count) gs;
+  else
+   v_b_id:=v_req.building_id;
+  end if;
+  if v_req.unit_no is not null then
+   select id into v_unit_id from public.units where building_id=v_b_id and unit_no=v_req.unit_no for update;
+   if v_unit_id is null then raise exception 'واحد انتخاب‌شده در ساختمان وجود ندارد'; end if;
+   if v_req.area is null or v_req.area<=0 then raise exception 'متراژ واحد نامعتبر است'; end if;
+   update public.units set area=v_req.area,resident_count=coalesce(v_req.resident_count,1) where id=v_unit_id;
+  end if;
+  insert into public.app_accounts(username,password_hash,full_name,phone,email,account_status)
+  values(v_req.username,v_req.requested_password_hash,v_req.full_name,v_req.phone,v_req.email,'active') returning id into v_acc_id;
+  insert into public.building_memberships(building_id,account_id,access_role,membership_status,resident_type,unit_id)
+  values(v_b_id,v_acc_id,'manager','active',case when v_req.unit_no is not null then 'owner_resident' else null end,v_unit_id)
+  returning id into v_m_id;
+  update public.buildings set current_manager_membership_id=v_m_id where id=v_b_id;
+  update public.registration_requests set request_status='approved',reviewed_by=v_actor.id,reviewed_at=now(),review_note=p_review_note where id=p_request_id;
+ else
+  update public.registration_requests set request_status='rejected',reviewed_by=v_actor.id,reviewed_at=now(),review_note=p_review_note where id=p_request_id;
+ end if;
+ return jsonb_build_object('success',true,'building_id',v_b_id);
+end;
+$$;
+revoke all on function public.app_admin_review_manager_request(uuid,uuid,boolean,text) from public,anon,authenticated;
+grant execute on function public.app_admin_review_manager_request(uuid,uuid,boolean,text) to anon;
