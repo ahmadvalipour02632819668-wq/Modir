@@ -305,7 +305,7 @@ async function renderShell() {
     showErr(e); return;
   }
 
-  try { S.avatarData = await T('app_profile_avatar_get'); } catch (avatarErr) { console.warn('Profile photo could not be loaded:', avatarErr); S.avatarData = null; }
+  S.avatarData = null;
 
   const curTheme = localStorage.getItem('bm_theme') || 'default';
 
@@ -351,6 +351,13 @@ async function renderShell() {
   window.addEventListener('resize', debounce(() => renderShellHeaderState(false), 100));
   if ('serviceWorker' in navigator && window.isSecureContext) getPushServiceWorker().catch(err => console.warn('Service worker registration failed:', err));
   go(S.view);
+  const avatarToken = S.token;
+  T('app_profile_avatar_get').then(data => {
+    if (S.token !== avatarToken || !S.me) return;
+    S.avatarData = data || null;
+    const avatarButton = $('#who-btn');
+    if (avatarButton && data) avatarButton.innerHTML = '<img src="' + esc(data) + '" alt="عکس پروفایل" style="width:100%;height:100%;object-fit:cover;border-radius:50%">';
+  }).catch(avatarErr => console.warn('Profile photo could not be loaded:', avatarErr));
   setTimeout(maybeAskForPushPermission, 500);
 }
 
