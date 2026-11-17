@@ -19,11 +19,12 @@ jobs:
         image: public.ecr.aws/supabase/postgres:17.12.0.000
         env:
           POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: supabase_admin
           POSTGRES_DB: modir_test
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U postgres -d modir_test"
+          --health-cmd "pg_isready -U supabase_admin -d modir_test"
           --health-interval 5s
           --health-timeout 5s
           --health-retries 20
@@ -34,6 +35,7 @@ jobs:
       - name: Run isolated payment correction integration tests
         env:
           PGPASSWORD: postgres
+          PGUSER: supabase_admin
         run: |
-          psql -h localhost -U postgres -d modir_test -v ON_ERROR_STOP=1 -f supabase/tests/payment_correction_fixture.sql
+          psql -h localhost -U supabase_admin -d modir_test -v ON_ERROR_STOP=1 -f supabase/tests/payment_correction_fixture.sql
           psql -h localhost -U postgres -d modir_test -v ON_ERROR_STOP=1 -f supabase/tests/payment_correction_schema.test.sql
