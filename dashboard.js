@@ -185,14 +185,26 @@ function setupPaymentScrollAnimation(root, unitMap) {
 }
 
 async function viewDash(el) {
-  const rep = await T('app_report', { p_year: S.y, p_month: S.m });
-  const managerResidencyUnits = S.me.is_admin ? await T('app_get_units') : [];
-  const managerResidencyIssues = S.me.is_admin ? (managerResidencyUnits.length ? managerResidencyUnits.filter(u=>u.residency_issue) : [{unit_no:null,residency_issue:'هنوز واحدی برای ساختمان ثبت نشده است'}]) : [];
+  const admin = !!S.me.is_admin;
+  let rep, managerResidencyUnits = [], fund = null, residentRequests = [];
+  if (admin) {
+    [rep, managerResidencyUnits, fund] = await Promise.all([
+      T('app_report', { p_year: S.y, p_month: S.m }),
+      T('app_get_units'),
+      T('app_fund_summary', { p_year: S.y, p_month: S.m })
+    ]);
+  } else {
+    [rep, residentRequests] = await Promise.all([
+      T('app_report', { p_year: S.y, p_month: S.m }),
+      T('app_get_payment_requests')
+    ]);
+  }
+  const managerResidencyIssues = admin ? (managerResidencyUnits.length ? managerResidencyUnits.filter(u=>u.residency_issue) : [{unit_no:null,residency_issue:'هنوز واحدی برای ساختمان ثبت نشده است'}]) : [];
   const residencyWarning = managerResidencyIssues.length ? `<div class="card" style="margin-bottom:16px;border-color:var(--danger);background:var(--bg)"><b style="color:var(--danger)">ثبت هرگونه تراکنش مالی تا تعیین تکلیف و تأیید تمام واحدها مسدود است.</b><p class="sub" style="margin:8px 0 0">واحدهای نیازمند اقدام: ${managerResidencyIssues.map(u=>(u.unit_no?'واحد '+fa(u.unit_no)+': ':'')+esc(u.residency_issue)).join(' · ')}</p><button class="btn sf sm" style="margin-top:10px" data-go="units">تعیین وضعیت واحدها</button></div>` : '';
   const missing = rep.missing_rates?.length ? `<div class="card" style="background:#fee2e2;color:#991b1b;margin-bottom:20px">مبالغ شارژ/پس‌انداز برای این ماه‌ها تعریف نشده: ${rep.missing_rates.map(fa).join('، ')}</div>` : '';
 
-  if (!S.me.is_admin) {
-    const r = rep.rows[0]; const reqs = await T('app_get_payment_requests');
+  if (!admin) {
+    const r = rep.rows[0]; const reqs = residentRequests;
     el.innerHTML = `${ModirAccountUi.mustChangeBanner()}
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:8px">
         <div><h1>سلام ${esc(S.me.full_name || ('واحد ' + fa(S.me.unit_no)))} 👋</h1><p class="sub" style="margin:0">صورتحساب ${rep.month_name} ${fa(rep.year)}</p></div>
@@ -212,7 +224,6 @@ async function viewDash(el) {
     return;
   }
 
-  const fund = await T('app_fund_summary', { p_year: S.y, p_month: S.m });
   const rows = rep.rows || [];
   const unitMap = {};
   rows.forEach(r => {
