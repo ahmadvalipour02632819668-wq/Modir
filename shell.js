@@ -341,8 +341,10 @@ async function renderShell() {
   });
   if (window.__modirManagerAlertTimer) clearInterval(window.__modirManagerAlertTimer);
   window.__modirManagerAlertTimer = setInterval(() => {
-    if (document.visibilityState === 'visible') ModirAlertCenter.refreshManagerAlertBadge();
-  }, 15000);
+    if (document.visibilityState === 'visible' && S.me?.is_admin) {
+      ModirAlertCenter.refreshManagerAlertBadge();
+    }
+  }, 60000);
   if (!window.__modirVisibilityHandler) {
     window.__modirVisibilityHandler = () => {
       if (document.visibilityState === 'visible' && S.me?.is_admin) ModirAlertCenter.refreshManagerAlertBadge();
