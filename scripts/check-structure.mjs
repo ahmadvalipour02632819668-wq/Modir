@@ -65,6 +65,12 @@ const contracts = {
   "finance.js": ["ModirFinance", "viewTx", "viewReport"],
   "management.js": ["ModirManagement", "viewUnits", "viewRates", "viewSettings", "viewActivity", "viewProfile"],
 };
+const managementSource = read("management.js");
+if (!managementSource.includes("S.view === 'charge' ? Promise.resolve({}) : T('app_get_settings')") ||
+    !managementSource.includes("S.view === 'charge' ? Promise.resolve(null) : T('app_admin_get_bale_config')")) {
+  fail("charge view must skip settings-only RPC requests");
+}
+
 const financeSource = read("finance.js");
 if (!financeSource.includes("function loadHtml2Canvas()") || (financeSource.match(/loadHtml2Canvas\(\)/g) || []).length < 3) {
   fail("finance.js must lazy-load html2canvas only when an image export is requested");
