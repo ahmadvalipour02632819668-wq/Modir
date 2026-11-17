@@ -1,4 +1,29 @@
 (function (window) {
+let html2CanvasPromise = null;
+function loadHtml2Canvas() {
+  if (typeof window.html2canvas === 'function') return Promise.resolve(window.html2canvas);
+  if (!html2CanvasPromise) {
+    html2CanvasPromise = new Promise((resolve, reject) => {
+      const sources = [
+        'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js',
+        'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js'
+      ];
+      const loadNext = (index) => {
+        if (index >= sources.length) { reject(new Error('بارگذاری ابزار ساخت تصویر ناموفق بود؛ اتصال اینترنت را بررسی کنید.')); return; }
+        const script = document.createElement('script');
+        script.src = sources[index];
+        script.async = true;
+        script.onload = () => typeof window.html2canvas === 'function'
+          ? resolve(window.html2canvas)
+          : loadNext(index + 1);
+        script.onerror = () => loadNext(index + 1);
+        document.head.appendChild(script);
+      };
+      loadNext(0);
+    }).catch(error => { html2CanvasPromise = null; throw error; });
+  }
+  return html2CanvasPromise;
+}
 async function viewTx(el) {
   const admin = S.me.is_admin; if (!S.txFilter) S.txFilter = { y: String(S.y), m: '', unit: '', type: '' }; const f = S.txFilter;
   const unitParam = admin && f.unit !== '' ? +f.unit : null;
@@ -253,7 +278,7 @@ async function viewReport(el) {
       }catch(err){content.innerHTML=`<p style="color:#b91c1c">`+esc(err.message||'خطا در دریافت گزارش')+`</p>`;}
     });
     $('#range-print-btn')?.addEventListener('click',()=>window.print());
-    $('#range-bale-btn')?.addEventListener('click',async()=>{const b=$('#range-bale-btn'),c=$('#range-report-content');if(!b||!c)return;const old=b.textContent;b.disabled=true;try{b.textContent='در حال ساخت تصویر...';const canvas=await html2canvas(c,{backgroundColor:'#fff',scale:2,useCORS:true,logging:false});const ok=await notifyBale(`📊 گزارش بازه‌ای `+(c.dataset.rangeTitle||'')+`\n`+(S.me?.building_name||S.building),canvas.toDataURL('image/jpeg',0.88));if(!ok)throw new Error('ارسال گزارش به بله ناموفق بود');toast('گزارش بازه‌ای به گروه بله ارسال شد');}catch(err){showErr(err)}finally{b.textContent=old;b.disabled=false}});
+    $('#range-bale-btn')?.addEventListener('click',async()=>{const b=$('#range-bale-btn'),c=$('#range-report-content');if(!b||!c)return;const old=b.textContent;b.disabled=true;try{b.textContent='در حال ساخت تصویر...';const renderCanvas=await loadHtml2Canvas();const canvas=await renderCanvas(c,{backgroundColor:'#fff',scale:2,useCORS:true,logging:false});const ok=await notifyBale(`📊 گزارش بازه‌ای `+(c.dataset.rangeTitle||'')+`\n`+(S.me?.building_name||S.building),canvas.toDataURL('image/jpeg',0.88));if(!ok)throw new Error('ارسال گزارش به بله ناموفق بود');toast('گزارش بازه‌ای به گروه بله ارسال شد');}catch(err){showErr(err)}finally{b.textContent=old;b.disabled=false}});
     return;
   }
   const rep=await T('app_report',{p_year:S.y,p_month:S.m});
@@ -268,7 +293,7 @@ async function viewReport(el) {
   ModirPeriodUi.bindPeriod(()=>go('report'));
   $('#report-range-mode')?.addEventListener('click',()=>{S.reportMode='range';S.rangeFromYear=S.y;S.rangeFromMonth=S.m;S.rangeToYear=S.y;S.rangeToMonth=S.m;go('report')});
   $('#pr-btn')?.addEventListener('click',()=>{const table=$('.report-table-wrap table');const rows=table?.querySelectorAll('tbody tr').length||1;const estimatedHeight=rows*23+105;const scale=Math.max(.42,Math.min(.82,720/estimatedHeight));document.documentElement.style.setProperty('--report-print-scale',String(scale));window.print();});
-  $('#bale-btn')?.addEventListener('click',async()=>{const b=$('#bale-btn'),table=$('.tbl-wrap table');if(!b||!table)return;const old=b.textContent;b.disabled=true;try{b.textContent='در حال ساخت تصویر...';const canvas=await html2canvas(table,{backgroundColor:'#fff',scale:2,useCORS:true,logging:false});const ok=await notifyBale(`📊 گزارش ماهانه `+rep.month_name+` `+fa(rep.year)+`\n`+(S.me?.building_name||S.building),canvas.toDataURL('image/jpeg',0.88));if(!ok)throw new Error('ارسال گزارش به بله ناموفق بود');toast('گزارش با موفقیت به گروه بله ارسال شد')}catch(err){showErr(err)}finally{b.textContent=old;b.disabled=false}});
+  $('#bale-btn')?.addEventListener('click',async()=>{const b=$('#bale-btn'),table=$('.tbl-wrap table');if(!b||!table)return;const old=b.textContent;b.disabled=true;try{b.textContent='در حال ساخت تصویر...';const renderCanvas=await loadHtml2Canvas();const canvas=await renderCanvas(table,{backgroundColor:'#fff',scale:2,useCORS:true,logging:false});const ok=await notifyBale(`📊 گزارش ماهانه `+rep.month_name+` `+fa(rep.year)+`\n`+(S.me?.building_name||S.building),canvas.toDataURL('image/jpeg',0.88));if(!ok)throw new Error('ارسال گزارش به بله ناموفق بود');toast('گزارش با موفقیت به گروه بله ارسال شد')}catch(err){showErr(err)}finally{b.textContent=old;b.disabled=false}});
 }
 
   // Public finance API: entry points used by the application shell.
