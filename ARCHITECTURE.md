@@ -16,15 +16,16 @@ The order in `index.html` is part of the runtime contract:
 4. `pwa.js` — isolated PWA installation prompt, install tile and service-worker registration.
 5. `assistant.js` — isolated AI assistant UI and interaction controller.
 6. `shell.js` — login/shell rendering, global UI, navigation dispatch, shared interaction helpers and alert UI.
-7. `period-ui.js` — shared month/year/unit selectors and period-picker binding helpers.
-8. `dashboard-ui.js` — dashboard-only balance visibility and count-up animation helpers.
-9. `dashboard.js` — dashboard cards, summaries, request table and dashboard view.
-10. `community.js` — announcements, neighbor alerts, requests and payment-related community views.
-11. `finance.js` — transactions and financial reports.
-12. `management.js` — units, rates, settings, activity/profile views and Jalali date helpers.
-13. `navigation.js` — browser back-button/history handling.
+7. `account-ui.js` — shared account-state notices, including the forced password-change banner.
+8. `period-ui.js` — shared month/year/unit selectors and period-picker binding helpers.
+9. `dashboard-ui.js` — dashboard-only balance visibility and count-up animation helpers.
+10. `dashboard.js` — dashboard cards, summaries, request table and dashboard view.
+11. `community.js` — announcements, neighbor alerts, requests and payment-related community views.
+12. `finance.js` — transactions and financial reports.
+13. `management.js` — units, rates, settings, activity/profile views and Jalali date helpers.
+14. `navigation.js` — browser back-button/history handling.
 
-All thirteen application scripts are loaded synchronously at the end of the document body. This allows each later file to use APIs registered by earlier files.
+All fourteen application scripts are loaded synchronously at the end of the document body. This allows each later file to use APIs registered by earlier files.
 
 ## Public cross-file APIs
 
