@@ -196,7 +196,7 @@ async function viewDash(el) {
     el.innerHTML = `${mustChangeBanner()}
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:8px">
         <div><h1>سلام ${esc(S.me.full_name || ('واحد ' + fa(S.me.unit_no)))} 👋</h1><p class="sub" style="margin:0">صورتحساب ${rep.month_name} ${fa(rep.year)}</p></div>
-        ${periodPicker()}
+        ${ModirPeriodUi.periodPicker()}
       </div>
       <div><div class="sec-title">دسترسی سریع</div>
         <div class="quick">${[['pay','پرداخت بدهی'],['tx','تراکنش‌ها'],['announcements','اعلانات'],['requests','ارتباط با مدیر']].map(([k,l]) => `<button class="tile" data-go="${k}">${ico(k)}<span>${l}</span></button>`).join('') + ModirPwa.installTileHtml()}</div></div>
@@ -204,7 +204,7 @@ async function viewDash(el) {
       <div style="margin-top:20px">${r ? billCard(r, rep) : '<p class="sub">صورتحسابی ثبت نشده.</p>'}</div>
       <div class="sec-title">سابقه پرداخت‌ها</div>
       ${reqTable(reqs.slice(0, 8), false)}`;
-    bindPeriod(() => go('dash'));
+    ModirPeriodUi.bindPeriod(() => go('dash'));
     $('#go-profile')?.addEventListener('click', e => { e.preventDefault(); go('profile'); });
     $$('[data-go]', el).forEach(b => b.addEventListener('click', () => go(b.dataset.go)));
    $$('[data-install]', el).forEach(b => b.addEventListener('click', ModirPwa.installPwa));
@@ -233,7 +233,7 @@ async function viewDash(el) {
   el.innerHTML = `
     <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:8px">
       <div><h1>داشبورد مدیریت</h1><p class="sub" style="margin:0">خلاصه وضعیت صندوق در ${rep.month_name} ${fa(rep.year)}</p></div>
-      ${periodPicker()}
+      ${ModirPeriodUi.periodPicker()}
     </div>
     ${missing}
     ${residencyWarning}
@@ -280,7 +280,7 @@ async function viewDash(el) {
       </div>
     </div>`;
 
-  bindPeriod(() => go('dash'));
+  ModirPeriodUi.bindPeriod(() => go('dash'));
   $$('[data-go]', el).forEach(b => b.addEventListener('click', () => go(b.dataset.go)));
    $$('[data-install]', el).forEach(b => b.addEventListener('click', ModirPwa.installPwa));
   ModirDashboardUi.countUp(el); ModirDashboardUi.bindEyes(el);
