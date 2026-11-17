@@ -3,16 +3,16 @@
 **Status: reconciled**
 - Project: `fvhzshtgtkqzrgmblczh` (Resident Manager / Modir)
 - Audited: 2026-11-17
-- Repository tree snapshot: `5fa167201c5df9631b2b496983c96694dcf9b9c8`
-- Applied migration entries in Supabase: **188**
-- SQL migration files in repository: **188**
+- Repository tree snapshot: `db8f4a21a5615ad330faef27ff8cb9befd73f713`
+- Applied migration entries in Supabase: **189**
+- SQL migration files in repository: **189**
 - Remote versions missing locally: **0**
 - Local versions absent remotely: **0**
 - Version/name mismatches or duplicate local versions: **0**
 
 ## Result
 
-At this snapshot, every applied Supabase migration has a corresponding SQL file in the repository, and every repository migration version is present in the database history. Version/name matching is exact. The earlier migration-history gap has been reconciled by restoring the missing SQL files to GitHub; this audit does not apply or replay any migration against production.
+At this snapshot, every applied Supabase migration has a corresponding SQL file in the repository, and every repository migration version is present in the database history. Version/name matching is exact. The earlier migration-history gap has been reconciled by restoring the missing SQL files to GitHub. The additional manual-duplicate serialization migration is also present in both the repository and production migration history.
 
 ## Safe operating rule
 
