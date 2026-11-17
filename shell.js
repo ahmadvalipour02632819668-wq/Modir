@@ -308,28 +308,6 @@ async function viewServices(el) {
   $$('.tile', el).forEach(b => b.addEventListener('click', () => go(b.dataset.v)));
 }
 
-function alertSeenKey() {
-  return 'bm_alerts_seen:' + String(S.me?.id || S.me?.account_id || S.me?.username || S.me?.building_id || 'account');
-}
-function getSeenAlertIds() {
-  try {
-    const value = JSON.parse(localStorage.getItem(alertSeenKey()) || '[]');
-    return new Set(Array.isArray(value) ? value : []);
-  } catch (_) { return new Set(); }
-}
-function saveSeenAlertIds(seen) {
-  localStorage.setItem(alertSeenKey(), JSON.stringify([...seen].slice(-3000)));
-}
-function markAlertSeen(id) {
-  const seen = getSeenAlertIds();
-  seen.add(String(id));
-  saveSeenAlertIds(seen);
-}
-function markAlertPrefixSeen(prefix) {
-  const seen = getSeenAlertIds();
-  (window.__modirCurrentAlerts || []).filter(item => item.id.startsWith(prefix)).forEach(item => seen.add(item.id));
-  saveSeenAlertIds(seen);
-}
 async function collectAlertItems() {
   const jobs = [
     T('app_get_announcements').catch(() => []),
@@ -366,7 +344,7 @@ async function collectAlertItems() {
   return items.filter(x => x.id && x.id.split(':').length > 1);
 }
 function renderAlertCenter(items) {
-  const seen = getSeenAlertIds();
+  const seen = ModirAlertUi.getSeenAlertIds();
   const unread = items.filter(x => !seen.has(x.id));
   window.__modirCurrentAlerts = items;
   const panel = $('#alert-center');
@@ -378,7 +356,7 @@ function renderAlertCenter(items) {
   panel.style.display = 'block';
   panel.querySelectorAll('[data-alert-close]').forEach(b => b.addEventListener('click', () => { panel.style.display='none'; }));
   panel.querySelectorAll('[data-alert-id]').forEach(b => b.addEventListener('click', async () => {
-    markAlertSeen(b.dataset.alertId);
+    ModirAlertUi.markAlertSeen(b.dataset.alertId);
     panel.style.display = 'none';
     await refreshManagerAlertBadge();
     go(b.dataset.alertView || 'dash');
@@ -390,7 +368,7 @@ async function refreshManagerAlertBadge() {
   try {
     const items = await collectAlertItems();
     window.__modirCurrentAlerts = items;
-    const seen = getSeenAlertIds();
+    const seen = ModirAlertUi.getSeenAlertIds();
     const unread = items.filter(x => !seen.has(x.id)).length;
     badge.textContent = unread > 99 ? '99+' : String(unread);
     badge.style.display = unread ? 'block' : 'none';
