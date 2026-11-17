@@ -17,7 +17,7 @@ jobs:
       - name: Check JavaScript syntax
         run: |
           set -e
-          for file in core.js sms.js pwa.js media.js assistant.js shell.js period-ui.js dashboard-ui.js dashboard.js community.js finance.js management.js navigation.js; do
+          for file in core.js sms.js pwa.js media.js assistant.js shell.js account-ui.js period-ui.js dashboard-ui.js dashboard.js community.js finance.js management.js navigation.js; do
             node --check "$file"
           done
       - name: Check application structure and public APIs
