@@ -16,8 +16,9 @@ jobs:
           node-version: 20
       - name: Check JavaScript syntax
         run: |
-          for file in core.js shell.js dashboard.js community.js finance.js management.js navigation.js; do
+          set -e
+          for file in core.js assistant.js shell.js dashboard.js community.js finance.js management.js navigation.js; do
             node --check "$file"
           done
-      - name: Check application structure
+      - name: Check application structure and public APIs
         run: node scripts/check-structure.mjs
