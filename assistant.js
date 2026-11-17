@@ -18,7 +18,11 @@ function mount(){
   const finishDrag=e=>{if(!dragState||dragState.id!==e.pointerId)return;if(dragged){const r=launch.getBoundingClientRect();try{localStorage.setItem('modir_ai_avatar_pos',JSON.stringify({x:r.left,y:r.top}))}catch(_){}}launch.classList.remove('dragging');dragState=null;};
   launch.onpointerup=finishDrag;launch.onpointercancel=finishDrag;
   launch.onclick=()=>{if(dragged){dragged=false;return;}panel.classList.toggle('open');if(panel.classList.contains('open')){placePanel();document.getElementById('modir-ai-input')?.focus();}};
-  window.addEventListener('resize',()=>{if(panel.classList.contains('open'))placePanel();});
+  window.__modirAiPlacePanel = placePanel;
+  if (!window.__modirAiResizeHandler) {
+    window.__modirAiResizeHandler = () => window.__modirAiPlacePanel?.();
+    window.addEventListener('resize', window.__modirAiResizeHandler);
+  }
  document.getElementById('modir-ai-close').onclick=()=>panel.classList.remove('open');
  const form=document.getElementById('modir-ai-compose');
  if(form.dataset.ready)return;form.dataset.ready='1';
