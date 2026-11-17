@@ -35,11 +35,12 @@ window.supabase = window.supabase || {
       }
     }
     return {
-      rpc: function (name, args) {
+      rpc: function (name, args, options) {
         return request((baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl) + '/rest/v1/rpc/' + encodeURIComponent(name), {
           method: 'POST',
           headers: Object.assign({}, headers, { 'Content-Type': 'application/json', Accept: 'application/json' }),
-          body: JSON.stringify(args || {})
+          body: JSON.stringify(args || {}),
+          signal: options && options.signal
         });
       },
       functions: {
@@ -70,7 +71,7 @@ window.supabase = window.supabase || {
  <form id="modir-ai-compose"><input id="modir-ai-input" maxlength="1200" autocomplete="off" placeholder="سؤالتان را بنویسید..." aria-label="متن سؤال" required><button id="modir-ai-send" type="submit">ارسال</button></form>
 </section>
 
-<script src="./core.js?v=1"></script>
+<script src="./core.js?v=2"></script>
 <script src="./menu-ui.js?v=1"></script>
 <script src="./alert-ui.js?v=1"></script>
 <script src="./alert-center.js?v=1"></script>
