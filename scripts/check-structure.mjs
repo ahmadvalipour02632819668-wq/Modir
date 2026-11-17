@@ -44,7 +44,6 @@ const localScriptTags = [...index.matchAll(/<script\s+src=["']\.\/[^"']+["'][^>]
 if (localScriptTags.length !== modules.length || localScriptTags.some((tag) => !/\bdefer\b/.test(tag))) {
   fail("all ordered local JavaScript files must use defer for parallel downloads");
 }
-}
 
 for (const file of modules) {
   if (!fs.existsSync(path.join(root, file))) {
