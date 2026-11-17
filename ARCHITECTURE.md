@@ -11,18 +11,19 @@ Do not add `type="module"`, add `defer`, or reorder the scripts without first mi
 The order in `index.html` is part of the runtime contract:
 
 1. `core.js` — shared foundation: Supabase client/configuration, session and application state, API helpers, common formatting and date utilities.
-2. `pwa.js` — isolated PWA installation prompt, install tile and service-worker registration.
-3. `sms.js` — isolated SMS link/button helpers used by dashboard and finance.
-4. `media.js` — isolated image compression helper used by community uploads.
+2. `sms.js` — isolated SMS link/button helpers used by dashboard and finance.
+3. `media.js` — isolated image compression helper used by community uploads.
+4. `pwa.js` — isolated PWA installation prompt, install tile and service-worker registration.
 5. `assistant.js` — isolated AI assistant UI and interaction controller.
 6. `shell.js` — login/shell rendering, global UI, navigation dispatch, shared interaction helpers and alert UI.
-7. `dashboard.js` — dashboard cards, summaries, request table and dashboard view.
-8. `community.js` — announcements, neighbor alerts, requests and payment-related community views.
-9. `finance.js` — transactions and financial reports.
-10. `management.js` — units, rates, settings, activity/profile views and Jalali date helpers.
-11. `navigation.js` — browser back-button/history handling.
+7. `dashboard-ui.js` — dashboard-only balance visibility and count-up animation helpers.
+8. `dashboard.js` — dashboard cards, summaries, request table and dashboard view.
+9. `community.js` — announcements, neighbor alerts, requests and payment-related community views.
+10. `finance.js` — transactions and financial reports.
+11. `management.js` — units, rates, settings, activity/profile views and Jalali date helpers.
+12. `navigation.js` — browser back-button/history handling.
 
-All eight application scripts are loaded synchronously at the end of the document body. This allows each later file to use APIs registered by earlier files.
+All twelve application scripts are loaded synchronously at the end of the document body. This allows each later file to use APIs registered by earlier files.
 
 ## Public cross-file APIs
 
@@ -32,6 +33,7 @@ Files that have been isolated behind an IIFE expose a deliberately small frozen 
 | --- | --- | --- |
 | `pwa.js` | `window.ModirPwa` | shell, dashboard |
 | `sms.js` | `window.ModirSms` | dashboard, finance |
+| `dashboard-ui.js` | `window.ModirDashboardUi` | dashboard |
 | `media.js` | `window.ModirMedia` | community |
 | `assistant.js` | `window.ModirAssistant` | shell |
 | `dashboard.js` | `window.ModirDashboard` | shell, community |
@@ -48,7 +50,7 @@ Only add a function to one of these public objects when another file genuinely n
 The structure checker also verifies the shared identifiers that are currently consumed outside their owning file. These are compatibility contracts, not a recommendation to keep the current coupling forever.
 
 - Core-owned shared runtime: `sb`, `S`, `T`, DOM/format helpers, date helpers, push helpers and PWA install helpers.
-- Shell-owned shared runtime: modal/navigation/render functions, period selectors, icon helpers, image compression, alert-seen helpers and the password-change banner.
+- Shell-owned shared runtime: modal/navigation/render functions, period selectors, icon helpers, alert-seen helpers and the password-change banner.
 
 When reducing coupling, migrate one contract at a time: move the implementation behind an explicit frozen API, update every consumer, then remove that identifier from the checker contract in the same commit. Do not simply delete or rename a shared identifier.
 
@@ -76,6 +78,6 @@ Before renaming, moving, or hiding a shared identifier:
 
 - CSS is separated into `app.css`.
 - Main frontend code is split into eight ordered JavaScript files.
-- PWA installation behavior, SMS links, image compression, assistant, dashboard, community, finance and management implementations are wrapped in IIFEs with explicit public APIs.
+- PWA installation behavior, SMS links, image compression, dashboard UI helpers, assistant, dashboard, community, finance and management implementations are wrapped in IIFEs with explicit public APIs.
 - Navigation state is private to `navigation.js`.
 - Core and shell remain intentionally unwrapped until their shared dependencies can be safely reduced.
