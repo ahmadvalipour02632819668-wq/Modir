@@ -1,0 +1,4 @@
+-- Private production seed migration intentionally neutralized in the public repository.
+-- The original applied SQL remains in the live database migration history.
+-- It contained Negin 2 resident names, phone numbers, password hashes, and account identifiers.
+-- A fresh environment must create its own buildings and accounts through the registration workflow.
