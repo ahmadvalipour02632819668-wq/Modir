@@ -192,7 +192,7 @@ function txModal(t, units) {
   categorySelect.addEventListener('change',updateBillPeriodUI);
   typeSelect.addEventListener('change',()=>{updateFormUI();updateBillPeriodUI();});
   unitSelect.addEventListener('change',()=>{updateFormUI();updateBillPeriodUI();});
-  $$$('input[name="expense-kind"]',m).forEach(x=>x.addEventListener('change',updateFormUI));
+  $$$( 'input[name="expense-kind"]',m).forEach(x=>x.addEventListener('change',updateFormUI));
   updateFormUI();updateBillPeriodUI();
   $('#tf',m).addEventListener('submit',async e=>{
     e.preventDefault();
