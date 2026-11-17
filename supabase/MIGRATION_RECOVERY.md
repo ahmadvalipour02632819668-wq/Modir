@@ -2,11 +2,11 @@
 
 ## Recovery result
 
-- The live Supabase project contained 188 applied migration versions.
-- The public repository now contains 188 migration files with an exact one-to-one match of version and name.
+- The live Supabase project contained 189 applied migration versions.
+- The public repository now contains 189 migration files with an exact one-to-one match of version and name.
 - 99 previously missing migration files were recovered from the database's `supabase_migrations.schema_migrations.statements` history.
 - One previously mismatched filename was aligned with the applied database version.
-- A new migration, `20261117123314_revoke_authenticated_login_rpc_execute.sql`, was applied and checked into the repository.
+- Two new migrations are present in the live registry and repository: `20261117123314_revoke_authenticated_login_rpc_execute.sql` and `20261117124659_serialize_manual_transaction_duplicate_checks.sql`.
 
 ## Privacy-preserving adjustments
 
@@ -39,4 +39,4 @@ A separate read-only inspection found that the migration registry and current sc
 - The current live schema instead contains the multi-building `public.accounts`, `public.buildings`, and `public.units` model.
 - No explicit drop/rename migration for those older relation names was found in the recorded migration statements.
 
-This may reflect an earlier architecture transition or out-of-band schema change. It is not safe to infer the intended transition from the migration registry alone. Therefore, even though migration version/name coverage is now 188/188, a fresh-database replay is **not yet certified**. Do not reset, push, or replay migrations against production. The next step is a schema-diff review against the current live schema and the historical SQL before declaring reproducible deployment.
+This may reflect an earlier architecture transition or out-of-band schema change. It is not safe to infer the intended transition from the migration registry alone. Therefore, even though migration version/name coverage is now 189/189, a fresh-database replay is **not yet certified**. Do not reset, push, or replay migrations against production. The next step is a schema-diff review against the current live schema and the historical SQL before declaring reproducible deployment.
