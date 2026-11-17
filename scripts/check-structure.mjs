@@ -11,10 +11,12 @@ const fail = (message) => {
 const index = read("index.html");
 const modules = [
   "core.js",
-  "pwa.js",
+  "sms.js",
   "media.js",
+  "pwa.js",
   "assistant.js",
   "shell.js",
+  "dashboard-ui.js",
   "dashboard.js",
   "community.js",
   "finance.js",
@@ -43,6 +45,7 @@ for (const file of modules) {
 
 const contracts = {
   "sms.js": ["ModirSms", "smsLink", "smsBtn"],
+  "dashboard-ui.js": ["ModirDashboardUi", "countUp", "bindEyes", "EYE"],
   "media.js": ["ModirMedia", "compressImage"],
   "pwa.js": ["ModirPwa", "isAppInstalled", "installPwa", "installTileHtml", "renderInstallBanner"],
   "assistant.js": ["ModirAssistant", "mount"],
@@ -78,7 +81,7 @@ const sharedContracts = {
   "shell.js": [
     "modal", "closeModal", "go", "renderShell", "renderLogin", "logout",
     "monthOptions", "yearOptions", "unitOptions", "bindPeriod", "periodPicker",
-    "ico", "countUp", "bindEyes", "EYE",
+    "ico",
     "markAlertPrefixSeen", "mustChangeBanner"
   ],
 };
