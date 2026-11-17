@@ -145,7 +145,7 @@ const sharedContracts = {
     "sb", "S", "T", "api", "$", "$" + "$", "esc", "fmt", "fa", "money",
     "toNum", "toast", "showErr", "MONTHS", "CATS", "OCC",
     "jalaliDatePicker", "TODAY", "notifyBale", "sendMobilePush",
-    "enableMobilePush", "detachPushSubscription", "installPwa", "installTileHtml"
+    "enableMobilePush", "detachPushSubscription"
   ],
   "shell.js": [
     "modal", "closeModal", "go", "renderShell", "renderLogin", "logout",
