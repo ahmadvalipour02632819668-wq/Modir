@@ -71,6 +71,15 @@ if (!managementSource.includes("S.view === 'charge' ? Promise.resolve({}) : T('a
   fail("charge view must skip settings-only RPC requests");
 }
 
+const coreSource = read("core.js");
+if (!coreSource.includes("controller.abort()") ||
+    !coreSource.includes("sb.rpc(fn, args, controller ? { signal: controller.signal } : undefined)") ||
+    !index.includes("./core.js?v=2") ||
+    !index.includes("rpc: function (name, args, options)") ||
+    !index.includes("signal: options && options.signal")) {
+  fail("RPC timeout must abort the underlying fetch and core.js cache must be refreshed");
+}
+
 const financeSource = read("finance.js");
 if (!financeSource.includes("function loadHtml2Canvas()") || (financeSource.match(/loadHtml2Canvas\(\)/g) || []).length < 3) {
   fail("finance.js must lazy-load html2canvas only when an image export is requested");
