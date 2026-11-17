@@ -42,7 +42,7 @@ async function viewTx(el) {
   $('#tx-csv')?.addEventListener('click', () => exportCsv(rows)); if (!admin) return;
   $('#tx-charge')?.addEventListener('click', () => go('charge')); $('#tx-new')?.addEventListener('click', () => txModal(null, units));
     // دکمه ویرایش تراکنش
-  $$$('[data-edit]').forEach(b => b.addEventListener('click', () => {
+  $('[data-edit]').forEach(b => b.addEventListener('click', () => {
     const tx = rows.find(t => t.id == b.dataset.edit);
     if (tx) txModal(tx, units);
   }));
@@ -192,7 +192,7 @@ function txModal(t, units) {
   categorySelect.addEventListener('change',updateBillPeriodUI);
   typeSelect.addEventListener('change',()=>{updateFormUI();updateBillPeriodUI();});
   unitSelect.addEventListener('change',()=>{updateFormUI();updateBillPeriodUI();});
-  $$$('input[name="expense-kind"]',m).forEach(x=>x.addEventListener('change',updateFormUI));
+  $('input[name="expense-kind"]',m).forEach(x=>x.addEventListener('change',updateFormUI));
   updateFormUI();updateBillPeriodUI();
   $('#tf',m).addEventListener('submit',async e=>{
     e.preventDefault();
