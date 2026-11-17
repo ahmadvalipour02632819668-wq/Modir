@@ -240,7 +240,7 @@ async function viewActivity(el) {
 
 async function viewProfile(el) {
   const a = S.me;
-  el.innerHTML = `${mustChangeBanner()}<h1>پروفایل</h1>
+  el.innerHTML = `${ModirAccountUi.mustChangeBanner()}<h1>پروفایل</h1>
   <div class="card" style="margin:14px 0 18px;display:flex;align-items:center;gap:16px;flex-wrap:wrap">
     <div id="profile-avatar-preview" style="width:92px;height:92px;border-radius:50%;overflow:hidden;background:var(--bg);border:3px solid var(--line);display:grid;place-items:center;flex:none">${S.avatarData ? `<img src="${esc(S.avatarData)}" alt="عکس پروفایل" style="width:100%;height:100%;object-fit:cover">` : ICONS.profile.replace('<svg','<svg width="46" height="46"')}</div>
     <div style="flex:1;min-width:180px"><b style="display:block;margin-bottom:8px">عکس پروفایل</b><input id="profile-avatar-input" type="file" accept="image/jpeg,image/png,image/webp" hidden><div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="btn sf sm" id="profile-avatar-change">انتخاب یا تغییر عکس</button><button type="button" class="btn rd sm" id="profile-avatar-remove" ${S.avatarData ? '' : 'disabled'}>حذف عکس</button></div><p class="sub" style="margin:8px 0 0">تصویر از گالری انتخاب می‌شود و به حساب کاربری شما متصل می‌ماند.</p></div>
