@@ -16,14 +16,15 @@ The order in `index.html` is part of the runtime contract:
 4. `pwa.js` — isolated PWA installation prompt, install tile and service-worker registration.
 5. `assistant.js` — isolated AI assistant UI and interaction controller.
 6. `shell.js` — login/shell rendering, global UI, navigation dispatch, shared interaction helpers and alert UI.
-7. `dashboard-ui.js` — dashboard-only balance visibility and count-up animation helpers.
-8. `dashboard.js` — dashboard cards, summaries, request table and dashboard view.
-9. `community.js` — announcements, neighbor alerts, requests and payment-related community views.
-10. `finance.js` — transactions and financial reports.
-11. `management.js` — units, rates, settings, activity/profile views and Jalali date helpers.
-12. `navigation.js` — browser back-button/history handling.
+7. `period-ui.js` — shared month/year/unit selectors and period-picker binding helpers.
+8. `dashboard-ui.js` — dashboard-only balance visibility and count-up animation helpers.
+9. `dashboard.js` — dashboard cards, summaries, request table and dashboard view.
+10. `community.js` — announcements, neighbor alerts, requests and payment-related community views.
+11. `finance.js` — transactions and financial reports.
+12. `management.js` — units, rates, settings, activity/profile views and Jalali date helpers.
+13. `navigation.js` — browser back-button/history handling.
 
-All twelve application scripts are loaded synchronously at the end of the document body. This allows each later file to use APIs registered by earlier files.
+All thirteen application scripts are loaded synchronously at the end of the document body. This allows each later file to use APIs registered by earlier files.
 
 ## Public cross-file APIs
 
@@ -34,6 +35,7 @@ Files that have been isolated behind an IIFE expose a deliberately small frozen 
 | `pwa.js` | `window.ModirPwa` | shell, dashboard |
 | `sms.js` | `window.ModirSms` | dashboard, finance |
 | `dashboard-ui.js` | `window.ModirDashboardUi` | dashboard |
+| `period-ui.js` | `window.ModirPeriodUi` | dashboard, finance, management |
 | `media.js` | `window.ModirMedia` | community |
 | `assistant.js` | `window.ModirAssistant` | shell |
 | `dashboard.js` | `window.ModirDashboard` | shell, community |
