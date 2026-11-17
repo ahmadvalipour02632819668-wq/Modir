@@ -574,7 +574,7 @@ function replyModal(r) {
     try {
       const fileInput = $('#pf-img', m);
       let base64Image = null;
-      if (fileInput.files.length > 0) base64Image = await compressImage(fileInput.files[0]);
+      if (fileInput.files.length > 0) base64Image = await ModirMedia.compressImage(fileInput.files[0]);
       const totalAmount = toNum($('#pf-a', m).value);
       if (totalAmount <= 0) throw new Error('مبلغ باید بیشتر از صفر باشد');
 
