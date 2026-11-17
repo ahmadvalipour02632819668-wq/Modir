@@ -29,3 +29,14 @@ The original statements for those already-applied migrations remain in the live 
 ## Verification
 
 Migration reconciliation compares the exact `version_name` key in the live Supabase migration registry with the SQL filenames in `supabase/migrations`. The expected result is zero missing and zero extra files. This comparison verifies history coverage, not that a fresh database replay has been fully integration-tested.
+
+## Important live-schema drift warning
+
+A separate read-only inspection found that the migration registry and current schema need a deeper reconciliation before any clean replay:
+
+- The migration history contains older statements referring to `public.app_accounts` and `public.building_memberships`.
+- Those relations are absent from the current live database schema.
+- The current live schema instead contains the multi-building `public.accounts`, `public.buildings`, and `public.units` model.
+- No explicit drop/rename migration for those older relation names was found in the recorded migration statements.
+
+This may reflect an earlier architecture transition or out-of-band schema change. It is not safe to infer the intended transition from the migration registry alone. Therefore, even though migration version/name coverage is now 188/188, a fresh-database replay is **not yet certified**. Do not reset, push, or replay migrations against production. The next step is a schema-diff review against the current live schema and the historical SQL before declaring reproducible deployment.
