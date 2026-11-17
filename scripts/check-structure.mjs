@@ -110,7 +110,7 @@ if (!financeSource.includes('t.source === "payment" ?') ||
   fail("approved payment correction must be auditable and use a dedicated correction action");
 }
 
-if (/(^|[^$])\$\([^)]*\)\s*\.forEach/.test(financeSource) || financeSource.includes("$$")) {
+if (/(^|[^$])\$\([^)]*\)\s*\.forEach/.test(financeSource) || financeSource.includes("$$$")) {
   fail("finance.js must use $$() for multi-element forEach selectors; $() selects only one element");
 }
 
