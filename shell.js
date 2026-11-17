@@ -542,7 +542,7 @@ function go(v, isBackNavigation = false) {
   renderShellHeaderState();
   if (S.me?.is_admin) refreshManagerAlertBadge();
   const currentRenderId = ++S.renderId;
-  Promise.resolve(views[v](el)).then(() => { if (v === 'dash') renderInstallBanner(); }).catch(e => {
+  Promise.resolve(views[v](el)).then(() => { if (v === 'dash') ModirPwa.renderInstallBanner(); }).catch(e => {
     if (currentRenderId !== S.renderId) return;
     if (e.message === 'AUTH_ERROR') { logout(true); return; }
     if (e.message === 'NETWORK_ERROR') {
