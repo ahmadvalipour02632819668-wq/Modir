@@ -31,6 +31,7 @@ const modules = [
 
 if (!index.includes('href="./app.css?v=1"')) fail("index.html must load app.css");
 if (index.includes("./app.js")) fail("obsolete monolithic app.js reference remains");
+if (!index.includes("./finance.js?v=8")) fail("finance.js cache version must be refreshed after selector fixes");
 if (index.includes("<style>")) fail("application CSS must stay in app.css");
 if (index.includes("html2canvas")) fail("html2canvas must not block initial page loading");
 
