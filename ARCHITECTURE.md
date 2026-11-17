@@ -11,7 +11,8 @@ Do not add `type="module"`, add `defer`, or reorder the scripts without first mi
 The order in `index.html` is part of the runtime contract:
 
 1. `core.js` — shared foundation: Supabase client/configuration, session and application state, API helpers, common formatting and date utilities.
-2. `assistant.js` — isolated AI assistant UI and interaction controller.\n3. `shell.js` — login/shell rendering, global UI, navigation dispatch, shared interaction helpers and alert UI.
+2. `assistant.js` — isolated AI assistant UI and interaction controller.
+3. `shell.js` — login/shell rendering, global UI, navigation dispatch, shared interaction helpers and alert UI.
 4. `dashboard.js` — dashboard cards, summaries, request table and dashboard view.
 5. `community.js` — announcements, neighbor alerts, requests and payment-related community views.
 6. `finance.js` — transactions and financial reports.
@@ -26,7 +27,8 @@ Files that have been isolated behind an IIFE expose a deliberately small frozen 
 
 | Owner | Public API | Intended consumers |
 | --- | --- | --- |
-| `assistant.js` | `window.ModirAssistant` | shell |\n| `dashboard.js` | `window.ModirDashboard` | shell, community |
+| `assistant.js` | `window.ModirAssistant` | shell |
+| `dashboard.js` | `window.ModirDashboard` | shell, community |
 | `community.js` | `window.ModirCommunity` | shell, dashboard |
 | `finance.js` | `window.ModirFinance` | shell |
 | `management.js` | `window.ModirManagement` | shell, core, finance |
