@@ -1,5 +1,10 @@
 (function (window) {
-async function collectAlertItems() {
+let alertItemsCache = null;
+let alertItemsCacheAt = 0;
+let alertItemsLoadPromise = null;
+const ALERT_ITEMS_CACHE_TTL_MS = 30000;
+
+async function loadAlertItems() {
   const jobs = [
     T('app_get_announcements').catch(() => []),
     T('app_neighbor_alert_list').catch(() => []),
@@ -34,6 +39,25 @@ async function collectAlertItems() {
   }
   return items.filter(x => x.id && x.id.split(':').length > 1);
 }
+
+async function collectAlertItems(options = {}) {
+  const force = options?.force === true;
+  if (!force && Array.isArray(alertItemsCache) && Date.now() - alertItemsCacheAt < ALERT_ITEMS_CACHE_TTL_MS) {
+    return alertItemsCache;
+  }
+  if (alertItemsLoadPromise) return alertItemsLoadPromise;
+  const pending = loadAlertItems();
+  alertItemsLoadPromise = pending;
+  try {
+    const items = await pending;
+    alertItemsCache = items;
+    alertItemsCacheAt = Date.now();
+    return items;
+  } finally {
+    if (alertItemsLoadPromise === pending) alertItemsLoadPromise = null;
+  }
+}
+
 function renderAlertCenter(items) {
   const seen = ModirAlertUi.getSeenAlertIds();
   const unread = items.filter(x => !seen.has(x.id));
