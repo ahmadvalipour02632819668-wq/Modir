@@ -77,7 +77,7 @@ const sharedContracts = {
   "shell.js": [
     "modal", "closeModal", "go", "renderShell", "renderLogin", "logout",
     "monthOptions", "yearOptions", "unitOptions", "bindPeriod", "periodPicker",
-    "compressImage", "ico", "countUp", "bindEyes", "EYE", "smsBtn",
+    "ico", "countUp", "bindEyes", "EYE", "smsBtn",
     "markAlertPrefixSeen", "mustChangeBanner"
   ],
 };
