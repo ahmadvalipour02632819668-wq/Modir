@@ -12,6 +12,7 @@ const index = read("index.html");
 const modules = [
   "core.js",
   "pwa.js",
+  "media.js",
   "assistant.js",
   "shell.js",
   "dashboard.js",
@@ -41,6 +42,7 @@ for (const file of modules) {
 }
 
 const contracts = {
+  "media.js": ["ModirMedia", "compressImage"],
   "pwa.js": ["ModirPwa", "isAppInstalled", "installPwa", "installTileHtml", "renderInstallBanner"],
   "assistant.js": ["ModirAssistant", "mount"],
   "dashboard.js": ["ModirDashboard", "reqTable", "viewDash", "renderPollsInAnnouncements"],
