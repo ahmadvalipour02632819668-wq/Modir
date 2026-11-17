@@ -1,6 +1,6 @@
 (function (window) {
 async function viewAnnouncements(el) {
-  markAlertPrefixSeen('announcement:');
+  ModirAlertUi.markAlertPrefixSeen('announcement:');
   const list = await T('app_get_announcements');
   const adminForm = S.me.is_admin ? `<form id="af" class="card grid g3" style="margin-bottom:20px;border-color:var(--accent)"><h2 style="grid-column:1/-1;margin:0">ارسال اعلان جدید</h2><label class="f">عنوان<input id="a-title" required maxlength="180"></label><label class="f">نوع<select id="a-type"><option value="general">اطلاعیه عمومی</option><option value="meeting">دعوت به جلسه</option></select></label><label class="f" style="grid-column:1/-1">متن کامل<textarea id="a-content" rows="3" required maxlength="5000"></textarea></label><div style="grid-column:1/-1"><button class="btn">ثبت اعلان</button></div></form>` : '';
   el.innerHTML = `<h1>اعلانات ساختمان</h1><p class="sub">اطلاعیه‌ها و دعوت‌نامه‌ها</p>${adminForm}<div class="grid g2">${list.map(a => `<div class="card"><div style="display:flex;justify-content:space-between;margin-bottom:8px;gap:8px;flex-wrap:wrap"><h2 style="margin:0">${esc(a.title)}</h2><span class="chip ${a.type === 'meeting' ? 'pd' : 'ex'}">${a.type === 'meeting' ? 'جلسه' : (a.type === 'resident_message' ? 'پیام گروهی ساکن' : 'اطلاعیه')}</span></div><p style="white-space:pre-wrap;margin:0 0 16px">${esc(a.content)}</p><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px"><span style="font-size:12px;color:var(--muted)">${new Date(a.created_at).toLocaleDateString('fa-IR')}</span>${S.me.is_admin ? `<button class="btn rd sm" data-del="${a.id}">حذف</button>` : ''}</div></div>`).join('') || '<div class="card sub">هیچ اعلانی وجود ندارد.</div>'}</div>`;
@@ -21,8 +21,8 @@ async function viewAnnouncements(el) {
 }
 
 async function viewNeighborAlerts(el) {
-  markAlertPrefixSeen('neighbor:');
-  markAlertPrefixSeen('neighbor-summary:');
+  ModirAlertUi.markAlertPrefixSeen('neighbor:');
+  ModirAlertUi.markAlertPrefixSeen('neighbor-summary:');
   const categoryLabels = {
     noise: 'سروصدای غیرمتعارف',
     quiet_hours: 'رعایت ساعات استراحت',
@@ -154,8 +154,8 @@ async function viewNeighborAlerts(el) {
 }
 
 async function viewRequests(el) {
-  markAlertPrefixSeen('request:');
-  markAlertPrefixSeen('registration:');
+  ModirAlertUi.markAlertPrefixSeen('request:');
+  ModirAlertUi.markAlertPrefixSeen('registration:');
   const admin = !!S.me.is_admin;
   // Keep registration requests independent from other request/poll endpoints.
   let list = [], registrations = [];
@@ -638,7 +638,7 @@ function replyModal(r) {
   });
 }
   async function viewPay(el) {
-  markAlertPrefixSeen('payment:');
+  ModirAlertUi.markAlertPrefixSeen('payment:');
   const admin = S.me.is_admin; const list = await T('app_get_payment_requests'); const pending = list.filter(p => p.status === 'pending');
   el.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;gap:12px;flex-wrap:wrap"><div><h1>${admin ? 'بررسی پرداخت‌ها' : 'پرداخت بدهی'}</h1><p class="sub" style="margin:0">${admin ? 'پرداخت‌های منتظر تایید شما' : 'پرداخت خود را ثبت کنید.'}</p></div>${admin ? '' : '<button class="btn sf" id="np">ثبت پرداخت جدید</button>'}</div>${admin ? `<h2>منتظر تایید (${fa(pending.length)})</h2>${ModirDashboard.reqTable(pending, true)}<h2 style="margin-top:28px">سابقه</h2>${ModirDashboard.reqTable(list.filter(p => p.status !== 'pending'), true)}` : ModirDashboard.reqTable(list, false)}`;
   $('#np')?.addEventListener('click', async () => { const rep = await T('app_report', { p_year: S.y, p_month: S.m }); const r = rep.rows[0]; payModal(r); });
