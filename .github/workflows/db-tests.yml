@@ -35,7 +35,6 @@ jobs:
       - name: Run isolated payment correction integration tests
         env:
           PGPASSWORD: postgres
-          PGUSER: supabase_admin
         run: |
           psql -h localhost -U supabase_admin -d modir_test -v ON_ERROR_STOP=1 -f supabase/tests/payment_correction_fixture.sql
-          psql -h localhost -U postgres -d modir_test -v ON_ERROR_STOP=1 -f supabase/tests/payment_correction_schema.test.sql
+          psql -h localhost -U supabase_admin -d modir_test -v ON_ERROR_STOP=1 -f supabase/tests/payment_correction_schema.test.sql
