@@ -64,6 +64,11 @@ const contracts = {
   "finance.js": ["ModirFinance", "viewTx", "viewReport"],
   "management.js": ["ModirManagement", "viewUnits", "viewRates", "viewSettings", "viewActivity", "viewProfile"],
 };
+const dashboardSource = read("dashboard.js");
+if (/\$\{\s*mustChangeBanner\s*\(\s*\)\s*\}/.test(dashboardSource)) {
+  fail("dashboard.js must call ModirAccountUi.mustChangeBanner(), not the removed local helper");
+}
+
 for (const [file, names] of Object.entries(contracts)) {
   if (!fs.existsSync(path.join(root, file))) continue;
   const source = read(file);
