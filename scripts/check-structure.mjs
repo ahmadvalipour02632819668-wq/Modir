@@ -89,11 +89,6 @@ for (const [file, names] of Object.entries(sharedContracts)) {
     if (!declared) fail(`${file}: missing shared runtime contract ${name}`);
   }
 };
-if (process.exitCode) process.exit(process.exitCode);");
-    const declaration = new RegExp(`(?:\\b(?:const|let|var)\\s+${escaped}\\b|\\bfunction\\s+${escaped}\\s*\\()`);
-    if (!declaration.test(source)) fail(`${file}: missing shared runtime contract ${name}`);
-  }
-}
-
+if (process.exitCode) process.exit(process.exitCode);
 if (process.exitCode) process.exit(process.exitCode);
 console.log(`Structure check passed: ${modules.length} ordered JavaScript files, public API contracts and app.css.`);
