@@ -54,5 +54,8 @@ self.addEventListener('notificationclick', event => {
 // the fetch capability expected by Chromium's PWA installation checks.
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
+  // Keep the PWA fetch handler for same-origin installability checks only.
+  // Let cross-origin assets and APIs bypass this worker entirely.
+  if (new URL(event.request.url).origin !== self.location.origin) return;
   event.respondWith(fetch(event.request));
 });
