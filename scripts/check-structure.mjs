@@ -70,6 +70,11 @@ if (!financeSource.includes("function loadHtml2Canvas()") || (financeSource.matc
   fail("finance.js must lazy-load html2canvas only when an image export is requested");
 }
 
+const serviceWorkerSource = read("sw.js");
+if (!serviceWorkerSource.includes("new URL(event.request.url).origin !== self.location.origin")) {
+  fail("service worker must not intercept cross-origin GET requests");
+}
+
 const assistantSource = read("assistant.js");
 if ((assistantSource.match(/addEventListener\(['"]resize['"]/g) || []).length !== 1 ||
     !assistantSource.includes("window.__modirAiPlacePanel")) {
