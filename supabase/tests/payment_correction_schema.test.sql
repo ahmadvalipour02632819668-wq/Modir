@@ -2,7 +2,7 @@ BEGIN;
 
 CREATE EXTENSION IF NOT EXISTS pgtap WITH SCHEMA extensions;
 
-SELECT plan(19);
+SELECT plan(21);
 
 SELECT has_table('public', 'payment_corrections',
   'payment correction audit table exists');
@@ -102,6 +102,9 @@ SELECT ok(position('payment_corrections' IN
 SELECT ok(position('payment_corrections' IN
   pg_get_functiondef('public.app_get_unit_account_debts_for_admin(uuid,integer,integer)'::regprocedure)) > 0,
   'manager account debt calculation accounts for audited corrections');
+SELECT ok(position('payment_corrections' IN
+  pg_get_functiondef('public.app_get_unit_debts_for_admin(uuid,integer,integer)'::regprocedure)) > 0,
+  'manager unit debt calculation accounts for audited corrections');
 SELECT ok(position('payment_corrections' IN
   pg_get_functiondef('public.app_process_payment_fifo(uuid,bigint,text,text,text,text,integer)'::regprocedure)) > 0,
   'FIFO payment allocation accounts for audited corrections');
