@@ -336,7 +336,7 @@ async function renderShell() {
   $('#go-req').addEventListener('click', async () => {
     const panel = $('#alert-center');
     if (panel?.style.display === 'block') { panel.style.display = 'none'; return; }
-    try { ModirAlertCenter.renderAlertCenter(await ModirAlertCenter.collectAlertItems()); }
+    try { ModirAlertCenter.renderAlertCenter(await ModirAlertCenter.collectAlertItems({ force: true })); }
     catch (error) { console.warn('Alert center could not be opened:', error); }
   });
   if (window.__modirManagerAlertTimer) clearInterval(window.__modirManagerAlertTimer);
