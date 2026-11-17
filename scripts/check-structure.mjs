@@ -11,6 +11,7 @@ const fail = (message) => {
 const index = read("index.html");
 const modules = [
   "core.js",
+  "pwa.js",
   "assistant.js",
   "shell.js",
   "dashboard.js",
@@ -40,6 +41,7 @@ for (const file of modules) {
 }
 
 const contracts = {
+  "pwa.js": ["ModirPwa", "isAppInstalled", "installPwa", "installTileHtml", "renderInstallBanner"],
   "assistant.js": ["ModirAssistant", "mount"],
   "dashboard.js": ["ModirDashboard", "reqTable", "viewDash", "renderPollsInAnnouncements"],
   "community.js": ["ModirCommunity", "viewAnnouncements", "viewNeighborAlerts", "viewRequests", "payModal", "viewPay"],
