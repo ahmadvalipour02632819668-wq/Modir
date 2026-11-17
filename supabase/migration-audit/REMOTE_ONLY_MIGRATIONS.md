@@ -4,14 +4,17 @@
 
 - Project: `fvhzshtgtkqzrgmblczh` (Resident Manager / Modir)
 - Audited: 2026-11-17
+- Repository tree snapshot: `a0ad640eec3108c65b1b3911edbeea8a5345ca1c`
 - Remote migration history entries: **188**
-- SQL migration files in this repository: **101**
-- Remote entries without a matching local SQL file: **87**
+- SQL migration files in that repository snapshot: **108**
+- Remote entries without a matching local SQL file: **80**
 - Local SQL files without a matching remote version: **0**
 
 ## Why this is recorded
 
-The production database reports applied migration versions that are not represented by SQL files in this repository. The entries below are metadata read from Supabase's migration history. Their original SQL bodies were not available from the migration-history API and must not be guessed or recreated from their names.
+The production database reports applied migration versions that are not represented by SQL files in the audited repository snapshot. The entries below are metadata read from Supabase's migration history. Their original SQL bodies were not available from the migration-history API and must not be guessed or recreated from their names.
+
+The GitHub main branch changed during this audit. The comparison is therefore pinned to the repository tree SHA above so the counts and list are reproducible. Re-run the comparison against the latest main commit before any migration action.
 
 Do not run `db reset`, bulk `migration repair`, or replay these entries against production to resolve this discrepancy. First recover the original SQL from the historical source of truth or reconstruct and validate a baseline in a separate disposable database. Compare schema, policies, functions, triggers, indexes, and data assumptions before any production action.
 
@@ -19,13 +22,6 @@ Do not run `db reset`, bulk `migration repair`, or replay these entries against 
 
 | Version | Name |
 |---|---|
-| `20261102072246` | `fix_resident_payable_amount_after_credit` |
-| `20261102234109` | `credit_adjustment_itemized` |
-| `20261102234235` | `import_negin2_approved_building` |
-| `20261102235014` | `legacy_history_archive` |
-| `20261102235448` | `legacy_history_full_archive` |
-| `20261103001354` | `restrict_legacy_history_to_own_membership` |
-| `20261103001635` | `restrict_legacy_history_to_own_membership` |
 | `20261103090602` | `add_legacy_jalali_date_converter` |
 | `20261103090657` | `fix_legacy_jalali_date_converter` |
 | `20261103090851` | `import_negin2_transactions_to_financial_v2` |
