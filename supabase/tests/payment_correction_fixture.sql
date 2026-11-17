@@ -176,6 +176,11 @@ INSERT INTO public.payment_requests(id,building_id,status,account_id,unit_no,yea
 (9001,101,'approved','aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',1,1405,8,'شارژ',500000),
 (9002,202,'approved','bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',2,1405,8,'شارژ',300000),
 (9003,101,'pending','aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',1,1405,8,'شارژ',200000);
+INSERT INTO public.payment_requests(id,building_id,status,account_id,unit_no,year,month,category,amount) VALUES
+(9004,101,'approved','aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',1,1405,8,'شارژ',150000),
+(9005,101,'approved','aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',1,1405,8,'شارژ',160000),
+(9006,101,'approved','aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',1,1405,8,'شارژ',170000),
+(9007,101,'approved','aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',1,1405,8,'شارژ',180000);
 INSERT INTO public.transactions(building_id,year,month,day,unit_no,account_id,tx_type,category,amount,occupancy,source,created_by,payment_request_id)
 VALUES
 (101,1405,8,10,1,'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','درآمد','شارژ',500000,'owner','payment','aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',9001),
