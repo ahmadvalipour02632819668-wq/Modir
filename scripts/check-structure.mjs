@@ -65,7 +65,7 @@ for (const [file, names] of Object.entries(contracts)) {
 
 const sharedContracts = {
   "core.js": [
-    "sb", "S", "T", "api", "$", "$", "esc", "fmt", "fa", "money",
+    "sb", "S", "T", "api", "$", "$" + "$", "esc", "fmt", "fa", "money",
     "toNum", "toast", "showErr", "MONTHS", "CATS", "OCC",
     "jalaliDatePicker", "TODAY", "notifyBale", "sendMobilePush",
     "enableMobilePush", "detachPushSubscription", "installPwa", "installTileHtml"
@@ -78,10 +78,18 @@ const sharedContracts = {
   ],
 };
 for (const [file, names] of Object.entries(sharedContracts)) {
-  if (!fs.existsSync(path.join(root, file))) continue;
   const source = read(file);
+  const declarations = source.split(/\r?\n/).map((line) => line.trimStart());
   for (const name of names) {
-    const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, "\\if (process.exitCode) process.exit(process.exitCode);");
+    const declared = declarations.some((line) =>
+      line.startsWith(`const ${name} `) || line.startsWith(`let ${name} `) ||
+      line.startsWith(`var ${name} `) || line.startsWith(`function ${name}(`) ||
+      line.startsWith(`async function ${name}(`)
+    );
+    if (!declared) fail(`${file}: missing shared runtime contract ${name}`);
+  }
+};
+if (process.exitCode) process.exit(process.exitCode);");
     const declaration = new RegExp(`(?:\\b(?:const|let|var)\\s+${escaped}\\b|\\bfunction\\s+${escaped}\\s*\\()`);
     if (!declaration.test(source)) fail(`${file}: missing shared runtime contract ${name}`);
   }
