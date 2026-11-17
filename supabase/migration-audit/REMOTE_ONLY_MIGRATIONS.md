@@ -5,8 +5,8 @@
 - Project: `fvhzshtgtkqzrgmblczh` (Resident Manager / Modir)
 - Audited: 2026-11-17
 - Remote migration history entries: **188**
-- SQL migration files in this repository: **97**
-- Remote entries without a matching local SQL file: **91**
+- SQL migration files in this repository: **101**
+- Remote entries without a matching local SQL file: **87**
 - Local SQL files without a matching remote version: **0**
 
 ## Why this is recorded
@@ -19,10 +19,6 @@ Do not run `db reset`, bulk `migration repair`, or replay these entries against 
 
 | Version | Name |
 |---|---|
-| `20261101210045` | `fix_charge_full_amount_until_resident_exit` |
-| `20261101210903` | `enforce_registration_role_and_unit_conflicts` |
-| `20261101225359` | `allow_manager_submit_resident_itemized_payment` |
-| `20261101231308` | `add_secure_web_push_subscriptions` |
 | `20261102072246` | `fix_resident_payable_amount_after_credit` |
 | `20261102234109` | `credit_adjustment_itemized` |
 | `20261102234235` | `import_negin2_approved_building` |
