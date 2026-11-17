@@ -86,6 +86,15 @@ if (!coreSource.includes("controller.abort()") ||
   fail("RPC timeout must abort the underlying fetch and core.js cache must be refreshed");
 }
 
+const alertCenterSource = read("alert-center.js");
+const shellAlertSource = read("shell.js");
+if (!alertCenterSource.includes("ALERT_ITEMS_CACHE_TTL_MS = 30000") ||
+    !alertCenterSource.includes("if (alertItemsLoadPromise) return alertItemsLoadPromise;") ||
+    !shellAlertSource.includes("collectAlertItems({ force: true })") ||
+    !index.includes("./alert-center.js?v=2")) {
+  fail("alert-center reads must be cached, deduplicated and force-refreshed when the panel opens");
+}
+
 const financeSource = read("finance.js");
 if (!financeSource.includes("function loadHtml2Canvas()") || (financeSource.match(/loadHtml2Canvas\(\)/g) || []).length < 3) {
   fail("finance.js must lazy-load html2canvas only when an image export is requested");
