@@ -1,4 +1,4 @@
-# Modir Frontend Architecture
+# Resident Manager — Frontend Architecture
 
 ## Runtime model
 
@@ -36,6 +36,15 @@ Files that have been isolated behind an IIFE expose a deliberately small frozen 
 Only add a function to one of these public objects when another file genuinely needs it. Keep implementation helpers private inside the owning IIFE.
 
 `core.js` and `shell.js` are still shared classic-script scopes. They are high-coupling legacy foundations and have **not** yet been converted to isolated modules. `navigation.js` is self-contained in an IIFE.
+
+## Cross-file dependency guard
+
+The structure checker also verifies the shared identifiers that are currently consumed outside their owning file. These are compatibility contracts, not a recommendation to keep the current coupling forever.
+
+- Core-owned shared runtime: `sb`, `S`, `T`, DOM/format helpers, date helpers, push helpers and PWA install helpers.
+- Shell-owned shared runtime: modal/navigation/render functions, period selectors, icon helpers, image compression, alert-seen helpers and the password-change banner.
+
+When reducing coupling, migrate one contract at a time: move the implementation behind an explicit frozen API, update every consumer, then remove that identifier from the checker contract in the same commit. Do not simply delete or rename a shared identifier.
 
 ## Shared runtime contract
 
