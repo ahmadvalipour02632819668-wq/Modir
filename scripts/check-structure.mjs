@@ -70,6 +70,12 @@ if (!financeSource.includes("function loadHtml2Canvas()") || (financeSource.matc
   fail("finance.js must lazy-load html2canvas only when an image export is requested");
 }
 
+const shellSource = read("shell.js");
+if (!/document\.visibilityState === 'visible' && S\.me\?\.is_admin/.test(shellSource) ||
+    !/\},\s*60000\);/.test(shellSource)) {
+  fail("manager alert polling must be limited to visible manager sessions and run no more than once per minute");
+}
+
 const dashboardSource = read("dashboard.js");
 if (/\$\{\s*mustChangeBanner\s*\(\s*\)\s*\}/.test(dashboardSource)) {
   fail("dashboard.js must call ModirAccountUi.mustChangeBanner(), not the removed local helper");
