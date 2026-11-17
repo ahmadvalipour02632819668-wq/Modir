@@ -70,6 +70,12 @@ if (!financeSource.includes("function loadHtml2Canvas()") || (financeSource.matc
   fail("finance.js must lazy-load html2canvas only when an image export is requested");
 }
 
+const assistantSource = read("assistant.js");
+if ((assistantSource.match(/addEventListener\(['"]resize['"]/g) || []).length !== 1 ||
+    !assistantSource.includes("window.__modirAiPlacePanel")) {
+  fail("assistant resize handling must use one reusable window listener");
+}
+
 const shellSource = read("shell.js");
 if (!/document\.visibilityState === 'visible' && S\.me\?\.is_admin/.test(shellSource) ||
     !/\},\s*60000\);/.test(shellSource)) {
