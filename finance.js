@@ -42,11 +42,11 @@ async function viewTx(el) {
   $('#tx-csv')?.addEventListener('click', () => exportCsv(rows)); if (!admin) return;
   $('#tx-charge')?.addEventListener('click', () => go('charge')); $('#tx-new')?.addEventListener('click', () => txModal(null, units));
     // دکمه ویرایش تراکنش
-  $$('[data-edit]').forEach(b => b.addEventListener('click', () => {
+  $$$('[data-edit]').forEach(b => b.addEventListener('click', () => {
     const tx = rows.find(t => t.id == b.dataset.edit);
     if (tx) txModal(tx, units);
   }));
-  $('[data-correct]').forEach(b => b.addEventListener('click', async () => {
+  $$('[data-correct]').forEach(b => b.addEventListener('click', async () => {
     const reason = prompt('دلیل اصلاح این پرداخت را بنویسید (حداقل ۵ نویسه):');
     if (reason === null) return;
     if (reason.trim().length < 5) { toast('دلیل اصلاح باید حداقل ۵ نویسه باشد', true); return; }
@@ -58,7 +58,7 @@ async function viewTx(el) {
       go('tx');
     } catch (e) { showErr(e); b.disabled = false; }
   }));
-  $('[data-dl]').forEach(b => b.addEventListener('click', async () => { if (!confirm('حذف شود؟')) return; try { await T('app_admin_delete_transaction', { p_id: +b.dataset.dl }); toast('حذف شد'); go('tx'); } catch (e) { showErr(e); } }));
+  $$('[data-dl]').forEach(b => b.addEventListener('click', async () => { if (!confirm('حذف شود؟')) return; try { await T('app_admin_delete_transaction', { p_id: +b.dataset.dl }); toast('حذف شد'); go('tx'); } catch (e) { showErr(e); } }));
 }
 
 function txModal(t, units) {
@@ -192,7 +192,7 @@ function txModal(t, units) {
   categorySelect.addEventListener('change',updateBillPeriodUI);
   typeSelect.addEventListener('change',()=>{updateFormUI();updateBillPeriodUI();});
   unitSelect.addEventListener('change',()=>{updateFormUI();updateBillPeriodUI();});
-  $$('input[name="expense-kind"]',m).forEach(x=>x.addEventListener('change',updateFormUI));
+  $$$('input[name="expense-kind"]',m).forEach(x=>x.addEventListener('change',updateFormUI));
   updateFormUI();updateBillPeriodUI();
   $('#tf',m).addEventListener('submit',async e=>{
     e.preventDefault();
