@@ -74,6 +74,7 @@ if (!managementSource.includes("S.view === 'charge' ? Promise.resolve({}) : T('a
 const coreSource = read("core.js");
 if (!coreSource.includes("controller.abort()") ||
     !coreSource.includes("sb.rpc(fn, args, controller ? { signal: controller.signal } : undefined)") ||
+    !coreSource.includes("error.name === 'AbortError' || isNetworkError(rawMsg)") ||
     !index.includes("./core.js?v=2") ||
     !index.includes("rpc: function (name, args, options)") ||
     !index.includes("signal: options && options.signal")) {
