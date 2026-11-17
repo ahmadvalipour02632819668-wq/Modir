@@ -273,26 +273,9 @@ async function logout(silent = false) {
   renderLogin();
 }
 
-function getMenuItems() {
-  const a = S.me?.is_admin;
-  return [
-    ['dash', 'داشبورد'], a && ['units', 'مدیریت واحدها'], ['announcements', 'اعلانات'],
-    ['neighbor-alerts', 'زنگ همسایگی'], ['requests', a ? 'درخواست‌ها' : 'ارتباط با مدیر'], ['tx', 'تراکنش‌ها'],
-    a && ['pay', 'تایید پرداخت‌ها'], ['report', 'گزارش ماهانه'],
-    ['settings', 'تنظیمات'], ['profile', 'پروفایل'], a && ['activity', 'گزارش فعالیت‌ها'],
-  ].filter(Boolean);
-}
-
-function navItems() {
-  const a = S.me?.is_admin;
-  return [
-    ['tx', 'تراکنش‌ها'], a ? ['pay', 'تایید پرداخت'] : ['requests', 'ارتباط با مدیر'],
-    ['dash', 'خانه'], ['report', 'گزارش'], ['services', 'خدمات'],
-  ];
-}
 
 async function viewServices(el) {
-  const items = getMenuItems().filter(([k]) => k !== 'dash');
+  const items = ModirMenuUi.getMenuItems().filter(([k]) => k !== 'dash');
   const a = S.me?.is_admin;
   const groups = [
     ['امور مالی', ['tx', 'pay', 'report']],
@@ -411,7 +394,7 @@ async function renderShell() {
       <div class="bnav-bg"></div>
       <div class="bnav-diamond" id="bnav-dia"><span></span></div>
       <div class="bnav-items">
-        ${navItems().map(([k, l]) => `<button data-v="${k}">${LINE_ICONS[k] || ico(k)}<span>${esc(l)}</span></button>`).join('')}
+        ${ModirMenuUi.navItems().map(([k, l]) => `<button data-v="${k}">${LINE_ICONS[k] || ico(k)}<span>${esc(l)}</span></button>`).join('')}
       </div>
     </div></nav>`;
 
@@ -469,7 +452,7 @@ function go(v, isBackNavigation = false) {
 }
 
 function renderShellHeaderState(resetScroll = true) {
-  const all = [...getMenuItems(), ['services', 'خدمات']];
+  const all = [...ModirMenuUi.getMenuItems(), ['services', 'خدمات']];
   const current = all.find(t => t[0] === S.view);
   const t = $('#appbar-title');
   if (t) t.innerHTML = S.view === 'dash'
