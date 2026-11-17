@@ -13,21 +13,22 @@ The order in `index.html` is part of the runtime contract:
 1. `core.js` — shared foundation: Supabase client/configuration, session and application state, API helpers, common formatting and date utilities.
 2. `menu-ui.js` — role-aware menu definitions for the services grid and bottom navigation.
 3. `alert-ui.js` — local read/unread alert tracking and prefix-based seen-state helpers.
-4. `sms.js` — isolated SMS link/button helpers used by dashboard and finance.
-5. `media.js` — isolated image compression helper used by community uploads.
-6. `pwa.js` — isolated PWA installation prompt, install tile and service-worker registration.
-7. `assistant.js` — isolated AI assistant UI and interaction controller.
-8. `shell.js` — login/shell rendering, global UI, navigation dispatch, shared interaction helpers and alert UI.
-9. `account-ui.js` — shared account-state notices, including the forced password-change banner.
-10. `period-ui.js` — shared month/year/unit selectors and period-picker binding helpers.
-11. `dashboard-ui.js` — dashboard-only balance visibility and count-up animation helpers.
-12. `dashboard.js` — dashboard cards, summaries, request table and dashboard view.
-13. `community.js` — announcements, neighbor alerts, requests and payment-related community views.
-14. `finance.js` — transactions and financial reports.
-15. `management.js` — units, rates, settings, activity/profile views and Jalali date helpers.
-16. `navigation.js` — browser back-button/history handling.
+4. `alert-center.js` — alert collection, unread center rendering and badge refresh.
+5. `sms.js` — isolated SMS link/button helpers used by dashboard and finance.
+6. `media.js` — isolated image compression helper used by community uploads.
+7. `pwa.js` — isolated PWA installation prompt, install tile and service-worker registration.
+8. `assistant.js` — isolated AI assistant UI and interaction controller.
+9. `shell.js` — login/shell rendering, global UI, navigation dispatch, shared interaction helpers.
+10. `account-ui.js` — shared account-state notices, including the forced password-change banner.
+11. `period-ui.js` — shared month/year/unit selectors and period-picker binding helpers.
+12. `dashboard-ui.js` — dashboard-only balance visibility and count-up animation helpers.
+13. `dashboard.js` — dashboard cards, summaries, request table and dashboard view.
+14. `community.js` — announcements, neighbor alerts, requests and payment-related community views.
+15. `finance.js` — transactions and financial reports.
+16. `management.js` — units, rates, settings, activity/profile views and Jalali date helpers.
+17. `navigation.js` — browser back-button/history handling.
 
-All sixteen application scripts are loaded synchronously at the end of the document body. This allows each later file to use APIs registered by earlier files.
+All seventeen application scripts are loaded synchronously at the end of the document body. This allows each later file to use APIs registered by earlier files.
 
 ## Public cross-file APIs
 
@@ -36,6 +37,7 @@ Files that have been isolated behind an IIFE expose a deliberately small frozen 
 | Owner | Public API | Intended consumers |
 | --- | --- | --- |
 | `pwa.js` | `window.ModirPwa` | shell, dashboard |
+| `alert-center.js` | `window.ModirAlertCenter` | shell |
 | `sms.js` | `window.ModirSms` | dashboard, finance |
 | `dashboard-ui.js` | `window.ModirDashboardUi` | dashboard |
 | `period-ui.js` | `window.ModirPeriodUi` | dashboard, finance, management |
@@ -55,7 +57,7 @@ Only add a function to one of these public objects when another file genuinely n
 The structure checker also verifies the shared identifiers that are currently consumed outside their owning file. These are compatibility contracts, not a recommendation to keep the current coupling forever.
 
 - Core-owned shared runtime: `sb`, `S`, `T`, DOM/format helpers, date helpers, push helpers and PWA install helpers.
-- Shell-owned shared runtime: modal/navigation/render functions, period selectors, icon helpers, alert-seen helpers and the password-change banner.
+- Shell-owned shared runtime: modal/navigation/render functions, period selectors, icon helpers, icon helpers and the password-change banner.
 
 When reducing coupling, migrate one contract at a time: move the implementation behind an explicit frozen API, update every consumer, then remove that identifier from the checker contract in the same commit. Do not simply delete or rename a shared identifier.
 
@@ -83,6 +85,6 @@ Before renaming, moving, or hiding a shared identifier:
 
 - CSS is separated into `app.css`.
 - Main frontend code is split into eight ordered JavaScript files.
-- PWA installation behavior, SMS links, image compression, dashboard UI helpers, assistant, dashboard, community, finance and management implementations are wrapped in IIFEs with explicit public APIs.
+- PWA installation behavior, alert tracking and alert-center rendering, SMS links, image compression, dashboard UI helpers, assistant, dashboard, community, finance and management implementations are wrapped in IIFEs with explicit public APIs.
 - Navigation state is private to `navigation.js`.
 - Core and shell remain intentionally unwrapped until their shared dependencies can be safely reduced.
