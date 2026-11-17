@@ -1,6 +1,6 @@
 (function (window) {
   const monthOptions = (sel, withAll = false) => (withAll ? `<option value="">همه ماه‌ها</option>` : '') + MONTHS.map((n, i) => `<option value="${i+1}" ${+sel === i+1 ? 'selected' : ''}>${n}</option>`).join('');
-  const yearOptions = (sel) => { const ys = []; for (let y = TODAY.y + 1; y >= 1403; y--) ys.push(y); return ys.map(y => `<option value="${y}" ${+y === +sel ? 'selected' : ''}>${fa(y)}</option>`).join(''); };
+  const yearOptions = (sel) => { const ys = []; for (let y = TODAY.y + 10; y >= 1403; y--) ys.push(y); return ys.map(y => `<option value="${y}" ${+y === +sel ? 'selected' : ''}>${fa(y)}</option>`).join(''); };
   const unitOptions = (sel, withBuilding = true, withAll = false) => (withAll ? `<option value="">همه</option>` : '') + (withBuilding ? `<option value="0" ${+sel === 0 ? 'selected' : ''}>ساختمان</option>` : '') + Array.from({length:(S.unitCount || 10)}, (_,i) => `<option value="${i+1}" ${+sel === i+1 ? 'selected' : ''}>واحد ${fa(i+1)}</option>`).join('');
   let periodAbort = null;
   function bindPeriod(cb) {
