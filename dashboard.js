@@ -199,7 +199,7 @@ async function viewDash(el) {
         ${periodPicker()}
       </div>
       <div><div class="sec-title">دسترسی سریع</div>
-        <div class="quick">${[['pay','پرداخت بدهی'],['tx','تراکنش‌ها'],['announcements','اعلانات'],['requests','ارتباط با مدیر']].map(([k,l]) => `<button class="tile" data-go="${k}">${ico(k)}<span>${l}</span></button>`).join('') + installTileHtml()}</div></div>
+        <div class="quick">${[['pay','پرداخت بدهی'],['tx','تراکنش‌ها'],['announcements','اعلانات'],['requests','ارتباط با مدیر']].map(([k,l]) => `<button class="tile" data-go="${k}">${ico(k)}<span>${l}</span></button>`).join('') + ModirPwa.installTileHtml()}</div></div>
       ${missing}
       <div style="margin-top:20px">${r ? billCard(r, rep) : '<p class="sub">صورتحسابی ثبت نشده.</p>'}</div>
       <div class="sec-title">سابقه پرداخت‌ها</div>
@@ -207,7 +207,7 @@ async function viewDash(el) {
     bindPeriod(() => go('dash'));
     $('#go-profile')?.addEventListener('click', e => { e.preventDefault(); go('profile'); });
     $$('[data-go]', el).forEach(b => b.addEventListener('click', () => go(b.dataset.go)));
-   $$('[data-install]', el).forEach(b => b.addEventListener('click', installPwa));
+   $$('[data-install]', el).forEach(b => b.addEventListener('click', ModirPwa.installPwa));
     countUp(el); bindEyes(el);
     return;
   }
@@ -239,7 +239,7 @@ async function viewDash(el) {
     ${residencyWarning}
     ${mustChangeBanner()}
     <div><div class="sec-title">دسترسی سریع</div>
-      <div class="quick">${[['units','واحدها'],['pay','تایید پرداخت'],['announcements','اعلانات'],['settings','تنظیمات']].map(([k,l]) => `<button class="tile" data-go="${k}">${ico(k)}${k==='pay' && +fund.pending_payments ? `<i class="badge">${fa(fund.pending_payments)}</i>` : ''}<span>${l}</span></button>`).join('') + installTileHtml()}</div></div>
+      <div class="quick">${[['units','واحدها'],['pay','تایید پرداخت'],['announcements','اعلانات'],['settings','تنظیمات']].map(([k,l]) => `<button class="tile" data-go="${k}">${ico(k)}${k==='pay' && +fund.pending_payments ? `<i class="badge">${fa(fund.pending_payments)}</i>` : ''}<span>${l}</span></button>`).join('') + ModirPwa.installTileHtml()}</div></div>
     <div class="grid dashboard-money-grid" style="margin:14px 0 12px">
       <div class="bank-card"><i class="shine"></i>
         <div style="display:flex;justify-content:space-between;align-items:center"><b style="font-size:15px">صندوق ساختمان</b><span style="color:#ffd27a;font-size:20px">★</span></div>
@@ -282,7 +282,7 @@ async function viewDash(el) {
 
   bindPeriod(() => go('dash'));
   $$('[data-go]', el).forEach(b => b.addEventListener('click', () => go(b.dataset.go)));
-   $$('[data-install]', el).forEach(b => b.addEventListener('click', installPwa));
+   $$('[data-install]', el).forEach(b => b.addEventListener('click', ModirPwa.installPwa));
   countUp(el); bindEyes(el);
   setupPaymentScrollAnimation(el, unitMap);
   $('#go-pay')?.addEventListener('click', () => go('pay'));
