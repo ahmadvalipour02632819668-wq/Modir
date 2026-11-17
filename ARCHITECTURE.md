@@ -11,21 +11,22 @@ Do not add `type="module"`, add `defer`, or reorder the scripts without first mi
 The order in `index.html` is part of the runtime contract:
 
 1. `core.js` — shared foundation: Supabase client/configuration, session and application state, API helpers, common formatting and date utilities.
-2. `sms.js` — isolated SMS link/button helpers used by dashboard and finance.
-3. `media.js` — isolated image compression helper used by community uploads.
-4. `pwa.js` — isolated PWA installation prompt, install tile and service-worker registration.
-5. `assistant.js` — isolated AI assistant UI and interaction controller.
-6. `shell.js` — login/shell rendering, global UI, navigation dispatch, shared interaction helpers and alert UI.
-7. `account-ui.js` — shared account-state notices, including the forced password-change banner.
-8. `period-ui.js` — shared month/year/unit selectors and period-picker binding helpers.
-9. `dashboard-ui.js` — dashboard-only balance visibility and count-up animation helpers.
-10. `dashboard.js` — dashboard cards, summaries, request table and dashboard view.
-11. `community.js` — announcements, neighbor alerts, requests and payment-related community views.
-12. `finance.js` — transactions and financial reports.
-13. `management.js` — units, rates, settings, activity/profile views and Jalali date helpers.
-14. `navigation.js` — browser back-button/history handling.
+2. `alert-ui.js` — local read/unread alert tracking and prefix-based seen-state helpers.
+15. `sms.js` — isolated SMS link/button helpers used by dashboard and finance.
+15. `media.js` — isolated image compression helper used by community uploads.
+15. `pwa.js` — isolated PWA installation prompt, install tile and service-worker registration.
+15. `assistant.js` — isolated AI assistant UI and interaction controller.
+15. `shell.js` — login/shell rendering, global UI, navigation dispatch, shared interaction helpers and alert UI.
+15. `account-ui.js` — shared account-state notices, including the forced password-change banner.
+15. `period-ui.js` — shared month/year/unit selectors and period-picker binding helpers.
+15. `dashboard-ui.js` — dashboard-only balance visibility and count-up animation helpers.
+15. `dashboard.js` — dashboard cards, summaries, request table and dashboard view.
+15. `community.js` — announcements, neighbor alerts, requests and payment-related community views.
+15. `finance.js` — transactions and financial reports.
+15. `management.js` — units, rates, settings, activity/profile views and Jalali date helpers.
+15. `navigation.js` — browser back-button/history handling.
 
-All fourteen application scripts are loaded synchronously at the end of the document body. This allows each later file to use APIs registered by earlier files.
+All fifteen application scripts are loaded synchronously at the end of the document body. This allows each later file to use APIs registered by earlier files.
 
 ## Public cross-file APIs
 
