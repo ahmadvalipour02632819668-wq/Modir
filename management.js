@@ -152,7 +152,12 @@ function renderScenarioForm(scenario, m, u, activeAccounts) {
 }
 
 async function viewRates(el) {
-  const [rates, st, baleCfg, rateGuardUnits] = await Promise.all([T('app_get_rates'), T('app_get_settings'), T('app_admin_get_bale_config'), T('app_get_units')]);
+  const [rates, rateGuardUnits, st, baleCfg] = await Promise.all([
+    T('app_get_rates'),
+    T('app_get_units'),
+    S.view === 'charge' ? Promise.resolve({}) : T('app_get_settings'),
+    S.view === 'charge' ? Promise.resolve(null) : T('app_admin_get_bale_config')
+  ]);
   const rateGuardIssues = rateGuardUnits.length ? rateGuardUnits.filter(u=>u.residency_issue) : [{unit_no:null,residency_issue:'هنوز واحدی برای ساختمان ثبت نشده است'}];
   const rateGuardWarning = rateGuardIssues.length ? `<div class="card" style="margin-bottom:16px;border-color:var(--danger)"><b style="color:var(--danger)">ثبت، ویرایش و حذف نرخ شارژ و پس‌انداز تا تعیین تکلیف تمام واحدها مسدود است.</b><p class="sub" style="margin:8px 0 0">${rateGuardIssues.map(u=>(u.unit_no?'واحد '+fa(u.unit_no)+': ':'')+esc(u.residency_issue)).join(' · ')}</p><button class="btn sf sm" style="margin-top:10px" type="button" data-go="units">تعیین وضعیت واحدها</button></div>` : '';
   const getPayers = arr => !arr ? 'همه' : arr.length === 0 ? 'هیچ‌کس' : arr.map(o => esc(String(o).replace('مالک ساکن', 'ساکن'))).join('، ');
