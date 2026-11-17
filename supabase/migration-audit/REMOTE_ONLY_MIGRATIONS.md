@@ -1,6 +1,6 @@
 # Supabase migration history audit
 
-**Status: reconciled**
+**Status: migration version/name registry reconciled; clean replay not yet certified**
 - Project: `fvhzshtgtkqzrgmblczh` (Resident Manager / Modir)
 - Audited: 2026-11-17
 - Repository tree snapshot: `db8f4a21a5615ad330faef27ff8cb9befd73f713`
@@ -17,6 +17,8 @@ At this snapshot, every applied Supabase migration has a corresponding SQL file 
 ## Safe operating rule
 
 Do not run `db reset` or replay already-applied migrations against production. For future schema changes, add a new timestamped SQL migration to the repository, review it, apply it through the normal migration workflow, and verify the resulting version in Supabase. Keep production data intact.
+
+A separate schema-diff review found historical references to `public.app_accounts` and `public.building_memberships`, while those relations are absent from the current live schema. No recorded drop/rename transition was identified. Therefore, zero missing filenames does not prove a clean replay. Do not reset, push, or replay against production until the historical schema transition is reconstructed.
 
 ## Verification details
 
