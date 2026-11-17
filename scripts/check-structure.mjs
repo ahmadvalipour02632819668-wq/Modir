@@ -11,6 +11,7 @@ const fail = (message) => {
 const index = read("index.html");
 const modules = [
   "core.js",
+  "alert-ui.js",
   "sms.js",
   "media.js",
   "pwa.js",
@@ -49,6 +50,7 @@ const contracts = {
   "sms.js": ["ModirSms", "smsLink", "smsBtn"],
   "dashboard-ui.js": ["ModirDashboardUi", "countUp", "bindEyes", "EYE"],
   "account-ui.js": ["ModirAccountUi", "mustChangeBanner"],
+  "alert-ui.js": ["ModirAlertUi", "getSeenAlertIds", "markAlertSeen", "markAlertPrefixSeen"],
   "period-ui.js": ["ModirPeriodUi", "monthOptions", "yearOptions", "unitOptions", "bindPeriod", "periodPicker"],
   "media.js": ["ModirMedia", "compressImage"],
   "pwa.js": ["ModirPwa", "isAppInstalled", "installPwa", "installTileHtml", "renderInstallBanner"],
@@ -86,7 +88,6 @@ const sharedContracts = {
     "modal", "closeModal", "go", "renderShell", "renderLogin", "logout",
     
     "ico",
-    "markAlertPrefixSeen"
   ],
 };
 for (const [file, names] of Object.entries(sharedContracts)) {
