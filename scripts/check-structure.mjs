@@ -101,8 +101,12 @@ if (!financeSource.includes("function loadHtml2Canvas()") || (financeSource.matc
   fail("finance.js must lazy-load html2canvas only when an image export is requested");
 }
 
-if (!financeSource.includes('t.source === "payment" ?') || !financeSource.includes("پرداخت تأییدشده")) {
-  fail("approved payment transactions must not expose the generic manual edit action");
+if (!financeSource.includes('t.source === "payment" ?') ||
+    !financeSource.includes("پرداخت تأییدشده") ||
+    !financeSource.includes("data-correct") ||
+    !financeSource.includes("app_admin_correct_approved_payment") ||
+    !financeSource.includes("payment_corrected")) {
+  fail("approved payment correction must be auditable and use a dedicated correction action");
 }
 
 const serviceWorkerSource = read("sw.js");
