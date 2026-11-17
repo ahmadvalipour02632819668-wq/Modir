@@ -11,6 +11,7 @@ const fail = (message) => {
 const index = read("index.html");
 const modules = [
   "core.js",
+  "menu-ui.js",
   "alert-ui.js",
   "sms.js",
   "media.js",
@@ -50,6 +51,7 @@ const contracts = {
   "sms.js": ["ModirSms", "smsLink", "smsBtn"],
   "dashboard-ui.js": ["ModirDashboardUi", "countUp", "bindEyes", "EYE"],
   "account-ui.js": ["ModirAccountUi", "mustChangeBanner"],
+  "menu-ui.js": ["ModirMenuUi", "getMenuItems", "navItems"],
   "alert-ui.js": ["ModirAlertUi", "getSeenAlertIds", "markAlertSeen", "markAlertPrefixSeen"],
   "period-ui.js": ["ModirPeriodUi", "monthOptions", "yearOptions", "unitOptions", "bindPeriod", "periodPicker"],
   "media.js": ["ModirMedia", "compressImage"],
