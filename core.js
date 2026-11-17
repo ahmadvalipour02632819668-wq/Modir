@@ -248,10 +248,14 @@ localStorage.removeItem('bm_token');
 function isNetworkError(msg) { return !!msg && /failed to fetch|network|fetch|timeout|ECONN|ERR_NETWORK|ERR_INTERNET/i.test(String(msg)); }
 async function api(fn, args = {}) {
   let timeoutId;
+  const controller = typeof AbortController === 'function' ? new AbortController() : null;
   try {
-    const request = sb.rpc(fn, args);
+    const request = sb.rpc(fn, args, controller ? { signal: controller.signal } : undefined);
     const timeout = new Promise((_, reject) => {
-      timeoutId = setTimeout(() => reject(new Error('NETWORK_ERROR')), 20000);
+      timeoutId = setTimeout(() => {
+        if (controller) controller.abort();
+        reject(new Error('NETWORK_ERROR'));
+      }, 20000);
     });
     const { data, error } = await Promise.race([request, timeout]);
     if (error) {
