@@ -84,29 +84,6 @@ document.addEventListener('pointerdown', e => {
   setTimeout(() => c.remove(), 650);
 });
 
-function countUp(root = document) {
-  $$('[data-count]', root).forEach(el => {
-    const to = Number(el.dataset.count) || 0, t0 = performance.now(), d = 900;
-    const step = t => {
-      const p = Math.min(1, (t - t0) / d), e = 1 - Math.pow(1 - p, 3);
-      el.textContent = fmt(to * e);
-      if (p < 1) requestAnimationFrame(step);
-    };
-    requestAnimationFrame(step);
-  });
-}
-const BAL_KEY = 'bm_hide_bal';
-function bindEyes(root = document) {
-  const apply = () => $$('.bc-amt', root).forEach(a => a.classList.toggle('blur', sessionStorage.getItem(BAL_KEY) === '1'));
-  apply();
-  $$('.eye', root).forEach(b => b.addEventListener('click', e => {
-    e.stopPropagation();
-    sessionStorage.setItem(BAL_KEY, sessionStorage.getItem(BAL_KEY) === '1' ? '0' : '1');
-    apply();
-  }));
-}
-const EYE = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>`;
-
 async function renderLogin() {
   $('#app').innerHTML = '<div class="login"><div class="art"><img class="logo" src="icone-512.png" alt="" aria-hidden="true"><h1 id="login-title">Resident Manager</h1><p>سامانه مدیریت مجتمع‌های مسکونی</p></div><div class="form"><div class="card" style="max-width:520px"><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:20px"><button type="button" class="btn sf" id="tab-login">ورود</button><button type="button" class="btn lt" id="tab-register">ثبت‌نام</button></div><section id="login-panel"><h2>ورود به سامانه</h2><p class="sub">نام کاربری و گذرواژه خود را وارد کنید.</p><form id="lg" class="grid" style="gap:14px"><label class="f">نام کاربری<input id="lg-user" autocomplete="username" dir="ltr" required maxlength="32"></label><label class="f">گذرواژه<input id="lg-pass" type="password" autocomplete="current-password" dir="ltr" required inputmode="numeric" autocorrect="off" autocapitalize="off" spellcheck="false"></label><button class="btn sf" type="submit" id="lg-btn">ورود</button><p id="lg-err" style="color:var(--danger);margin:0;min-height:24px" role="status"></p><a href="#" id="forgot-pass" style="text-align:center;font-size:13px;color:var(--muted);display:block">فراموشی گذرواژه</a></form></section><section id="register-panel" class="hidden"><h2>ثبت‌نام در سامانه</h2><p class="sub">ماهیت ثبت‌نام را انتخاب کنید و اطلاعات مربوط به آن را تکمیل کنید.</p><form id="registration-form" class="grid" style="gap:12px"><label class="f">ماهیت ثبت‌نام<select id="reg-type" required><option value="">انتخاب کنید</option><option value="manager">مدیر ساختمان و ایجاد ساختمان جدید</option><option value="resident_owner">مالک ساکن</option><option value="owner">مالک غیرساکن</option><option value="tenant">مستأجر</option></select></label><div id="reg-specific" class="grid" style="gap:12px"></div><div style="border-top:1px solid var(--line);padding-top:14px"><h3>مشخصات فردی و حساب کاربری</h3><div class="grid g2"><label class="f">نام و نام خانوادگی<input name="full_name" required maxlength="120"></label><label class="f">شماره موبایل<input name="phone" required inputmode="tel" maxlength="30"></label><label class="f">ایمیل<input name="email" type="email" required maxlength="254" dir="ltr"></label><label class="f">نام کاربری انگلیسی<input name="username" required pattern="[A-Za-z][A-Za-z0-9_]{2,31}" minlength="3" maxlength="32" dir="ltr"></label><label class="f" style="grid-column:1/-1">گذرواژه (۴ تا ۸ رقم)<input name="password" type="password" required inputmode="numeric" pattern="[0-9]{4,8}" minlength="4" maxlength="8" dir="ltr" autocomplete="new-password" autocorrect="off" autocapitalize="off" spellcheck="false"></label></div></div><button class="btn sf" id="register-submit" type="submit">ارسال درخواست ثبت‌نام</button><p id="register-message" style="margin:0;min-height:24px" role="status"></p></form></section></div></div></div>';
 
