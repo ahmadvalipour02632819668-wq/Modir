@@ -4,7 +4,7 @@
 
 The frontend currently uses **ordered classic scripts**, not native ES modules. This is intentional for compatibility: the application still has shared runtime state and legacy functions that are referenced across files and from UI event handlers.
 
-Do not add `type="module"`, add `defer`, or reorder the scripts without first migrating and testing every cross-file dependency.
+Do not add `type="module"`, remove `defer`, or reorder the scripts without first migrating and testing every cross-file dependency.
 
 ## Load order
 
@@ -28,7 +28,7 @@ The order in `index.html` is part of the runtime contract:
 16. `management.js` — units, rates, settings, activity/profile views and Jalali date helpers.
 17. `navigation.js` — browser back-button/history handling.
 
-All seventeen application scripts are loaded synchronously at the end of the document body. This allows each later file to use APIs registered by earlier files.
+All seventeen application scripts are loaded with `defer` at the end of the document body. Deferred scripts execute in document order after parsing, so later files can use APIs registered by earlier files.
 
 ## Public cross-file APIs
 
