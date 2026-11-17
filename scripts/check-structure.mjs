@@ -90,5 +90,4 @@ for (const [file, names] of Object.entries(sharedContracts)) {
   }
 };
 if (process.exitCode) process.exit(process.exitCode);
-if (process.exitCode) process.exit(process.exitCode);
 console.log(`Structure check passed: ${modules.length} ordered JavaScript files, public API contracts and app.css.`);
