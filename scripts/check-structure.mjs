@@ -42,6 +42,7 @@ for (const file of modules) {
 }
 
 const contracts = {
+  "sms.js": ["ModirSms", "smsLink", "smsBtn"],
   "media.js": ["ModirMedia", "compressImage"],
   "pwa.js": ["ModirPwa", "isAppInstalled", "installPwa", "installTileHtml", "renderInstallBanner"],
   "assistant.js": ["ModirAssistant", "mount"],
