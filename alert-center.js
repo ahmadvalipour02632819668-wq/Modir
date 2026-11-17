@@ -1,8 +1,14 @@
 (function (window) {
 let alertItemsCache = null;
 let alertItemsCacheAt = 0;
+let alertItemsCacheKey = '';
 let alertItemsLoadPromise = null;
+let alertItemsLoadKey = '';
 const ALERT_ITEMS_CACHE_TTL_MS = 30000;
+
+function alertItemsContextKey() {
+  return [String(S.token || ''), String(S.me?.building_id || ''), S.me?.is_admin ? 'admin' : 'resident'].join('|');
+}
 
 async function loadAlertItems() {
   const jobs = [
@@ -42,19 +48,28 @@ async function loadAlertItems() {
 
 async function collectAlertItems(options = {}) {
   const force = options?.force === true;
-  if (!force && Array.isArray(alertItemsCache) && Date.now() - alertItemsCacheAt < ALERT_ITEMS_CACHE_TTL_MS) {
+  const contextKey = alertItemsContextKey();
+  if (!force && alertItemsCacheKey === contextKey && Array.isArray(alertItemsCache) &&
+      Date.now() - alertItemsCacheAt < ALERT_ITEMS_CACHE_TTL_MS) {
     return alertItemsCache;
   }
-  if (alertItemsLoadPromise) return alertItemsLoadPromise;
+  if (alertItemsLoadPromise && alertItemsLoadKey === contextKey) return alertItemsLoadPromise;
   const pending = loadAlertItems();
   alertItemsLoadPromise = pending;
+  alertItemsLoadKey = contextKey;
   try {
     const items = await pending;
-    alertItemsCache = items;
-    alertItemsCacheAt = Date.now();
+    if (alertItemsContextKey() === contextKey) {
+      alertItemsCache = items;
+      alertItemsCacheAt = Date.now();
+      alertItemsCacheKey = contextKey;
+    }
     return items;
   } finally {
-    if (alertItemsLoadPromise === pending) alertItemsLoadPromise = null;
+    if (alertItemsLoadPromise === pending) {
+      alertItemsLoadPromise = null;
+      alertItemsLoadKey = '';
+    }
   }
 }
 
