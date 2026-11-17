@@ -11,13 +11,14 @@ Do not add `type="module"`, add `defer`, or reorder the scripts without first mi
 The order in `index.html` is part of the runtime contract:
 
 1. `core.js` — shared foundation: Supabase client/configuration, session and application state, API helpers, common formatting and date utilities.
-2. `assistant.js` — isolated AI assistant UI and interaction controller.
-3. `shell.js` — login/shell rendering, global UI, navigation dispatch, shared interaction helpers and alert UI.
-4. `dashboard.js` — dashboard cards, summaries, request table and dashboard view.
-5. `community.js` — announcements, neighbor alerts, requests and payment-related community views.
-6. `finance.js` — transactions and financial reports.
-7. `management.js` — units, rates, settings, activity/profile views and Jalali date helpers.
-8. `navigation.js` — browser back-button/history handling.
+2. `pwa.js` — isolated PWA installation prompt, install tile and service-worker registration.
+3. `assistant.js` — isolated AI assistant UI and interaction controller.
+4. `shell.js` — login/shell rendering, global UI, navigation dispatch, shared interaction helpers and alert UI.
+5. `dashboard.js` — dashboard cards, summaries, request table and dashboard view.
+6. `community.js` — announcements, neighbor alerts, requests and payment-related community views.
+7. `finance.js` — transactions and financial reports.
+8. `management.js` — units, rates, settings, activity/profile views and Jalali date helpers.
+9. `navigation.js` — browser back-button/history handling.
 
 All eight application scripts are loaded synchronously at the end of the document body. This allows each later file to use APIs registered by earlier files.
 
@@ -27,6 +28,7 @@ Files that have been isolated behind an IIFE expose a deliberately small frozen 
 
 | Owner | Public API | Intended consumers |
 | --- | --- | --- |
+| `pwa.js` | `window.ModirPwa` | shell, dashboard |
 | `assistant.js` | `window.ModirAssistant` | shell |
 | `dashboard.js` | `window.ModirDashboard` | shell, community |
 | `community.js` | `window.ModirCommunity` | shell, dashboard |
@@ -70,6 +72,6 @@ Before renaming, moving, or hiding a shared identifier:
 
 - CSS is separated into `app.css`.
 - Main frontend code is split into eight ordered JavaScript files.
-- Assistant, dashboard, community, finance and management implementations are wrapped in IIFEs with explicit public APIs.
+- PWA installation behavior, assistant, dashboard, community, finance and management implementations are wrapped in IIFEs with explicit public APIs.
 - Navigation state is private to `navigation.js`.
 - Core and shell remain intentionally unwrapped until their shared dependencies can be safely reduced.
