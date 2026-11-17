@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  syntax-and-assets:
+  syntax-and-structure:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -17,68 +17,13 @@ jobs:
         with:
           node-version: 22
 
-      - name: Check JavaScript syntax
+      - name: Check all application JavaScript syntax
         run: |
           set -e
-          for file in core.js assistant.js shell.js dashboard.js community.js finance.js management.js navigation.js; do
+          for file in core.js menu-ui.js alert-ui.js alert-center.js sms.js media.js pwa.js assistant.js shell.js account-ui.js period-ui.js dashboard-ui.js dashboard.js community.js finance.js management.js navigation.js; do
             echo "Checking $file"
             node --check "$file"
           done
 
-      - name: Check local asset references and script order
-        run: |
-          node <<'NODE'
-          const fs = require('node:fs');
-          const html = fs.readFileSync('index.html', 'utf8');
-          const expected = [
-            'core.js', 'assistant.js', 'shell.js', 'dashboard.js', 'community.js',
-            'finance.js', 'management.js', 'navigation.js'
-          ];
-          const actual = [...html.matchAll(/<script\s+src=["']\.\/([^"'?]+)(?:\?[^"']*)?["']/g)]
-            .map(match => match[1])
-            .filter(name => expected.includes(name));
-
-          if (JSON.stringify(actual) !== JSON.stringify(expected)) {
-            console.error('Unexpected JavaScript load order:', actual);
-            process.exit(1);
-          }
-
-          for (const file of [...expected, 'app.css']) {
-            if (!fs.existsSync(file)) {
-              console.error('Missing referenced asset:', file);
-              process.exit(1);
-            }
-          }
-
-          console.log('JavaScript load order and local assets are valid.');
-          NODE
-
-      - name: Check frontend module API contracts
-        run: |
-          node <<'NODE'
-          const fs = require('node:fs');
-          const contracts = {
-            'assistant.js': ['ModirAssistant', 'mount'],
-            'dashboard.js': ['ModirDashboard', 'reqTable', 'viewDash', 'renderPollsInAnnouncements'],
-            'community.js': ['ModirCommunity', 'viewAnnouncements', 'viewNeighborAlerts', 'viewRequests', 'payModal', 'viewPay'],
-            'finance.js': ['ModirFinance', 'viewTx', 'viewReport'],
-            'management.js': ['ModirManagement', 'viewUnits', 'viewRates', 'viewSettings', 'viewActivity', 'viewProfile', 'normalizeJalaliDigits', 'jalaliToGregorianDate', 'gregorianToJalaliDate', 'jalaliMonthDays']
-          };
-
-          for (const [file, names] of Object.entries(contracts)) {
-            const source = fs.readFileSync(file, 'utf8');
-            const [apiName, ...methods] = names;
-            const apiStart = source.indexOf('window.' + apiName + ' = Object.freeze({');
-            if (apiStart < 0) {
-              throw new Error(`${file}: missing frozen public API ${apiName}`);
-            }
-            const apiEnd = source.indexOf('});', apiStart);
-            const apiBlock = source.slice(apiStart, apiEnd < 0 ? source.length : apiEnd);
-            for (const method of methods) {
-              if (!apiBlock.includes(method)) {
-                throw new Error(`${file}: public API ${apiName} does not expose ${method}`);
-              }
-            }
-          }
-          console.log('Frontend public API contracts are present.');
-          NODE
+      - name: Check application structure and public API contracts
+        run: node scripts/check-structure.mjs
