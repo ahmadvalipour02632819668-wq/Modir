@@ -339,16 +339,21 @@ async function renderShell() {
     try { ModirAlertCenter.renderAlertCenter(await ModirAlertCenter.collectAlertItems()); }
     catch (error) { console.warn('Alert center could not be opened:', error); }
   });
-  ModirAlertCenter.refreshManagerAlertBadge();
   if (window.__modirManagerAlertTimer) clearInterval(window.__modirManagerAlertTimer);
   window.__modirManagerAlertTimer = setInterval(() => {
     if (document.visibilityState === 'visible') ModirAlertCenter.refreshManagerAlertBadge();
   }, 15000);
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible') ModirAlertCenter.refreshManagerAlertBadge();
-  });
+  if (!window.__modirVisibilityHandler) {
+    window.__modirVisibilityHandler = () => {
+      if (document.visibilityState === 'visible' && S.me?.is_admin) ModirAlertCenter.refreshManagerAlertBadge();
+    };
+    document.addEventListener('visibilitychange', window.__modirVisibilityHandler);
+  }
   document.querySelectorAll('.bnav-items button').forEach(b => b.addEventListener('click', () => go(b.dataset.v)));
-  window.addEventListener('resize', debounce(() => renderShellHeaderState(false), 100));
+  if (!window.__modirResizeHandler) {
+    window.__modirResizeHandler = debounce(() => renderShellHeaderState(false), 100);
+    window.addEventListener('resize', window.__modirResizeHandler);
+  }
   if ('serviceWorker' in navigator && window.isSecureContext) getPushServiceWorker().catch(err => console.warn('Service worker registration failed:', err));
   go(S.view);
   const avatarToken = S.token;
