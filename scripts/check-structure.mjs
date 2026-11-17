@@ -40,9 +40,10 @@ const actual = [...index.matchAll(/<script\s+src=["']\.\/([^"'?]+)(?:\?[^"']*)?[
 if (JSON.stringify(actual) !== JSON.stringify(modules)) {
   fail(`JavaScript load order mismatch. Expected: ${modules.join(" -> ")}; found: ${actual.join(" -> ")}`);
 }
-const localScriptTags = [...index.matchAll(/<script\\s+src=["']\\.\\/[^"']+["'][^>]*>/g)].map((match) => match[0]);
-if (localScriptTags.length !== modules.length || localScriptTags.some((tag) => !/\\bdefer\\b/.test(tag))) {
+const localScriptTags = [...index.matchAll(/<script\s+src=["']\.\/[^"']+["'][^>]*>/g)].map((match) => match[0]);
+if (localScriptTags.length !== modules.length || localScriptTags.some((tag) => !/\bdefer\b/.test(tag))) {
   fail("all ordered local JavaScript files must use defer for parallel downloads");
+}
 }
 
 for (const file of modules) {
