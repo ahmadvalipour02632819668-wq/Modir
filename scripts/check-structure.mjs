@@ -11,6 +11,7 @@ const fail = (message) => {
 const index = read("index.html");
 const modules = [
   "core.js",
+  "icons.js",
   "menu-ui.js",
   "alert-ui.js",
   "alert-center.js",
@@ -56,6 +57,7 @@ for (const file of modules) {
 }
 
 const contracts = {
+  "icons.js": ["ModirIcons", "ICONS", "LINE_ICONS", "ico"],
   "sms.js": ["ModirSms", "smsLink", "smsBtn"],
   "dashboard-ui.js": ["ModirDashboardUi", "countUp", "bindEyes", "EYE"],
   "account-ui.js": ["ModirAccountUi", "mustChangeBanner"],
@@ -69,7 +71,6 @@ const contracts = {
   "dashboard.js": ["ModirDashboard", "reqTable", "viewDash", "renderPollsInAnnouncements"],
   "community.js": ["ModirCommunity", "viewAnnouncements", "viewNeighborAlerts", "viewRequests", "payModal", "viewPay"],
   "finance.js": ["ModirFinance", "viewTx", "viewReport"],
-  "jalali-date.js": ["ModirJalaliDate", "normalizeJalaliDigits", "jalaliToGregorianDate", "gregorianToJalaliDate", "jalaliMonthDays"],
   "jalali-date.js": ["ModirJalaliDate", "normalizeJalaliDigits", "jalaliToGregorianDate", "gregorianToJalaliDate", "jalaliMonthDays"],
   "management.js": ["ModirManagement", "viewUnits", "viewRates", "viewSettings", "viewActivity", "viewProfile"],
 };
@@ -135,6 +136,10 @@ if (!/document\.visibilityState === 'visible' && S\.me\?\.is_admin/.test(shellSo
 }
 
 const dashboardSource = read("dashboard.js");
+const managementSourceForIcons = read("management.js");
+if (!dashboardSource.includes("window.ModirIcons.ico(k)") || !managementSourceForIcons.includes("window.ModirIcons.ICONS.profile") || !shellSource.includes("ModirIcons.LINE_ICONS")) {
+  fail("dashboard, management and shell must consume the shared ModirIcons API");
+}
 if (/\$\{\s*mustChangeBanner\s*\(\s*\)\s*\}/.test(dashboardSource)) {
   fail("dashboard.js must call ModirAccountUi.mustChangeBanner(), not the removed local helper");
 }
@@ -166,7 +171,6 @@ const sharedContracts = {
   "shell.js": [
     "modal", "closeModal", "go", "renderShell", "renderLogin", "logout",
     
-    "ico",
   ],
 };
 for (const [file, names] of Object.entries(sharedContracts)) {
