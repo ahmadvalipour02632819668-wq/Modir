@@ -24,7 +24,7 @@ The order in `index.html` is part of the runtime contract:
 12. `modal-ui.js` — modal creation, dismissal and browser-history lifecycle, exposed through `window.ModirModal`.
 13. `push.js` — push subscription lifecycle, permission prompts and delivery helpers, exposed through `window.ModirPush`.
 14. `bale.js` — Bale message delivery and error handling, exposed through `window.ModirBale`.
-16. `shell.js` — login/shell rendering, global UI, navigation dispatch, shared interaction helpers.
+15. `shell.js` — login/shell rendering, global UI, navigation dispatch, shared interaction helpers.
 16. `account-ui.js` — shared account-state notices, including the forced password-change banner.
 17. `period-ui.js` — shared month/year/unit selectors and period-picker binding helpers.
 18. `dashboard-ui.js` — dashboard-only balance visibility and count-up animation helpers.
