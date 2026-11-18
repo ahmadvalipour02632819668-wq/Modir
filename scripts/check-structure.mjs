@@ -101,6 +101,7 @@ if (coreSource.includes("PUSH_VAPID_PUBLIC_KEY") || !pushSource.includes("window
     !shellSource.includes("window.ModirPush.maybeAskForPermission") ||
     !shellSource.includes("window.ModirPush.detachSubscription") ||
     !shellSource.includes("window.ModirPush.send(") ||
+    shellSource.includes("getPushServiceWorker(") ||
     !read("management.js").includes("window.ModirPush.enable()") ||
     !read("management.js").includes("window.ModirPush.getServiceWorker()") ||
     !read("dashboard.js").includes("window.ModirPush.send(") ||
