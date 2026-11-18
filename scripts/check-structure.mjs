@@ -95,6 +95,7 @@ if (!managementSource.includes("S.view === 'charge' ? Promise.resolve({}) : T('a
 }
 
 const coreSource = read("core.js");
+const shellSource = read("shell.js");
 const pushSource = read("push.js");
 if (coreSource.includes("PUSH_VAPID_PUBLIC_KEY") || !pushSource.includes("window.ModirPush = Object.freeze") ||
     !shellSource.includes("window.ModirPush.maybeAskForPermission") ||
@@ -106,7 +107,6 @@ if (coreSource.includes("PUSH_VAPID_PUBLIC_KEY") || !pushSource.includes("window
     !read("community.js").includes("window.ModirPush.send(")) {
   fail("push lifecycle and delivery must be owned by the explicit ModirPush module API");
 }
-const shellSource = read("shell.js");
 const themeSource = read("theme-ui.js");
 const timingSource = read("timing.js");
 if (coreSource.includes("function setTheme(") || !themeSource.includes("window.ModirTheme = Object.freeze({ setTheme })") || !shellSource.includes("window.ModirTheme.setTheme") || !read("management.js").includes("window.ModirTheme.setTheme")) {
