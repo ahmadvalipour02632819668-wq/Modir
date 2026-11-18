@@ -23,6 +23,7 @@ const modules = [
   "assistant.js",
   "modal-ui.js",
   "push.js",
+  "bale.js",
   "shell.js",
   "account-ui.js",
   "period-ui.js",
@@ -64,6 +65,7 @@ const contracts = {
   "icons.js": ["ModirIcons", "ICONS", "LINE_ICONS", "ico"],
   "modal-ui.js": ["ModirModal", "open", "close"],
   "push.js": ["ModirPush", "getServiceWorker", "enable", "detachSubscription", "maybeAskForPermission", "send"],
+  "bale.js": ["ModirBale", "send"],
   "theme-ui.js": ["ModirTheme", "setTheme"],
   "timing.js": ["ModirTiming", "debounce"],
   "sms.js": ["ModirSms", "smsLink", "smsBtn"],
@@ -95,6 +97,14 @@ if (!managementSource.includes("S.view === 'charge' ? Promise.resolve({}) : T('a
 }
 
 const coreSource = read("core.js");
+const baleSource = read("bale.js");
+if (coreSource.includes("function notifyBale(") || !baleSource.includes("window.ModirBale = Object.freeze({ send: notifyBale })") ||
+    !read("dashboard.js").includes("window.ModirBale.send(") ||
+    !read("community.js").includes("window.ModirBale.send(") ||
+    !read("finance.js").includes("window.ModirBale.send(") ||
+    !index.includes("./bale.js?v=1")) {
+  fail("Bale delivery must be owned by the ModirBale module and all consumers must use its public API");
+}
 const shellSource = read("shell.js");
 const pushSource = read("push.js");
 if (coreSource.includes("PUSH_VAPID_PUBLIC_KEY") || !pushSource.includes("window.ModirPush = Object.freeze") ||
@@ -199,12 +209,10 @@ const sharedContracts = {
   "core.js": [
     "sb", "S", "T", "api", "$", "$" + "$", "esc", "fmt", "fa", "money",
     "toNum", "toast", "showErr", "MONTHS", "CATS", "OCC",
-    "jalaliDatePicker", "TODAY", "notifyBale", "sendMobilePush",
-    "enableMobilePush", "detachPushSubscription"
+    "jalaliDatePicker", "TODAY"
   ],
   "shell.js": [
-    "modal", "closeModal", "go", "renderShell", "renderLogin", "logout",
-    
+    "go", "renderShell", "renderLogin", "logout"
   ],
 };
 for (const [file, names] of Object.entries(sharedContracts)) {
