@@ -82,7 +82,7 @@ function txModal(t, units) {
   const savedKind = t.expense_kind || 'nonshared';
   const savedMethod = t.allocation_method || 'equal';
 
-  const m = modal(`
+  const m = window.ModirModal.open(`
     <h2>${isNew ? 'ثبت تراکنش جدید' : 'ویرایش تراکنش'}</h2>
     <form id="tf" class="grid g2" style="gap:16px">
       <label class="f">نوع
