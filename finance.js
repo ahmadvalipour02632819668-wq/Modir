@@ -235,7 +235,7 @@ function txModal(t, units) {
         });
         if(saved?.ok==false) throw new Error(saved.error||'ثبت هزینه ناموفق بود');
       }
-      notifyBale(`${isNew?'📝 تراکنش جدید':'✏️ ویرایش تراکنش'}:\n\n🔹 نوع: ${txType}\n🏢 ${txType==='هزینه'?'پرداخت‌کننده':'واحد'}: ${unitNo?'واحد '+unitNo:'ساختمان'}\n💰 مبلغ: ${fmt(amount)} تومان\n📄 بابت: ${categoryLabel(txType, category)}`);
+      window.ModirBale.send(`${isNew?'📝 تراکنش جدید':'✏️ ویرایش تراکنش'}:\n\n🔹 نوع: ${txType}\n🏢 ${txType==='هزینه'?'پرداخت‌کننده':'واحد'}: ${unitNo?'واحد '+unitNo:'ساختمان'}\n💰 مبلغ: ${fmt(amount)} تومان\n📄 بابت: ${categoryLabel(txType, category)}`);
       closeModal(m);
       toast(isNew?'ثبت شد':'ویرایش شد');
       go('tx');
@@ -292,7 +292,7 @@ async function viewReport(el) {
       }catch(err){content.innerHTML=`<p style="color:#b91c1c">`+esc(err.message||'خطا در دریافت گزارش')+`</p>`;}
     });
     $('#range-print-btn')?.addEventListener('click',()=>window.print());
-    $('#range-bale-btn')?.addEventListener('click',async()=>{const b=$('#range-bale-btn'),c=$('#range-report-content');if(!b||!c)return;const old=b.textContent;b.disabled=true;try{b.textContent='در حال ساخت تصویر...';const renderCanvas=await loadHtml2Canvas();const canvas=await renderCanvas(c,{backgroundColor:'#fff',scale:2,useCORS:true,logging:false});const ok=await notifyBale(`📊 گزارش بازه‌ای `+(c.dataset.rangeTitle||'')+`\n`+(S.me?.building_name||S.building),canvas.toDataURL('image/jpeg',0.88));if(!ok)throw new Error('ارسال گزارش به بله ناموفق بود');toast('گزارش بازه‌ای به گروه بله ارسال شد');}catch(err){showErr(err)}finally{b.textContent=old;b.disabled=false}});
+    $('#range-bale-btn')?.addEventListener('click',async()=>{const b=$('#range-bale-btn'),c=$('#range-report-content');if(!b||!c)return;const old=b.textContent;b.disabled=true;try{b.textContent='در حال ساخت تصویر...';const renderCanvas=await loadHtml2Canvas();const canvas=await renderCanvas(c,{backgroundColor:'#fff',scale:2,useCORS:true,logging:false});const ok=await window.ModirBale.send(`📊 گزارش بازه‌ای `+(c.dataset.rangeTitle||'')+`\n`+(S.me?.building_name||S.building),canvas.toDataURL('image/jpeg',0.88));if(!ok)throw new Error('ارسال گزارش به بله ناموفق بود');toast('گزارش بازه‌ای به گروه بله ارسال شد');}catch(err){showErr(err)}finally{b.textContent=old;b.disabled=false}});
     return;
   }
   const [rep, reportTransactions] = await Promise.all([
@@ -309,7 +309,7 @@ async function viewReport(el) {
   ModirPeriodUi.bindPeriod(()=>go('report'));
   $('#report-range-mode')?.addEventListener('click',()=>{S.reportMode='range';S.rangeFromYear=S.y;S.rangeFromMonth=S.m;S.rangeToYear=S.y;S.rangeToMonth=S.m;go('report')});
   $('#pr-btn')?.addEventListener('click',()=>{const table=$('.report-table-wrap table');const rows=table?.querySelectorAll('tbody tr').length||1;const estimatedHeight=rows*23+105;const scale=Math.max(.42,Math.min(.82,720/estimatedHeight));document.documentElement.style.setProperty('--report-print-scale',String(scale));window.print();});
-  $('#bale-btn')?.addEventListener('click',async()=>{const b=$('#bale-btn'),table=$('.tbl-wrap table');if(!b||!table)return;const old=b.textContent;b.disabled=true;try{b.textContent='در حال ساخت تصویر...';const renderCanvas=await loadHtml2Canvas();const canvas=await renderCanvas(table,{backgroundColor:'#fff',scale:2,useCORS:true,logging:false});const ok=await notifyBale(`📊 گزارش ماهانه `+rep.month_name+` `+fa(rep.year)+`\n`+(S.me?.building_name||S.building),canvas.toDataURL('image/jpeg',0.88));if(!ok)throw new Error('ارسال گزارش به بله ناموفق بود');toast('گزارش با موفقیت به گروه بله ارسال شد')}catch(err){showErr(err)}finally{b.textContent=old;b.disabled=false}});
+  $('#bale-btn')?.addEventListener('click',async()=>{const b=$('#bale-btn'),table=$('.tbl-wrap table');if(!b||!table)return;const old=b.textContent;b.disabled=true;try{b.textContent='در حال ساخت تصویر...';const renderCanvas=await loadHtml2Canvas();const canvas=await renderCanvas(table,{backgroundColor:'#fff',scale:2,useCORS:true,logging:false});const ok=await window.ModirBale.send(`📊 گزارش ماهانه `+rep.month_name+` `+fa(rep.year)+`\n`+(S.me?.building_name||S.building),canvas.toDataURL('image/jpeg',0.88));if(!ok)throw new Error('ارسال گزارش به بله ناموفق بود');toast('گزارش با موفقیت به گروه بله ارسال شد')}catch(err){showErr(err)}finally{b.textContent=old;b.disabled=false}});
 }
 
   // Public finance API: entry points used by the application shell.
