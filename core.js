@@ -139,12 +139,6 @@ const toNum = v => {
   return Number(str) || 0;
 };
 
-function setTheme(theme) {
-  if (theme === 'default') document.documentElement.removeAttribute('data-theme');
-  else document.documentElement.setAttribute('data-theme', theme);
-  localStorage.setItem('bm_theme', theme);
-  $$('.theme-dot').forEach(d => d.classList.toggle('active', d.dataset.t === theme));
-}
 
 function jalaliToday() {
   try {
