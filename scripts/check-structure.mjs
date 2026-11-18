@@ -13,6 +13,7 @@ const modules = [
   "core.js",
   "icons.js",
   "theme-ui.js",
+  "timing.js",
   "menu-ui.js",
   "alert-ui.js",
   "alert-center.js",
@@ -60,6 +61,7 @@ for (const file of modules) {
 const contracts = {
   "icons.js": ["ModirIcons", "ICONS", "LINE_ICONS", "ico"],
   "theme-ui.js": ["ModirTheme", "setTheme"],
+  "timing.js": ["ModirTiming", "debounce"],
   "sms.js": ["ModirSms", "smsLink", "smsBtn"],
   "dashboard-ui.js": ["ModirDashboardUi", "countUp", "bindEyes", "EYE"],
   "account-ui.js": ["ModirAccountUi", "mustChangeBanner"],
@@ -84,8 +86,12 @@ if (!managementSource.includes("S.view === 'charge' ? Promise.resolve({}) : T('a
 
 const coreSource = read("core.js");
 const themeSource = read("theme-ui.js");
+const timingSource = read("timing.js");
 if (coreSource.includes("function setTheme(") || !themeSource.includes("window.ModirTheme.setTheme") || !shellSource.includes("window.ModirTheme.setTheme") || !read("management.js").includes("window.ModirTheme.setTheme")) {
   fail("theme behavior must be owned by theme-ui.js and consumed through ModirTheme");
+}
+if (coreSource.includes("function debounce(") || !timingSource.includes("window.ModirTiming") || !shellSource.includes("window.ModirTiming.debounce") || !read("finance.js").includes("window.ModirTiming.debounce")) {
+  fail("debounce must be owned by timing.js and consumed through ModirTiming");
 }
 if (!coreSource.includes("controller.abort()") ||
     !coreSource.includes("sb.rpc(fn, args, controller ? { signal: controller.signal } : undefined)") ||
