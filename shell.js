@@ -196,8 +196,41 @@ async function renderLogin() {
     window.ModirModal.open('<h2>بازیابی گذرواژه</h2><p class="sub" style="line-height:2">برای حفظ امنیت حساب، بازیابی مستقیم با نام کاربری و شماره موبایل غیرفعال شده است. لطفاً از مدیر ساختمان بخواهید گذرواژه شما را از بخش مدیریت واحدها بازنشانی کند. پس از ورود، گذرواژه خود را تغییر دهید.</p>');
   });
 }
+function confirmLogout() {
+  return new Promise(resolve => {
+    const modal = window.ModirModal.open(`
+      <div class="logout-confirm">
+        <h2>خروج از حساب</h2>
+        <p class="sub">آیا می‌خواهید از حساب کاربری خارج شوید؟</p>
+        <div class="modal-actions">
+          <button type="button" class="btn" id="logout-cancel">انصراف</button>
+          <button type="button" class="btn rd" id="logout-confirm">خروج از حساب</button>
+        </div>
+      </div>`);
+    let settled = false;
+    const finish = value => {
+      if (settled) return;
+      settled = true;
+      window.removeEventListener('popstate', onBack);
+      if (modal.isConnected) window.ModirModal.close(modal);
+      resolve(value);
+    };
+    const onBack = () => {
+      if (settled) return;
+      settled = true;
+      resolve(false);
+    };
+    window.addEventListener('popstate', onBack, { once: true });
+    modal.addEventListener('click', event => {
+      if (event.target === modal || event.target.closest('.x')) finish(false);
+    });
+    modal.querySelector('#logout-cancel').addEventListener('click', () => finish(false));
+    modal.querySelector('#logout-confirm').addEventListener('click', () => finish(true));
+  });
+}
+
 async function logout(silent = false) {
-  if(!silent && !confirm('آیا قصد خروج از حساب را دارید؟')) return;
+  if (!silent && !(await confirmLogout())) return;
   const token = S.token; S.renderId++;
   if (token) {
     try { await window.ModirPush.detachSubscription(token); } catch (err) { console.warn('Could not detach previous account push subscription:', err); }
