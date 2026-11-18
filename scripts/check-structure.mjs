@@ -86,8 +86,13 @@ const contracts = {
 };
 const managementSource = read("management.js");
 const financeSource = read("finance.js");
-if (managementSource.includes("modal(") || financeSource.includes("modal(") ||
+const dashboardSourceForModals = read("dashboard.js");
+const communitySourceForModals = read("community.js");
+const modalConsumers = [shellSource, managementSource, financeSource, dashboardSourceForModals, communitySourceForModals];
+if (modalConsumers.some(source => /\\bmodal\\s*\\(|\\bcloseModal\\s*\\(/.test(source)) ||
     !managementSource.includes("window.ModirModal.open(") || !financeSource.includes("window.ModirModal.open(") ||
+    !dashboardSourceForModals.includes("window.ModirModal.open(") ||
+    !managementSource.includes("window.ModirModal.close(") ||
     !index.includes("./modal-ui.js?v=1") || !index.includes("./push.js?v=1")) {
   fail("all modal consumers must use the explicitly loaded ModirModal API");
 }
@@ -182,7 +187,7 @@ if (!/document\.visibilityState === 'visible' && S\.me\?\.is_admin/.test(shellSo
 
 const dashboardSource = read("dashboard.js");
 const managementSourceForIcons = read("management.js");
-if (!dashboardSource.includes("window.ModirIcons.ico(k)") || !managementSourceForIcons.includes("window.ModirIcons.ICONS.profile") || !shellSource.includes("ModirIcons.LINE_ICONS")) {
+if (!dashboardSource.includes("window.ModirIcons.ico(k)") || !managementSourceForIcons.includes("window.ModirIcons.ICONS.profile") || !shellSource.includes("ModirIcons.LINE_ICONS[key]") || !shellSource.includes("ModirIcons.ICONS.profile")) {
   fail("dashboard, management and shell must consume the shared ModirIcons API");
 }
 if (/\$\{\s*mustChangeBanner\s*\(\s*\)\s*\}/.test(dashboardSource)) {
