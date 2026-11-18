@@ -82,7 +82,7 @@ const contracts = {
 };
 const managementSource = read("management.js");
 const financeSource = read("finance.js");
-if (/\\bmodal\\(/.test(managementSource) || /\\bmodal\\(/.test(financeSource) ||
+if (managementSource.includes("modal(") || financeSource.includes("modal(") ||
     !managementSource.includes("window.ModirModal.open(") || !financeSource.includes("window.ModirModal.open(") ||
     !index.includes("./modal-ui.js?v=1")) {
   fail("all modal consumers must use the explicitly loaded ModirModal API");
@@ -149,7 +149,7 @@ if ((assistantSource.match(/addEventListener\(['"]resize['"]/g) || []).length !=
   fail("assistant resize handling must use one reusable window listener");
 }
 
-const shellSource = read("shell.js");
+
 if (!/document\.visibilityState === 'visible' && S\.me\?\.is_admin/.test(shellSource) ||
     !/\},\s*60000\);/.test(shellSource)) {
   fail("manager alert polling must be limited to visible manager sessions and run no more than once per minute");
