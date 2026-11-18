@@ -1,5 +1,5 @@
 \set ON_ERROR_STOP on
-SELECT plan(25);
+SELECT plan(26);
 
 SELECT has_table('public','payment_corrections','audit table exists');
 SELECT has_column('public','payment_corrections','original_transaction_id','stores original payment');
@@ -17,6 +17,15 @@ SELECT is(
   (public.app_admin_correct_approved_payment('11111111-1111-4111-8111-111111111111',1,'ثبت اشتباه') ->> 'amount')::bigint,
   500000::bigint,
   'approved payment is reversed for the exact amount'
+);
+SELECT is(
+  public.app_preview_account_exit(
+    NULL,
+    'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+    'test', current_date, 1405, '08', 'next-user', current_date, 140508
+  ),
+  540000::bigint,
+  'account exit preview subtracts the corrected payment amount'
 );
 SELECT is((SELECT count(*)::bigint FROM public.payment_corrections WHERE original_transaction_id=1),1::bigint,'one immutable audit record is created');
 SELECT is((SELECT count(*)::bigint FROM public.transactions WHERE source='payment_correction' AND amount=500000),1::bigint,'one reversal transaction is created');
