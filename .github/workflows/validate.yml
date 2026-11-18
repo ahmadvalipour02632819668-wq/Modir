@@ -28,5 +28,5 @@ jobs:
       - name: Check application structure and public API contracts
         run: node scripts/check-structure.mjs
 
-      - name: Run financial invariant tests
-        run: node --test tests/finance-invariants.test.mjs
+      - name: Run frontend unit tests
+        run: node --test tests/*.test.mjs
