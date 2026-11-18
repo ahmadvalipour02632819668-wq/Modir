@@ -25,6 +25,7 @@ const modules = [
   "dashboard.js",
   "community.js",
   "finance.js",
+  "jalali-date.js",
   "management.js",
   "navigation.js",
 ];
@@ -68,7 +69,8 @@ const contracts = {
   "dashboard.js": ["ModirDashboard", "reqTable", "viewDash", "renderPollsInAnnouncements"],
   "community.js": ["ModirCommunity", "viewAnnouncements", "viewNeighborAlerts", "viewRequests", "payModal", "viewPay"],
   "finance.js": ["ModirFinance", "viewTx", "viewReport"],
-  "jalali-date.js": ["ModirJalaliDate", "normalizeJalaliDigits", "jalaliToGregorianDate", "gregorianToJalaliDate", "jalaliMonthDays"],\n  "management.js": ["ModirManagement", "viewUnits", "viewRates", "viewSettings", "viewActivity", "viewProfile"],
+  "jalali-date.js": ["ModirJalaliDate", "normalizeJalaliDigits", "jalaliToGregorianDate", "gregorianToJalaliDate", "jalaliMonthDays"],\n  "jalali-date.js": ["ModirJalaliDate", "normalizeJalaliDigits", "jalaliToGregorianDate", "gregorianToJalaliDate", "jalaliMonthDays"],
+  "management.js": ["ModirManagement", "viewUnits", "viewRates", "viewSettings", "viewActivity", "viewProfile"],
 };
 const managementSource = read("management.js");
 if (!managementSource.includes("S.view === 'charge' ? Promise.resolve({}) : T('app_get_settings')") ||
