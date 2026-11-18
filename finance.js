@@ -47,10 +47,10 @@ async function viewTx(el) {
     if (tx) txModal(tx, units);
   }));
   $$('[data-correct]').forEach(b => b.addEventListener('click', async () => {
-    const reason = prompt('دلیل اصلاح این پرداخت را بنویسید (حداقل ۵ نویسه):');
+    const reason = await window.ModirModal.prompt('دلیل اصلاح این پرداخت را بنویسید (حداقل ۵ نویسه):');
     if (reason === null) return;
     if (reason.trim().length < 5) { toast('دلیل اصلاح باید حداقل ۵ نویسه باشد', true); return; }
-    if (!confirm('یک سند معکوس برای کل مبلغ این پرداخت ثبت شود؟ تراکنش اصلی حذف یا ویرایش نمی‌شود.')) return;
+    if (!await window.ModirModal.confirm('یک سند معکوس برای کل مبلغ این پرداخت ثبت شود؟ تراکنش اصلی حذف یا ویرایش نمی‌شود.')) return;
     b.disabled = true;
     try {
       await T('app_admin_correct_approved_payment', { p_id: +b.dataset.correct, p_reason: reason.trim() });
@@ -58,7 +58,7 @@ async function viewTx(el) {
       go('tx');
     } catch (e) { showErr(e); b.disabled = false; }
   }));
-  $$('[data-dl]').forEach(b => b.addEventListener('click', async () => { if (!confirm('حذف شود؟')) return; try { await T('app_admin_delete_transaction', { p_id: +b.dataset.dl }); toast('حذف شد'); go('tx'); } catch (e) { showErr(e); } }));
+  $$('[data-dl]').forEach(b => b.addEventListener('click', async () => { if (!await window.ModirModal.confirm('حذف شود؟')) return; try { await T('app_admin_delete_transaction', { p_id: +b.dataset.dl }); toast('حذف شد'); go('tx'); } catch (e) { showErr(e); } }));
 }
 
 function txModal(t, units) {
