@@ -285,7 +285,7 @@ async function renderShell() {
   $('#direct-logout').addEventListener('click', () => logout());
   $('#who-btn').addEventListener('click', () => go('settings'));
   
-  $$('.theme-dot').forEach(d => d.addEventListener('click', () => setTheme(d.dataset.t)));
+  $$('.theme-dot').forEach(d => d.addEventListener('click', () => window.ModirTheme.setTheme(d.dataset.t)));
 
   $('#go-req').addEventListener('click', async () => {
     const panel = $('#alert-center');
