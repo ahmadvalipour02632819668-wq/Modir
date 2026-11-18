@@ -1,20 +1,3 @@
-function closeModal(bg) {
-  if (!bg?.isConnected) return;
-  if (history.state?.modal) history.back();
-  else bg.remove();
-}
-
-function modal(html) {
-  const bg = document.createElement('div'); bg.className = 'modal-bg';
-  bg.innerHTML = `<div class="modal"><button class="x" aria-label="بستن">×</button>${html}</div>`;
-  bg.addEventListener('click', e => { if (e.target === bg || e.target.classList.contains('x')) closeModal(bg); });
-  document.body.appendChild(bg);
-  history.pushState({ ...(history.state || {}), app: true, modal: true, view: S.view || 'dash' }, '', '#modal');
-  return bg;
-}
-
-
-
 document.addEventListener('pointerdown', e => {
   const b = e.target.closest('.btn,.tile,.win');
   if (!b) return;
@@ -159,12 +142,12 @@ async function renderLogin() {
         });
         if(!r?.ok){
           if(r.code==='SESSION_LIMIT'&&Array.isArray(r.sessions)){
-            const bg=modal(`<h2>حداکثر دو نشست فعال</h2><p class="sub">این حساب هم‌اکنون در دو دستگاه فعال است. برای ورود در این دستگاه، یکی از نشست‌های زیر را خارج کنید.</p><div class="grid" style="gap:10px" id="active-session-list">${r.sessions.map((s,i)=>`<div class="card" style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap"><div><b>${esc(s.device_label||'دستگاه ناشناس')}</b><div class="sub" style="margin:3px 0 0">شروع نشست: ${esc(new Date(s.created_at).toLocaleString('fa-IR'))}</div></div><button type="button" class="btn rd sm" data-revoke-session="${esc(s.session_id)}">خروج از این دستگاه</button></div>`).join('')}</div><p class="sub" style="margin:14px 0 0">با انتخاب یک نشست، همان نشست باطل و ورود این دستگاه انجام می‌شود.</p>`);
+            const bg=window.ModirModal.open(`<h2>حداکثر دو نشست فعال</h2><p class="sub">این حساب هم‌اکنون در دو دستگاه فعال است. برای ورود در این دستگاه، یکی از نشست‌های زیر را خارج کنید.</p><div class="grid" style="gap:10px" id="active-session-list">${r.sessions.map((s,i)=>`<div class="card" style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap"><div><b>${esc(s.device_label||'دستگاه ناشناس')}</b><div class="sub" style="margin:3px 0 0">شروع نشست: ${esc(new Date(s.created_at).toLocaleString('fa-IR'))}</div></div><button type="button" class="btn rd sm" data-revoke-session="${esc(s.session_id)}">خروج از این دستگاه</button></div>`).join('')}</div><p class="sub" style="margin:14px 0 0">با انتخاب یک نشست، همان نشست باطل و ورود این دستگاه انجام می‌شود.</p>`);
             bg.querySelectorAll('[data-revoke-session]').forEach(b=>b.addEventListener('click',async()=>{
               bg.querySelectorAll('button').forEach(x=>x.disabled=true);
               try{
                 if(history.state?.modal){
-                  await new Promise(resolve=>{window.addEventListener('popstate',resolve,{once:true});closeModal(bg);});
+                  await new Promise(resolve=>{window.addEventListener('popstate',resolve,{once:true});window.ModirModal.close(bg);});
                 }else{bg.remove();}
                 await attemptLogin(b.dataset.revokeSession);
               }catch(err){$('#lg-err').textContent=err?.message||'ورود ناموفق بود';}
@@ -210,7 +193,7 @@ async function renderLogin() {
 
   $('#forgot-pass').addEventListener('click',e=>{
     e.preventDefault();
-    modal('<h2>بازیابی گذرواژه</h2><p class="sub" style="line-height:2">برای حفظ امنیت حساب، بازیابی مستقیم با نام کاربری و شماره موبایل غیرفعال شده است. لطفاً از مدیر ساختمان بخواهید گذرواژه شما را از بخش مدیریت واحدها بازنشانی کند. پس از ورود، گذرواژه خود را تغییر دهید.</p>');
+    window.ModirModal.open('<h2>بازیابی گذرواژه</h2><p class="sub" style="line-height:2">برای حفظ امنیت حساب، بازیابی مستقیم با نام کاربری و شماره موبایل غیرفعال شده است. لطفاً از مدیر ساختمان بخواهید گذرواژه شما را از بخش مدیریت واحدها بازنشانی کند. پس از ورود، گذرواژه خود را تغییر دهید.</p>');
   });
 }
 async function logout(silent = false) {
