@@ -307,7 +307,7 @@ async function renderShell() {
   }
   document.querySelectorAll('.bnav-items button').forEach(b => b.addEventListener('click', () => go(b.dataset.v)));
   if (!window.__modirResizeHandler) {
-    window.__modirResizeHandler = debounce(() => renderShellHeaderState(false), 100);
+    window.__modirResizeHandler = window.ModirTiming.debounce(() => renderShellHeaderState(false), 100);
     window.addEventListener('resize', window.__modirResizeHandler);
   }
   if ('serviceWorker' in navigator && window.isSecureContext) getPushServiceWorker().catch(err => console.warn('Service worker registration failed:', err));
