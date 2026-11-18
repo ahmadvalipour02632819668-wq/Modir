@@ -181,9 +181,6 @@ document.addEventListener('click',e=>{
 });
 
 
-function debounce(fn, ms = 300) {
-  let t; return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
-}
 
 function toast(msg, err = false) {
   const t = $('#toast'); if (!t) return;
