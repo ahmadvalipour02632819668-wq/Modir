@@ -302,7 +302,7 @@ async function renderShell() {
     const avatarButton = $('#who-btn');
     if (avatarButton && data) avatarButton.innerHTML = '<img src="' + esc(data) + '" alt="عکس پروفایل" style="width:100%;height:100%;object-fit:cover;border-radius:50%">';
   }).catch(avatarErr => console.warn('Profile photo could not be loaded:', avatarErr));
-  setTimeout(maybeAskForPushPermission, 500);
+  setTimeout(window.ModirPush.maybeAskForPermission, 500);
 }
 
 function go(v, isBackNavigation = false) {
