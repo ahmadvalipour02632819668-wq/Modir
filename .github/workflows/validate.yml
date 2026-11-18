@@ -20,7 +20,7 @@ jobs:
       - name: Check all application JavaScript syntax
         run: |
           set -e
-          for file in core.js icons.js theme-ui.js menu-ui.js alert-ui.js alert-center.js sms.js media.js pwa.js assistant.js shell.js account-ui.js period-ui.js dashboard-ui.js dashboard.js community.js finance.js jalali-date.js management.js navigation.js; do
+          for file in core.js icons.js theme-ui.js timing.js menu-ui.js alert-ui.js alert-center.js sms.js media.js pwa.js assistant.js shell.js account-ui.js period-ui.js dashboard-ui.js dashboard.js community.js finance.js jalali-date.js management.js navigation.js; do
             echo "Checking $file"
             node --check "$file"
           done
