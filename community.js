@@ -15,7 +15,7 @@ async function viewAnnouncements(el) {
         toast('ثبت شد'); go('announcements');
       } catch (err) { showErr(err); }
     });
-    $$('[data-del]').forEach(b => b.addEventListener('click', async () => { if (!confirm('حذف شود؟')) return; try { await T('app_admin_delete_announcement', { p_id: +b.dataset.del }); toast('حذف شد'); go('announcements'); } catch (e) { showErr(e); } }));
+    $$('[data-del]').forEach(b => b.addEventListener('click', async () => { if (!await window.ModirModal.confirm('حذف شود؟')) return; try { await T('app_admin_delete_announcement', { p_id: +b.dataset.del }); toast('حذف شد'); go('announcements'); } catch (e) { showErr(e); } }));
   }
   await ModirDashboard.renderPollsInAnnouncements(el);
 }
@@ -95,7 +95,7 @@ async function viewNeighborAlerts(el) {
     const target = Number($('#neighbor-target-unit')?.value);
     const category = $('#neighbor-category')?.value;
     if (!Number.isInteger(target) || target < 1 || !category) return toast('واحد و موضوع هشدار را انتخاب کنید', true);
-    if (!confirm('یادآوری محرمانه برای واحد ' + fa(target) + ' ارسال شود؟')) return;
+    if (!await window.ModirModal.confirm('یادآوری محرمانه برای واحد ' + fa(target) + ' ارسال شود؟')) return;
     // Short emergency-style feedback; vibration is supported on compatible mobile browsers.
     try {
       if (typeof navigator.vibrate === 'function') navigator.vibrate([900, 160, 550]);
@@ -291,7 +291,7 @@ async function viewRequests(el) {
     $$('[data-registration-approve], [data-registration-reject]', el).forEach(btn => btn.addEventListener('click', async () => {
       const approve = btn.hasAttribute('data-registration-approve');
       const id = Number(approve ? btn.dataset.registrationApprove : btn.dataset.registrationReject);
-      if (!approve && !confirm('درخواست ثبت‌نام رد شود؟')) return;
+      if (!approve && !await window.ModirModal.confirm('درخواست ثبت‌نام رد شود؟')) return;
       btn.disabled = true;
       try {
         const result = await T('app_admin_review_membership_registration', { p_request_id: id, p_decision: approve ? 'approve' : 'reject' });
@@ -317,7 +317,7 @@ async function viewRequests(el) {
       }
     });
     $('#transfer-cancel')?.addEventListener('click', async () => {
-      if (!confirm('درخواست انتقال مدیریت لغو شود؟')) return;
+      if (!await window.ModirModal.confirm('درخواست انتقال مدیریت لغو شود؟')) return;
       try {
         await T('app_management_transfer_cancel');
         toast('درخواست انتقال لغو شد');
@@ -648,7 +648,7 @@ function replyModal(r) {
 function approveModal(p) {
   const m = window.ModirModal.open(`<h2>تایید پرداخت واحد ${fa(p.unit_no)}</h2><p class="sub">${esc(p.full_name || '')} · بابت ${esc(CATS[p.category] || p.category)} · ${MONTHS[p.month-1]} ${fa(p.year)}</p>${p.receipt_image ? `<div style="margin-bottom:16px;text-align:center"><img src="${esc(p.receipt_image)}" style="max-width:100%;max-height:300px;border-radius:12px;border:1px solid var(--line)"></div>` : `<div class="card" style="background:var(--bg);margin-bottom:16px;text-align:center;color:var(--muted)">تصویری بارگذاری نشده است</div>`}<div class="grid g2"><label class="f">مبلغ تاییدی (تومان)<input id="ap-a" value="${fmt(p.amount)}" inputmode="numeric"></label><label class="f">یادداشت<input id="ap-n"></label></div><div style="margin-top:20px;display:flex;gap:10px"><button class="btn" id="ap-go" style="flex:1">تایید و ثبت</button><button class="btn rd" id="ap-rj">رد کردن</button></div>`);
   attachNumericInputIn(m, '#ap-a');
-  $('#ap-rj', m).addEventListener('click', async () => { const note = prompt('دلیل رد:') ?? null; if (note === null) return; try { await T('app_admin_review_payment', { p_id: p.id, p_approve: false, p_admin_note: note }); await window.ModirPush.send('payment_reviewed', 'نتیجه بررسی پرداخت', 'پرداخت شما رد شد. ' + note, p.account_id); window.ModirModal.close(m); toast('رد شد'); go('pay'); } catch (e) { showErr(e); } });
+  $('#ap-rj', m).addEventListener('click', async () => { const note = await window.ModirModal.prompt('دلیل رد:') ?? null; if (note === null) return; try { await T('app_admin_review_payment', { p_id: p.id, p_approve: false, p_admin_note: note }); await window.ModirPush.send('payment_reviewed', 'نتیجه بررسی پرداخت', 'پرداخت شما رد شد. ' + note, p.account_id); window.ModirModal.close(m); toast('رد شد'); go('pay'); } catch (e) { showErr(e); } });
   $('#ap-go', m).addEventListener('click', async () => {
     try {
       const approvedAmount = toNum($('#ap-a', m).value);
