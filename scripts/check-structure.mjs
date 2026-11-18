@@ -69,7 +69,7 @@ const contracts = {
   "dashboard.js": ["ModirDashboard", "reqTable", "viewDash", "renderPollsInAnnouncements"],
   "community.js": ["ModirCommunity", "viewAnnouncements", "viewNeighborAlerts", "viewRequests", "payModal", "viewPay"],
   "finance.js": ["ModirFinance", "viewTx", "viewReport"],
-  "jalali-date.js": ["ModirJalaliDate", "normalizeJalaliDigits", "jalaliToGregorianDate", "gregorianToJalaliDate", "jalaliMonthDays"],\n  "jalali-date.js": ["ModirJalaliDate", "normalizeJalaliDigits", "jalaliToGregorianDate", "gregorianToJalaliDate", "jalaliMonthDays"],
+  "jalali-date.js": ["ModirJalaliDate", "normalizeJalaliDigits", "jalaliToGregorianDate", "gregorianToJalaliDate", "jalaliMonthDays"],
   "management.js": ["ModirManagement", "viewUnits", "viewRates", "viewSettings", "viewActivity", "viewProfile"],
 };
 const managementSource = read("management.js");
