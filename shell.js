@@ -167,7 +167,7 @@ async function renderLogin() {
         S.token=r.token;S.me=r.account;S.unitCount=Number(r.account.units_count||10);S.building=r.account.building_name||'';
         sessionStorage.setItem('bm_token',S.token);sessionStorage.setItem('bm_me',JSON.stringify(S.me));
         renderShell();
-        if(!S.me?.is_admin) await sendMobilePush('resident_login','ورود ساکن',`${S.me?.full_name||'ساکن'} از ${S.me?.unit_no?'واحد '+fa(S.me.unit_no):'حساب کاربری'} وارد برنامه شد.`);
+        if(!S.me?.is_admin) await window.ModirPush.send('resident_login','ورود ساکن',`${S.me?.full_name||'ساکن'} از ${S.me?.unit_no?'واحد '+fa(S.me.unit_no):'حساب کاربری'} وارد برنامه شد.`);
       }finally{btn.disabled=false;btn.textContent=old;}
     };
     try{await attemptLogin(null);}catch(err){showErr(err);}
@@ -200,7 +200,7 @@ async function logout(silent = false) {
   if(!silent && !confirm('آیا قصد خروج از حساب را دارید؟')) return;
   const token = S.token; S.renderId++;
   if (token) {
-    try { await detachPushSubscription(token); } catch (err) { console.warn('Could not detach previous account push subscription:', err); }
+    try { await window.ModirPush.detachSubscription(token); } catch (err) { console.warn('Could not detach previous account push subscription:', err); }
     try { await api('app_logout', { p_token: token }); } catch {}
   }
   S.token = null; S.me = null; S.view = 'dash'; S.txFilter = null; S.avatarData = null;
