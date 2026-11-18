@@ -36,10 +36,10 @@ const modules = [
   "navigation.js",
 ];
 
-if (!index.includes("./community.js?v=3")) fail("community.js cache version must be refreshed after modal API migration");
+if (!index.includes("./community.js?v=4")) fail("community.js cache version must be refreshed after modal API migration");
 if (!index.includes('href="./app.css?v=1"')) fail("index.html must load app.css");
 if (index.includes("./app.js")) fail("obsolete monolithic app.js reference remains");
-if (!index.includes("./finance.js?v=11")) fail("finance.js cache version must be refreshed after selector fixes");
+if (!index.includes("./finance.js?v=12")) fail("finance.js cache version must be refreshed after selector fixes");
 if (index.includes("<style>")) fail("application CSS must stay in app.css");
 if (index.includes("html2canvas")) fail("html2canvas must not block initial page loading");
 
@@ -96,7 +96,7 @@ if (modalConsumers.some(source => /\bmodal\s*\(|\bcloseModal\s*\(/.test(source))
     !managementSource.includes("window.ModirModal.open(") || !financeSource.includes("window.ModirModal.open(") ||
     !dashboardSourceForModals.includes("window.ModirModal.open(") ||
     !managementSource.includes("window.ModirModal.close(") ||
-    !index.includes("./modal-ui.js?v=1") || !index.includes("./push.js?v=1")) {
+    !index.includes("./modal-ui.js?v=2") || !index.includes("./push.js?v=1")) {
   fail("all modal consumers must use the explicitly loaded ModirModal API");
 }
 if (!managementSource.includes("S.view === 'charge' ? Promise.resolve({}) : T('app_get_settings')") ||
