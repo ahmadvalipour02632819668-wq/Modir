@@ -21,6 +21,7 @@ const modules = [
   "media.js",
   "pwa.js",
   "assistant.js",
+  "modal-ui.js",
   "shell.js",
   "account-ui.js",
   "period-ui.js",
@@ -35,7 +36,7 @@ const modules = [
 
 if (!index.includes('href="./app.css?v=1"')) fail("index.html must load app.css");
 if (index.includes("./app.js")) fail("obsolete monolithic app.js reference remains");
-if (!index.includes("./finance.js?v=8")) fail("finance.js cache version must be refreshed after selector fixes");
+if (!index.includes("./finance.js?v=9")) fail("finance.js cache version must be refreshed after selector fixes");
 if (index.includes("<style>")) fail("application CSS must stay in app.css");
 if (index.includes("html2canvas")) fail("html2canvas must not block initial page loading");
 
@@ -60,6 +61,7 @@ for (const file of modules) {
 
 const contracts = {
   "icons.js": ["ModirIcons", "ICONS", "LINE_ICONS", "ico"],
+  "modal-ui.js": ["ModirModal", "open", "close"],
   "theme-ui.js": ["ModirTheme", "setTheme"],
   "timing.js": ["ModirTiming", "debounce"],
   "sms.js": ["ModirSms", "smsLink", "smsBtn"],
@@ -79,12 +81,19 @@ const contracts = {
   "management.js": ["ModirManagement", "viewUnits", "viewRates", "viewSettings", "viewActivity", "viewProfile"],
 };
 const managementSource = read("management.js");
+const financeSource = read("finance.js");
+if (/\\bmodal\\(/.test(managementSource) || /\\bmodal\\(/.test(financeSource) ||
+    !managementSource.includes("window.ModirModal.open(") || !financeSource.includes("window.ModirModal.open(") ||
+    !index.includes("./modal-ui.js?v=1")) {
+  fail("all modal consumers must use the explicitly loaded ModirModal API");
+}
 if (!managementSource.includes("S.view === 'charge' ? Promise.resolve({}) : T('app_get_settings')") ||
     !managementSource.includes("S.view === 'charge' ? Promise.resolve(null) : T('app_admin_get_bale_config')")) {
   fail("charge view must skip settings-only RPC requests");
 }
 
 const coreSource = read("core.js");
+const shellSource = read("shell.js");
 const themeSource = read("theme-ui.js");
 const timingSource = read("timing.js");
 if (coreSource.includes("function setTheme(") || !themeSource.includes("window.ModirTheme.setTheme") || !shellSource.includes("window.ModirTheme.setTheme") || !read("management.js").includes("window.ModirTheme.setTheme")) {
@@ -96,7 +105,7 @@ if (coreSource.includes("function debounce(") || !timingSource.includes("window.
 if (!coreSource.includes("controller.abort()") ||
     !coreSource.includes("sb.rpc(fn, args, controller ? { signal: controller.signal } : undefined)") ||
     !coreSource.includes("error.name === 'AbortError' || isNetworkError(rawMsg)") ||
-    !index.includes("./core.js?v=2") ||
+    !index.includes("./core.js?v=4") ||
     !index.includes("rpc: function (name, args, options)") ||
     !index.includes("signal: options && options.signal")) {
   fail("RPC timeout must abort the underlying fetch and core.js cache must be refreshed");
@@ -113,7 +122,6 @@ if (!alertCenterSource.includes("ALERT_ITEMS_CACHE_TTL_MS = 30000") ||
   fail("alert-center reads must be cached, deduplicated and force-refreshed when the panel opens");
 }
 
-const financeSource = read("finance.js");
 if (!financeSource.includes("function loadHtml2Canvas()") || (financeSource.match(/loadHtml2Canvas\(\)/g) || []).length < 3) {
   fail("finance.js must lazy-load html2canvas only when an image export is requested");
 }
