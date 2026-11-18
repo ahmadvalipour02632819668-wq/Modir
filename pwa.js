@@ -18,7 +18,7 @@ async function installPwa() {
   if (deferredInstallPrompt) {
     const promptEvent = deferredInstallPrompt;
     deferredInstallPrompt = null;
-    promptEvent.await window.ModirModal.prompt();
+    promptEvent.prompt();
     const choice = await promptEvent.userChoice;
     if (choice?.outcome === 'accepted') {
       document.querySelectorAll('[data-install]').forEach(button => button.remove());
