@@ -37,4 +37,13 @@ jobs:
           PGPASSWORD: postgres
         run: |
           psql -h localhost -U supabase_admin -d modir_test -v ON_ERROR_STOP=1 -f supabase/tests/payment_correction_fixture.sql
-          psql -h localhost -U supabase_admin -d modir_test -v ON_ERROR_STOP=1 -f supabase/tests/payment_correction_schema.test.sql
+          test_output="$(psql -X -h localhost -U supabase_admin -d modir_test -v ON_ERROR_STOP=1 -f supabase/tests/payment_correction_schema.test.sql 2>&1)"
+          printf '%s\n' "$test_output"
+          if printf '%s\n' "$test_output" | grep -Eq 'not ok [0-9]+|# Looks like you failed'; then
+            echo "pgTAP reported failed assertions."
+            exit 1
+          fi
+          if ! printf '%s\n' "$test_output" | grep -q '1..25'; then
+            echo "pgTAP plan output missing; refusing to pass."
+            exit 1
+          fi
