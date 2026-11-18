@@ -50,14 +50,14 @@ Files that have been isolated behind an IIFE expose a deliberately small frozen 
 
 Only add a function to one of these public objects when another file genuinely needs it. Keep implementation helpers private inside the owning IIFE.
 
-`core.js` and `shell.js` are still shared classic-script scopes. They are high-coupling legacy foundations and have **not** yet been converted to isolated modules. `navigation.js` is self-contained in an IIFE.
+`core.js` and `shell.js` are still shared classic-script scopes. They are high-coupling legacy foundations and have **not** yet been converted to isolated modules. `navigation.js` is self-contained in an IIFE. The structure checker also verifies public APIs for `menu-ui.js`, `alert-ui.js` and `account-ui.js`.
 
 ## Cross-file dependency guard
 
-The structure checker also verifies the shared identifiers that are currently consumed outside their owning file. These are compatibility contracts, not a recommendation to keep the current coupling forever.
+The structure checker verifies shared identifiers that are currently consumed outside their owning file. These are compatibility contracts, not a recommendation to keep the current coupling forever.
 
-- Core-owned shared runtime: `sb`, `S`, `T`, DOM/format helpers, date helpers, push helpers and PWA install helpers.
-- Shell-owned shared runtime: modal/navigation/render functions, period selectors, icon helpers, icon helpers and the password-change banner.
+- Core-owned shared runtime: `sb`, `S`, `T`, DOM/format helpers, date helpers and push helpers.
+- Shell-owned shared runtime: modal/navigation/render functions, icon helpers and other shell-level UI helpers.
 
 When reducing coupling, migrate one contract at a time: move the implementation behind an explicit frozen API, update every consumer, then remove that identifier from the checker contract in the same commit. Do not simply delete or rename a shared identifier.
 
@@ -70,6 +70,19 @@ Before renaming, moving, or hiding a shared identifier:
 - Check UI callbacks and dynamically generated handlers, not only direct function calls.
 - Update all consumers in the same change.
 - Run the repository validation workflows and manually test login, navigation, dashboard, community, finance and management views.
+
+## Maintainability hotspots and refactor order
+
+The largest frontend files are currently `management.js`, `community.js`, `shell.js`, `finance.js` and `dashboard.js`. Their size alone is not a defect, but it increases review and regression cost when unrelated responsibilities change together.
+
+Refactor these incrementally, in this order:
+1. Extract cohesive, low-coupling helpers from the largest view files into small IIFE modules with frozen public APIs.
+2. Keep each extracted module responsible for one domain and expose only the functions actually used by other files.
+3. Reduce the shared global surface of `shell.js` and `core.js) only after call sites and dynamic event handlers have been inventoried.
+4. Add focused tests for each extracted module before deleting the old implementation.
+5. Avoid a large rewrite or a framework migration as a prerequisite for maintainability improvements.
+
+Do not split a file solely to meet an arbitrary line-count target. A change is worthwhile only when it reduces coupling or gives a responsibility a clear owner.
 
 ## Change-safety rules
 
@@ -84,7 +97,7 @@ Before renaming, moving, or hiding a shared identifier:
 ## Current migration status
 
 - CSS is separated into `app.css`.
-- Main frontend code is split into eight ordered JavaScript files.
-- PWA installation behavior, alert tracking and alert-center rendering, SMS links, image compression, dashboard UI helpers, assistant, dashboard, community, finance and management implementations are wrapped in IIFEs with explicit public APIs.
+- The frontend is split into seventeen ordered JavaScript files.
+- PWA installation behavior, alert tracking and alert-center rendering, SMS links, image compression, dashboard UI helpers, account notices, period controls, assistant, dashboard, community, finance and management implementations expose explicit public APIs.
 - Navigation state is private to `navigation.js`.
 - Core and shell remain intentionally unwrapped until their shared dependencies can be safely reduced.
