@@ -18,7 +18,7 @@ async function installPwa() {
   if (deferredInstallPrompt) {
     const promptEvent = deferredInstallPrompt;
     deferredInstallPrompt = null;
-    promptEvent.prompt();
+    promptEvent.await window.ModirModal.prompt();
     const choice = await promptEvent.userChoice;
     if (choice?.outcome === 'accepted') {
       document.querySelectorAll('[data-install]').forEach(button => button.remove());
@@ -29,7 +29,7 @@ async function installPwa() {
   const help = /iphone|ipad|ipod/i.test(navigator.userAgent)
     ? 'برای نصب در آیفون، دکمه اشتراک‌گذاری Safari را بزنید و «افزودن به صفحه اصلی» را انتخاب کنید.'
     : 'برای نصب، منوی سه‌نقطه مرورگر را باز کنید و «Install app» یا «Add to Home screen» را انتخاب کنید.';
-  alert(help);
+  await window.ModirModal.alert(help);
 }
 function installTileHtml() {
   if (isAppInstalled()) return '';
@@ -48,7 +48,7 @@ function renderInstallBanner() {
   view.prepend(banner);
   document.getElementById('pwa-install-action').addEventListener('click', async () => {
     if (!deferredInstallPrompt) return;
-    deferredInstallPrompt.prompt();
+    deferredInstallPrompt.await window.ModirModal.prompt();
     await deferredInstallPrompt.userChoice;
     deferredInstallPrompt = null;
     banner.remove();
