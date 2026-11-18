@@ -379,7 +379,7 @@ async function viewProfile(el) {
   $('#enable-push-btn')?.addEventListener('click', async e => {
     const btn = e.currentTarget; const status = $('#push-status');
     btn.disabled = true; btn.textContent = 'در حال فعال‌سازی...';
-    try { await enableMobilePush(); btn.textContent = 'اعلان‌ها فعال هستند'; if (status) status.textContent = 'اعلان‌های این ساختمان روی این دستگاه فعال شد.'; toast('اعلان‌های موبایلی فعال شد'); }
+    try { await window.ModirPush.enable(); btn.textContent = 'اعلان‌ها فعال هستند'; if (status) status.textContent = 'اعلان‌های این ساختمان روی این دستگاه فعال شد.'; toast('اعلان‌های موبایلی فعال شد'); }
     catch (err) { btn.textContent = 'تلاش دوباره برای فعال‌سازی'; if (status) status.textContent = err.message || 'فعال‌سازی اعلان‌ها ناموفق بود'; showErr(err); }
     finally { btn.disabled = false; }
   });
@@ -391,7 +391,7 @@ async function viewProfile(el) {
     let hadPushSubscription = false;
     if (passwordChanged && 'Notification' in window && Notification.permission === 'granted' && 'serviceWorker' in navigator) {
       try {
-        const registration = await getPushServiceWorker();
+        const registration = await window.ModirPush.getServiceWorker();
         hadPushSubscription = !!(await registration.pushManager.getSubscription());
       } catch (_) {}
     }
@@ -410,7 +410,7 @@ async function viewProfile(el) {
       let pushWarning = '';
       if (passwordChanged && hadPushSubscription) {
         try {
-          await enableMobilePush();
+          await window.ModirPush.enable();
         } catch (pushErr) {
           const message = String(pushErr?.message || '');
           pushWarning = message.includes('این اشتراک اعلان قبلاً به حساب دیگری متصل شده است')
