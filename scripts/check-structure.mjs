@@ -88,8 +88,9 @@ const managementSource = read("management.js");
 const financeSource = read("finance.js");
 const dashboardSourceForModals = read("dashboard.js");
 const communitySourceForModals = read("community.js");
-const modalConsumers = [shellSource, managementSource, financeSource, dashboardSourceForModals, communitySourceForModals];
-if (modalConsumers.some(source => /\\bmodal\\s*\\(|\\bcloseModal\\s*\\(/.test(source)) ||
+const shellSourceForModals = read("shell.js");
+const modalConsumers = [shellSourceForModals, managementSource, financeSource, dashboardSourceForModals, communitySourceForModals];
+if (modalConsumers.some(source => /\bmodal\s*\(|\bcloseModal\s*\(/.test(source)) ||
     !managementSource.includes("window.ModirModal.open(") || !financeSource.includes("window.ModirModal.open(") ||
     !dashboardSourceForModals.includes("window.ModirModal.open(") ||
     !managementSource.includes("window.ModirModal.close(") ||
@@ -110,7 +111,6 @@ if (coreSource.includes("function notifyBale(") || !baleSource.includes("window.
     !index.includes("./bale.js?v=1")) {
   fail("Bale delivery must be owned by the ModirBale module and all consumers must use its public API");
 }
-const shellSource = read("shell.js");
 const pushSource = read("push.js");
 if (coreSource.includes("PUSH_VAPID_PUBLIC_KEY") || !pushSource.includes("window.ModirPush = Object.freeze") ||
     !shellSource.includes("window.ModirPush.maybeAskForPermission") ||
