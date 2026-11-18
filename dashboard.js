@@ -302,7 +302,7 @@ async function viewDash(el) {
     const uData = mapUnits.find(x => x.unit_no == b.dataset.u); if (!uData) return;
     const cardsHtml = uData.accounts.length ? uData.accounts.map(r => billCard(r, rep)).join('<hr style="border:0;border-top:1px dashed var(--line);margin:20px 0">') : '<p class="sub" style="text-align:center;padding:20px">حسابی برای این واحد ثبت نشده است.</p>';
     const smsHtml = uData.accounts.map(r => r.phone ? ModirSms.smsBtn(r.phone, reminderText(r, rep), `پیامک به ${r.full_name || r.occupancy}`) : '').join('');
-const m = modal(`
+const m = window.ModirModal.open(`
   <div style="margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
     <h2 style="margin:0">صورتحساب واحد ${fa(uData.unit_no)}</h2>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
