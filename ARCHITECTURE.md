@@ -22,18 +22,19 @@ The order in `index.html` is part of the runtime contract:
 10. `pwa.js` — isolated PWA installation prompt, install tile and service-worker registration.
 11. `assistant.js` — isolated AI assistant UI and interaction controller.
 12. `modal-ui.js` — modal creation, dismissal and browser-history lifecycle, exposed through `window.ModirModal`.
-13. `shell.js` — login/shell rendering, global UI, navigation dispatch, shared interaction helpers.
-14. `account-ui.js` — shared account-state notices, including the forced password-change banner.
-15. `period-ui.js` — shared month/year/unit selectors and period-picker binding helpers.
-16. `dashboard-ui.js` — dashboard-only balance visibility and count-up animation helpers.
-17. `dashboard.js` — dashboard cards, summaries, request table and dashboard view.
-18. `community.js` — announcements, neighbor alerts, requests and payment-related community views.
-19. `finance.js` — transactions and financial reports.
-20. `jalali-date.js` — Jalali/Gregorian conversion and Jalali month-length helpers.
-21. `management.js` — units, rates, settings, activity and profile views.
-22. `navigation.js` — browser back-button/history handling.
+13. `push.js` — push subscription lifecycle, permission prompts and delivery helpers, exposed through `window.ModirPush`.
+15. `shell.js` — login/shell rendering, global UI, navigation dispatch, shared interaction helpers.
+15. `account-ui.js` — shared account-state notices, including the forced password-change banner.
+16. `period-ui.js` — shared month/year/unit selectors and period-picker binding helpers.
+17. `dashboard-ui.js` — dashboard-only balance visibility and count-up animation helpers.
+18. `dashboard.js` — dashboard cards, summaries, request table and dashboard view.
+19. `community.js` — announcements, neighbor alerts, requests and payment-related community views.
+20. `finance.js` — transactions and financial reports.
+21. `jalali-date.js` — Jalali/Gregorian conversion and Jalali month-length helpers.
+22. `management.js` — units, rates, settings, activity and profile views.
+23. `navigation.js` — browser back-button/history handling.
 
-All twenty-two application scripts are loaded with `defer` at the end of the document body. Deferred scripts execute in document order after parsing, so later files can use APIs registered by earlier files.
+All twenty-three application scripts are loaded with `defer` at the end of the document body. Deferred scripts execute in document order after parsing, so later files can use APIs registered by earlier files.
 
 ## Public cross-file APIs
 
@@ -43,6 +44,7 @@ Files that have been isolated behind an IIFE expose a deliberately small frozen 
 | --- | --- | --- |
 | `icons.js` | `window.ModirIcons` | shell, dashboard, management |
 | `modal-ui.js` | `window.ModirModal` | core, shell, management, finance |
+| `push.js` | `window.ModirPush` | shell, dashboard, community, management |
 | `theme-ui.js` | `window.ModirTheme` | shell, management |
 | `timing.js` | `window.ModirTiming` | shell, finance |
 | `pwa.js` | `window.ModirPwa` | shell, dashboard |
@@ -107,7 +109,7 @@ Do not split a file solely to meet an arbitrary line-count target. A change is w
 ## Current migration status
 
 - CSS is separated into `app.css`.
-- The frontend is split into twenty-two ordered JavaScript files.
-- shared icons, modal lifecycle, PWA installation behavior, alert tracking and alert-center rendering, SMS links, image compression, dashboard UI helpers, account notices, period controls, assistant, dashboard, community, finance and management implementations expose explicit public APIs.
+- The frontend is split into twenty-three ordered JavaScript files.
+- shared icons, modal lifecycle, push delivery, PWA installation behavior, alert tracking and alert-center rendering, SMS links, image compression, dashboard UI helpers, account notices, period controls, assistant, dashboard, community, finance and management implementations expose explicit public APIs.
 - Navigation state is private to `navigation.js`.
 - Core and shell remain intentionally unwrapped until their shared dependencies can be safely reduced.
