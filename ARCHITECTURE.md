@@ -11,24 +11,25 @@ Do not add `type="module"`, remove `defer`, or reorder the scripts without first
 The order in `index.html` is part of the runtime contract:
 
 1. `core.js` — shared foundation: Supabase client/configuration, session and application state, API helpers, common formatting and date utilities.
-2. `menu-ui.js` — role-aware menu definitions for the services grid and bottom navigation.
-3. `alert-ui.js` — local read/unread alert tracking and prefix-based seen-state helpers.
-4. `alert-center.js` — alert collection, unread center rendering and badge refresh.
-5. `sms.js` — isolated SMS link/button helpers used by dashboard and finance.
-6. `media.js` — isolated image compression helper used by community uploads.
-7. `pwa.js` — isolated PWA installation prompt, install tile and service-worker registration.
-8. `assistant.js` — isolated AI assistant UI and interaction controller.
-9. `shell.js` — login/shell rendering, global UI, navigation dispatch, shared interaction helpers.
-10. `account-ui.js` — shared account-state notices, including the forced password-change banner.
-11. `period-ui.js` — shared month/year/unit selectors and period-picker binding helpers.
-12. `dashboard-ui.js` — dashboard-only balance visibility and count-up animation helpers.
-13. `dashboard.js` — dashboard cards, summaries, request table and dashboard view.
-14. `community.js` — announcements, neighbor alerts, requests and payment-related community views.
-15. `finance.js` — transactions and financial reports.
-16. `management.js` — units, rates, settings, activity/profile views and Jalali date helpers.
-17. `navigation.js` — browser back-button/history handling.
+2. `icons.js` — shared immutable SVG icon catalog and icon lookup helper used by shell, dashboard and management.
+3. `menu-ui.js` — role-aware menu definitions for the services grid and bottom navigation.
+4. `alert-ui.js` — local read/unread alert tracking and prefix-based seen-state helpers.
+5. `alert-center.js` — alert collection, unread center rendering and badge refresh.
+6. `sms.js` — isolated SMS link/button helpers used by dashboard and finance.
+7. `media.js` — isolated image compression helper used by community uploads.
+8. `pwa.js` — isolated PWA installation prompt, install tile and service-worker registration.
+9. `assistant.js` — isolated AI assistant UI and interaction controller.
+10. `shell.js` — login/shell rendering, global UI, navigation dispatch, shared interaction helpers.
+11. `account-ui.js` — shared account-state notices, including the forced password-change banner.
+12. `period-ui.js` — shared month/year/unit selectors and period-picker binding helpers.
+13. `dashboard-ui.js` — dashboard-only balance visibility and count-up animation helpers.
+14. `dashboard.js` — dashboard cards, summaries, request table and dashboard view.
+15. `community.js` — announcements, neighbor alerts, requests and payment-related community views.
+16. `finance.js` — transactions and financial reports.
+18. `management.js` — units, rates, settings, activity/profile views and Jalali date helpers.
+19. `navigation.js` — browser back-button/history handling.
 
-All seventeen application scripts are loaded with `defer` at the end of the document body. Deferred scripts execute in document order after parsing, so later files can use APIs registered by earlier files.
+All nineteen application scripts are loaded with `defer` at the end of the document body. Deferred scripts execute in document order after parsing, so later files can use APIs registered by earlier files.
 
 ## Public cross-file APIs
 
@@ -36,6 +37,7 @@ Files that have been isolated behind an IIFE expose a deliberately small frozen 
 
 | Owner | Public API | Intended consumers |
 | --- | --- | --- |
+| `icons.js` | `window.ModirIcons` | shell, dashboard, management |
 | `pwa.js` | `window.ModirPwa` | shell, dashboard |
 | `alert-center.js` | `window.ModirAlertCenter` | shell |
 | `sms.js` | `window.ModirSms` | dashboard, finance |
@@ -78,7 +80,7 @@ The largest frontend files are currently `management.js`, `community.js`, `shell
 Refactor these incrementally, in this order:
 1. Extract cohesive, low-coupling helpers from the largest view files into small IIFE modules with frozen public APIs.
 2. Keep each extracted module responsible for one domain and expose only the functions actually used by other files.
-3. Reduce the shared global surface of `shell.js` and `core.js) only after call sites and dynamic event handlers have been inventoried.
+3. Reduce the shared global surface of `shell.js` and `core.js` only after call sites and dynamic event handlers have been inventoried.
 4. Add focused tests for each extracted module before deleting the old implementation.
 5. Avoid a large rewrite or a framework migration as a prerequisite for maintainability improvements.
 
@@ -97,7 +99,7 @@ Do not split a file solely to meet an arbitrary line-count target. A change is w
 ## Current migration status
 
 - CSS is separated into `app.css`.
-- The frontend is split into seventeen ordered JavaScript files.
-- PWA installation behavior, alert tracking and alert-center rendering, SMS links, image compression, dashboard UI helpers, account notices, period controls, assistant, dashboard, community, finance and management implementations expose explicit public APIs.
+- The frontend is split into nineteen ordered JavaScript files.
+- shared icons, PWA installation behavior, alert tracking and alert-center rendering, SMS links, image compression, dashboard UI helpers, account notices, period controls, assistant, dashboard, community, finance and management implementations expose explicit public APIs.
 - Navigation state is private to `navigation.js`.
 - Core and shell remain intentionally unwrapped until their shared dependencies can be safely reduced.
