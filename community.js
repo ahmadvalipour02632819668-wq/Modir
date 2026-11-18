@@ -10,7 +10,7 @@ async function viewAnnouncements(el) {
       try {
         const title = $('#a-title').value; const content = $('#a-content').value; const type = $('#a-type').value;
         await T('app_admin_save_announcement', { p_title: title, p_content: content, p_type: type });
-        notifyBale(`📢 اعلان جدید در ساختمان:\n\n🔹 ${title}\n\n${content}`);
+        window.ModirBale.send(`📢 اعلان جدید در ساختمان:\n\n🔹 ${title}\n\n${content}`);
         await window.ModirPush.send('announcement_created', title, content);
         toast('ثبت شد'); go('announcements');
       } catch (err) { showErr(err); }
@@ -258,7 +258,7 @@ async function viewRequests(el) {
         const type = $('#rq-type').value;
         const desc = $('#rq-desc').value.trim();
         await T('app_submit_request', { p_type: type, p_description: desc });
-        notifyBale(`🔔 درخواست جدید از واحد ${S.me.unit_no}:\n\n🔹 نوع: ${type}\n📝 توضیحات: ${desc}`);
+        window.ModirBale.send(`🔔 درخواست جدید از واحد ${S.me.unit_no}:\n\n🔹 نوع: ${type}\n📝 توضیحات: ${desc}`);
         await window.ModirPush.send('resident_request_created', 'درخواست جدید از واحد ' + S.me.unit_no, type + (desc ? ' · ' + desc : ''));
         toast('درخواست ثبت شد'); go('requests');
       } catch (err) { showErr(err); }
@@ -274,7 +274,7 @@ async function viewRequests(el) {
         const saved = await T('app_submit_group_message', { p_message: message });
         const title = saved?.title || `پیام گروهی از واحد ${S.me.unit_no || '—'}`;
         await window.ModirPush.send('group_message_created', title, message);
-        const baleSent = await notifyBale(`💬 ${title}\n\n${message}`);
+        const baleSent = await window.ModirBale.send(`💬 ${title}\n\n${message}`);
         toast(
           baleSent
             ? 'پیام در اعلان‌های برنامه ثبت و به گروه بله ارسال شد'
@@ -371,7 +371,7 @@ function replyModal(r) {
 
       // ارسال به ربات بله
       const statusLabel = status === 'done' ? '✅ انجام شد' : '🔄 در حال بررسی';
-      notifyBale(
+      window.ModirBale.send(
         `📩 پاسخ به درخواست واحد ${r.unit_no}\n\n` +
         `🔹 نوع: ${r.type}\n` +
         `📌 وضعیت: ${statusLabel}\n\n` +
@@ -605,7 +605,7 @@ function replyModal(r) {
             });
           }
         }
-        notifyBale(`💸 پرداخت جدید (بر اساس بدهی):\n\n👤 واحد ${selectedUnit} - ${isAdmin ? (selectedAccount?.full_name || selectedAccount?.occupancy || '') : S.me.full_name}\n💰 مبلغ: ${fmt(totalAmount)} تومان`);
+        window.ModirBale.send(`💸 پرداخت جدید (بر اساس بدهی):\n\n👤 واحد ${selectedUnit} - ${isAdmin ? (selectedAccount?.full_name || selectedAccount?.occupancy || '') : S.me.full_name}\n💰 مبلغ: ${fmt(totalAmount)} تومان`);
       } else {
         const res = await T('app_process_payment_fifo', {
           p_total_amount: totalAmount, p_pay_date: $('#pf-d', m).value, p_ref_code: $('#pf-r', m).value,
@@ -613,7 +613,7 @@ function replyModal(r) {
           p_target_unit: isAdmin ? selectedUnit : null
         });
         if (!res.ok) throw new Error(res.error);
-        notifyBale(`💸 پرداخت جدید (مبلغ دلخواه):\n\n👤 واحد ${selectedUnit} - ${S.me.full_name}\n💰 مبلغ: ${fmt(totalAmount)} تومان`);
+        window.ModirBale.send(`💸 پرداخت جدید (مبلغ دلخواه):\n\n👤 واحد ${selectedUnit} - ${S.me.full_name}\n💰 مبلغ: ${fmt(totalAmount)} تومان`);
       }
       if (!isAdmin) await window.ModirPush.send('payment_request_created', 'پرداخت جدید از واحد ' + selectedUnit, 'مبلغ ' + fmt(totalAmount) + ' تومان برای بررسی ثبت شد.');
       closeModal(m);
@@ -657,7 +657,7 @@ function approveModal(p) {
         return;
       }
       await T('app_admin_review_payment', { p_id: p.id, p_approve: true, p_amount: approvedAmount, p_admin_note: $('#ap-n', m).value });
-      notifyBale(`✅ پرداخت تایید شد:\n\n👤 واحد ${p.unit_no} - ${p.full_name}\n💰 مبلغ: ${fmt(approvedAmount)} تومان\n📅 بابت: ${CATS[p.category] || p.category} - ${MONTHS[p.month-1]} ${p.year}`);
+      window.ModirBale.send(`✅ پرداخت تایید شد:\n\n👤 واحد ${p.unit_no} - ${p.full_name}\n💰 مبلغ: ${fmt(approvedAmount)} تومان\n📅 بابت: ${CATS[p.category] || p.category} - ${MONTHS[p.month-1]} ${p.year}`);
       await window.ModirPush.send('payment_reviewed', 'پرداخت شما تایید شد', 'پرداخت ' + fmt(p.amount) + ' تومان تایید شد.', p.account_id);
       closeModal(m); toast('تایید شد'); go('pay');
     } catch (e) { showErr(e); }
