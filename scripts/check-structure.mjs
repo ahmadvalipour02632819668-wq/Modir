@@ -89,6 +89,7 @@ const financeSource = read("finance.js");
 const dashboardSourceForModals = read("dashboard.js");
 const communitySourceForModals = read("community.js");
 const shellSourceForModals = read("shell.js");
+const shellSource = shellSourceForModals;
 const modalConsumers = [shellSourceForModals, managementSource, financeSource, dashboardSourceForModals, communitySourceForModals];
 if (modalConsumers.some(source => /\bmodal\s*\(|\bcloseModal\s*\(/.test(source)) ||
     !managementSource.includes("window.ModirModal.open(") || !financeSource.includes("window.ModirModal.open(") ||
