@@ -151,7 +151,37 @@ document.querySelectorAll('[data-stat]').forEach(tile=>tile.addEventListener('cl
  }
 }));
 $('refreshRequests').addEventListener('click',loadAll);$('refreshBuildings').addEventListener('click',loadAll);$('refreshManagers').addEventListener('click',loadManagers);$('refreshActivity').addEventListener('click',loadAudit);$('refreshSystem').addEventListener('click',loadOverview);$('buildingSearch').addEventListener('input',renderBuildings);$('buildingFilter').addEventListener('change',renderBuildings);$('managerSearch').addEventListener('input',renderManagers);
-$('logoutButton').addEventListener('click',async()=>{try{if(token)await rpc('app_superadmin_logout',{p_token:token});}catch(e){}showLogin();});
+let backExitArmed=false,backExitTimer=null,logoutInProgress=false;
+async function performSuperadminLogout(){
+ if(logoutInProgress)return;
+ if(!await appConfirm('آیا می‌خواهید از حساب سوپرادمین خارج شوید؟'))return;
+ logoutInProgress=true;
+ const btn=$('logoutButton');if(btn)btn.disabled=true;
+ try{if(token)await rpc('app_superadmin_logout',{p_token:token});}
+ catch(e){logoutInProgress=false;if(btn)btn.disabled=false;await appAlert(e.message||'خروج از حساب انجام نشد. دوباره تلاش کنید.');return;}
+ showLogin();
+}
+$('logoutButton').addEventListener('click',performSuperadminLogout);
+
+// رفتار دکمه بازگشت: بار اول هشدار، بار دوم نمایش تأیید خروج
+function armBackNavigation(){
+ history.pushState({superadminPage:true,guard:true},'',location.href);
+}
+armBackNavigation();
+window.addEventListener('popstate',()=>{
+ if(logoutInProgress)return;
+ if(backExitArmed){
+  backExitArmed=false;
+  if(backExitTimer)clearTimeout(backExitTimer);
+  armBackNavigation();
+  performSuperadminLogout();
+  return;
+ }
+ backExitArmed=true;
+ armBackNavigation();
+ appAlert('برای خروج از حساب، یک بار دیگر دکمه بازگشت را بزنید.');
+ backExitTimer=setTimeout(()=>{backExitArmed=false;},2200);
+});
 token=sessionStorage.getItem('bm_superadmin_token');
 try{account=JSON.parse(sessionStorage.getItem('bm_superadmin_account')||'{}');}catch(e){account={};}
 if(!token){window.location.replace('index.html');return;}
