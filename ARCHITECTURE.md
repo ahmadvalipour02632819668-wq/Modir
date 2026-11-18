@@ -22,7 +22,7 @@ The order in `index.html` is part of the runtime contract:
 10. `pwa.js` — isolated PWA installation prompt, install tile and service-worker registration.
 11. `assistant.js` — isolated AI assistant UI and interaction controller.
 12. `modal-ui.js` — modal creation, dismissal and browser-history lifecycle, exposed through `window.ModirModal`.
-14. `shell.js` — login/shell rendering, global UI, navigation dispatch, shared interaction helpers.
+13. `shell.js` — login/shell rendering, global UI, navigation dispatch, shared interaction helpers.
 14. `account-ui.js` — shared account-state notices, including the forced password-change banner.
 15. `period-ui.js` — shared month/year/unit selectors and period-picker binding helpers.
 16. `dashboard-ui.js` — dashboard-only balance visibility and count-up animation helpers.
