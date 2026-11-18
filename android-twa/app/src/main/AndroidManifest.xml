@@ -1,6 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <application android:allowBackup="false" android:label="@string/app_name" android:supportsRtl="true" android:theme="@style/Theme.ResidentManager">
+    <application
+        android:allowBackup="false"
+        android:icon="@drawable/ic_launcher"
+        android:roundIcon="@drawable/ic_launcher"
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.ResidentManager">
         <activity android:name="com.google.androidbrowserhelper.trusted.LauncherActivity" android:exported="true" android:launchMode="singleTask">
             <meta-data android:name="android.support.customtabs.trusted.DEFAULT_URL" android:value="https://ahmadvalipour.ir/" />
             <meta-data android:name="android.support.customtabs.trusted.SPLASH_IMAGE_DRAWABLE" android:resource="@drawable/splash" />
