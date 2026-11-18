@@ -431,7 +431,7 @@ async function renderPollsInAnnouncements(el) {
     }));
 
     $$('[data-poll-delete]').forEach(b => b.addEventListener('click', async () => {
-      const ok = confirm('این نظرسنجی، همه گزینه‌ها و تمام آرای آن برای همیشه حذف می‌شود و دیگر در صفحه هیچ‌کس نمایش داده نخواهد شد. ادامه می‌دهید؟');
+      const ok = await window.ModirModal.confirm('این نظرسنجی، همه گزینه‌ها و تمام آرای آن برای همیشه حذف می‌شود و دیگر در صفحه هیچ‌کس نمایش داده نخواهد شد. ادامه می‌دهید؟');
       if (!ok) return;
       b.disabled = true;
       try {
