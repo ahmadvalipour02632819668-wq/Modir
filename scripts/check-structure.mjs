@@ -12,6 +12,7 @@ const index = read("index.html");
 const modules = [
   "core.js",
   "icons.js",
+  "theme-ui.js",
   "menu-ui.js",
   "alert-ui.js",
   "alert-center.js",
@@ -58,6 +59,7 @@ for (const file of modules) {
 
 const contracts = {
   "icons.js": ["ModirIcons", "ICONS", "LINE_ICONS", "ico"],
+  "theme-ui.js": ["ModirTheme", "setTheme"],
   "sms.js": ["ModirSms", "smsLink", "smsBtn"],
   "dashboard-ui.js": ["ModirDashboardUi", "countUp", "bindEyes", "EYE"],
   "account-ui.js": ["ModirAccountUi", "mustChangeBanner"],
@@ -81,6 +83,10 @@ if (!managementSource.includes("S.view === 'charge' ? Promise.resolve({}) : T('a
 }
 
 const coreSource = read("core.js");
+const themeSource = read("theme-ui.js");
+if (coreSource.includes("function setTheme(") || !themeSource.includes("window.ModirTheme.setTheme") || !shellSource.includes("window.ModirTheme.setTheme") || !read("management.js").includes("window.ModirTheme.setTheme")) {
+  fail("theme behavior must be owned by theme-ui.js and consumed through ModirTheme");
+}
 if (!coreSource.includes("controller.abort()") ||
     !coreSource.includes("sb.rpc(fn, args, controller ? { signal: controller.signal } : undefined)") ||
     !coreSource.includes("error.name === 'AbortError' || isNetworkError(rawMsg)") ||
