@@ -409,7 +409,7 @@ async function renderPollsInAnnouncements(el) {
         });
         if (isActive) {
           const pollText = `📊 نظرسنجی جدید ساختمان\n\n${title}${description ? `\n${description}` : ''}\n\nگزینه‌ها:\n${options.map((x, i) => `${i + 1}) ${x}`).join('\n')}\n\nبرای ثبت رأی وارد برنامه مدیریت ساختمان شوید.`;
-          const sent = await notifyBale(pollText);
+          const sent = await window.ModirBale.send(pollText);
         await window.ModirPush.send('poll_created', 'نظرسنجی جدید: ' + title, description || options.join('، '));
           toast(sent ? 'نظرسنجی ایجاد و در گروه بله اعلام شد' : 'نظرسنجی ایجاد شد؛ ارسال اعلان به بله ناموفق بود', !sent);
         } else {
@@ -464,7 +464,7 @@ async function renderPollsInAnnouncements(el) {
             `• ${o.text}: ${o.votes} رأی (${Number(o.percent || 0).toFixed(1)}٪)`
           );
           const resultsText = `📊 به‌روزرسانی نتیجه نظرسنجی\n${current.title}\n\n${lines.join('\n')}\n\nمجموع آرا: ${current.total_votes}`;
-          baleSent = await notifyBale(resultsText);
+          baleSent = await window.ModirBale.send(resultsText);
         }
       } catch (notifyErr) {
         console.warn('Poll results notification failed:', notifyErr);
