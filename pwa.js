@@ -48,7 +48,7 @@ function renderInstallBanner() {
   view.prepend(banner);
   document.getElementById('pwa-install-action').addEventListener('click', async () => {
     if (!deferredInstallPrompt) return;
-    deferredInstallPrompt.await window.ModirModal.prompt();
+    deferredInstallPrompt.prompt();
     await deferredInstallPrompt.userChoice;
     deferredInstallPrompt = null;
     banner.remove();
