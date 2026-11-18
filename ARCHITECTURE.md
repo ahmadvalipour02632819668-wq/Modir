@@ -26,7 +26,8 @@ The order in `index.html` is part of the runtime contract:
 14. `dashboard.js` — dashboard cards, summaries, request table and dashboard view.
 15. `community.js` — announcements, neighbor alerts, requests and payment-related community views.
 16. `finance.js` — transactions and financial reports.
-18. `management.js` — units, rates, settings, activity/profile views and Jalali date helpers.
+17. `jalali-date.js` — Jalali/Gregorian conversion and Jalali month-length helpers.
+18. `management.js` — units, rates, settings, activity and profile views.
 19. `navigation.js` — browser back-button/history handling.
 
 All nineteen application scripts are loaded with `defer` at the end of the document body. Deferred scripts execute in document order after parsing, so later files can use APIs registered by earlier files.
@@ -48,6 +49,7 @@ Files that have been isolated behind an IIFE expose a deliberately small frozen 
 | `dashboard.js` | `window.ModirDashboard` | shell, community |
 | `community.js` | `window.ModirCommunity` | shell, dashboard |
 | `finance.js` | `window.ModirFinance` | shell |
+| `jalali-date.js` | `window.ModirJalaliDate` | core, management |
 | `management.js` | `window.ModirManagement` | shell, core, finance |
 
 Only add a function to one of these public objects when another file genuinely needs it. Keep implementation helpers private inside the owning IIFE.
