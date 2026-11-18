@@ -23,7 +23,7 @@ The order in `index.html` is part of the runtime contract:
 11. `assistant.js` — isolated AI assistant UI and interaction controller.
 12. `modal-ui.js` — modal creation, dismissal and browser-history lifecycle, exposed through `window.ModirModal`.
 13. `push.js` — push subscription lifecycle, permission prompts and delivery helpers, exposed through `window.ModirPush`.
-15. `shell.js` — login/shell rendering, global UI, navigation dispatch, shared interaction helpers.
+14. `shell.js` — login/shell rendering, global UI, navigation dispatch, shared interaction helpers.
 15. `account-ui.js` — shared account-state notices, including the forced password-change banner.
 16. `period-ui.js` — shared month/year/unit selectors and period-picker binding helpers.
 17. `dashboard-ui.js` — dashboard-only balance visibility and count-up animation helpers.
