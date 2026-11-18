@@ -410,7 +410,7 @@ async function renderPollsInAnnouncements(el) {
         if (isActive) {
           const pollText = `📊 نظرسنجی جدید ساختمان\n\n${title}${description ? `\n${description}` : ''}\n\nگزینه‌ها:\n${options.map((x, i) => `${i + 1}) ${x}`).join('\n')}\n\nبرای ثبت رأی وارد برنامه مدیریت ساختمان شوید.`;
           const sent = await notifyBale(pollText);
-        await sendMobilePush('poll_created', 'نظرسنجی جدید: ' + title, description || options.join('، '));
+        await window.ModirPush.send('poll_created', 'نظرسنجی جدید: ' + title, description || options.join('، '));
           toast(sent ? 'نظرسنجی ایجاد و در گروه بله اعلام شد' : 'نظرسنجی ایجاد شد؛ ارسال اعلان به بله ناموفق بود', !sent);
         } else {
           toast('نظرسنجی به‌صورت غیرفعال ایجاد شد');
