@@ -56,7 +56,7 @@ test("closes through browser history when modal state is active", () => {
 });
 
 test("removes a modal directly when there is no modal history entry", () => {
-  const { api } = loadModal();
+  const { api, history } = loadModal();
   const modal = api.open("test");
   history.state = {};
   api.close(modal);
