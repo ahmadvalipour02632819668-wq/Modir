@@ -96,7 +96,7 @@ const coreSource = read("core.js");
 const shellSource = read("shell.js");
 const themeSource = read("theme-ui.js");
 const timingSource = read("timing.js");
-if (coreSource.includes("function setTheme(") || !themeSource.includes("window.ModirTheme.setTheme") || !shellSource.includes("window.ModirTheme.setTheme") || !read("management.js").includes("window.ModirTheme.setTheme")) {
+if (coreSource.includes("function setTheme(") || !themeSource.includes("window.ModirTheme = Object.freeze({ setTheme })") || !shellSource.includes("window.ModirTheme.setTheme") || !read("management.js").includes("window.ModirTheme.setTheme")) {
   fail("theme behavior must be owned by theme-ui.js and consumed through ModirTheme");
 }
 if (coreSource.includes("function debounce(") || !timingSource.includes("window.ModirTiming") || !shellSource.includes("window.ModirTiming.debounce") || !read("finance.js").includes("window.ModirTiming.debounce")) {
