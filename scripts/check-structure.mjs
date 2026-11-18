@@ -22,6 +22,7 @@ const modules = [
   "pwa.js",
   "assistant.js",
   "modal-ui.js",
+  "push.js",
   "shell.js",
   "account-ui.js",
   "period-ui.js",
@@ -62,6 +63,7 @@ for (const file of modules) {
 const contracts = {
   "icons.js": ["ModirIcons", "ICONS", "LINE_ICONS", "ico"],
   "modal-ui.js": ["ModirModal", "open", "close"],
+  "push.js": ["ModirPush", "getServiceWorker", "enable", "detachSubscription", "maybeAskForPermission", "send"],
   "theme-ui.js": ["ModirTheme", "setTheme"],
   "timing.js": ["ModirTiming", "debounce"],
   "sms.js": ["ModirSms", "smsLink", "smsBtn"],
@@ -84,7 +86,7 @@ const managementSource = read("management.js");
 const financeSource = read("finance.js");
 if (managementSource.includes("modal(") || financeSource.includes("modal(") ||
     !managementSource.includes("window.ModirModal.open(") || !financeSource.includes("window.ModirModal.open(") ||
-    !index.includes("./modal-ui.js?v=1")) {
+    !index.includes("./modal-ui.js?v=1") || !index.includes("./push.js?v=1")) {
   fail("all modal consumers must use the explicitly loaded ModirModal API");
 }
 if (!managementSource.includes("S.view === 'charge' ? Promise.resolve({}) : T('app_get_settings')") ||
@@ -93,6 +95,17 @@ if (!managementSource.includes("S.view === 'charge' ? Promise.resolve({}) : T('a
 }
 
 const coreSource = read("core.js");
+const pushSource = read("push.js");
+if (coreSource.includes("PUSH_VAPID_PUBLIC_KEY") || !pushSource.includes("window.ModirPush = Object.freeze") ||
+    !shellSource.includes("window.ModirPush.maybeAskForPermission") ||
+    !shellSource.includes("window.ModirPush.detachSubscription") ||
+    !shellSource.includes("window.ModirPush.send(") ||
+    !read("management.js").includes("window.ModirPush.enable()") ||
+    !read("management.js").includes("window.ModirPush.getServiceWorker()") ||
+    !read("dashboard.js").includes("window.ModirPush.send(") ||
+    !read("community.js").includes("window.ModirPush.send(")) {
+  fail("push lifecycle and delivery must be owned by the explicit ModirPush module API");
+}
 const shellSource = read("shell.js");
 const themeSource = read("theme-ui.js");
 const timingSource = read("timing.js");
