@@ -12,25 +12,26 @@ The order in `index.html` is part of the runtime contract:
 
 1. `core.js` — shared foundation: Supabase client/configuration, session and application state, API helpers, common formatting and date utilities.
 2. `icons.js` — shared immutable SVG icon catalog and icon lookup helper used by shell, dashboard and management.
-3. `menu-ui.js` — role-aware menu definitions for the services grid and bottom navigation.
-4. `alert-ui.js` — local read/unread alert tracking and prefix-based seen-state helpers.
-5. `alert-center.js` — alert collection, unread center rendering and badge refresh.
-6. `sms.js` — isolated SMS link/button helpers used by dashboard and finance.
-7. `media.js` — isolated image compression helper used by community uploads.
-8. `pwa.js` — isolated PWA installation prompt, install tile and service-worker registration.
-9. `assistant.js` — isolated AI assistant UI and interaction controller.
-10. `shell.js` — login/shell rendering, global UI, navigation dispatch, shared interaction helpers.
-11. `account-ui.js` — shared account-state notices, including the forced password-change banner.
-12. `period-ui.js` — shared month/year/unit selectors and period-picker binding helpers.
-13. `dashboard-ui.js` — dashboard-only balance visibility and count-up animation helpers.
-14. `dashboard.js` — dashboard cards, summaries, request table and dashboard view.
-15. `community.js` — announcements, neighbor alerts, requests and payment-related community views.
-16. `finance.js` — transactions and financial reports.
-17. `jalali-date.js` — Jalali/Gregorian conversion and Jalali month-length helpers.
-18. `management.js` — units, rates, settings, activity and profile views.
-19. `navigation.js` — browser back-button/history handling.
+3. `theme-ui.js` — isolated theme selection and persistence, exposed through `window.ModirTheme`.
+4. `menu-ui.js` — role-aware menu definitions for the services grid and bottom navigation.
+5. `alert-ui.js` — local read/unread alert tracking and prefix-based seen-state helpers.
+6. `alert-center.js` — alert collection, unread center rendering and badge refresh.
+7. `sms.js` — isolated SMS link/button helpers used by dashboard and finance.
+8. `media.js` — isolated image compression helper used by community uploads.
+9. `pwa.js` — isolated PWA installation prompt, install tile and service-worker registration.
+10. `assistant.js` — isolated AI assistant UI and interaction controller.
+11. `shell.js` — login/shell rendering, global UI, navigation dispatch, shared interaction helpers.
+12. `account-ui.js` — shared account-state notices, including the forced password-change banner.
+13. `period-ui.js` — shared month/year/unit selectors and period-picker binding helpers.
+14. `dashboard-ui.js` — dashboard-only balance visibility and count-up animation helpers.
+15. `dashboard.js` — dashboard cards, summaries, request table and dashboard view.
+16. `community.js` — announcements, neighbor alerts, requests and payment-related community views.
+17. `finance.js` — transactions and financial reports.
+18. `jalali-date.js` — Jalali/Gregorian conversion and Jalali month-length helpers.
+19. `management.js` — units, rates, settings, activity and profile views.
+20. `navigation.js` — browser back-button/history handling.
 
-All nineteen application scripts are loaded with `defer` at the end of the document body. Deferred scripts execute in document order after parsing, so later files can use APIs registered by earlier files.
+All twenty application scripts are loaded with `defer` at the end of the document body. Deferred scripts execute in document order after parsing, so later files can use APIs registered by earlier files.
 
 ## Public cross-file APIs
 
@@ -39,6 +40,7 @@ Files that have been isolated behind an IIFE expose a deliberately small frozen 
 | Owner | Public API | Intended consumers |
 | --- | --- | --- |
 | `icons.js` | `window.ModirIcons` | shell, dashboard, management |
+| `theme-ui.js` | `window.ModirTheme` | shell, management |
 | `pwa.js` | `window.ModirPwa` | shell, dashboard |
 | `alert-center.js` | `window.ModirAlertCenter` | shell |
 | `sms.js` | `window.ModirSms` | dashboard, finance |
@@ -101,7 +103,7 @@ Do not split a file solely to meet an arbitrary line-count target. A change is w
 ## Current migration status
 
 - CSS is separated into `app.css`.
-- The frontend is split into nineteen ordered JavaScript files.
+- The frontend is split into twenty ordered JavaScript files.
 - shared icons, PWA installation behavior, alert tracking and alert-center rendering, SMS links, image compression, dashboard UI helpers, account notices, period controls, assistant, dashboard, community, finance and management implementations expose explicit public APIs.
 - Navigation state is private to `navigation.js`.
 - Core and shell remain intentionally unwrapped until their shared dependencies can be safely reduced.
