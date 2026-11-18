@@ -202,7 +202,7 @@ function confirmLogout() {
       <div class="logout-confirm">
         <h2>خروج از حساب</h2>
         <p class="sub">آیا می‌خواهید از حساب کاربری خارج شوید؟</p>
-        <div class="modal-actions">
+        <div style="display:flex;gap:10px;margin-top:22px">
           <button type="button" class="btn" id="logout-cancel">انصراف</button>
           <button type="button" class="btn rd" id="logout-confirm">خروج از حساب</button>
         </div>
@@ -222,8 +222,11 @@ function confirmLogout() {
     };
     window.addEventListener('popstate', onBack, { once: true });
     modal.addEventListener('click', event => {
-      if (event.target === modal || event.target.closest('.x')) finish(false);
-    });
+      if (event.target === modal || event.target.closest('.x')) {
+        event.stopImmediatePropagation();
+        finish(false);
+      }
+    }, true);
     modal.querySelector('#logout-cancel').addEventListener('click', () => finish(false));
     modal.querySelector('#logout-confirm').addEventListener('click', () => finish(true));
   });
