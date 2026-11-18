@@ -223,7 +223,7 @@ async function viewSettings(el) {
   }
   $$('[data-settings-go]', el).forEach(b => b.addEventListener('click', () => go(b.dataset.settingsGo)));
   $$('[data-settings-theme]', el).forEach(b => b.addEventListener('click', () => {
-    setTheme(b.dataset.settingsTheme);
+    window.ModirTheme.setTheme(b.dataset.settingsTheme);
     $$('[data-settings-theme]', el).forEach(x => x.classList.toggle('active', x === b));
   }));
 }
