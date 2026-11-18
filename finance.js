@@ -236,7 +236,7 @@ function txModal(t, units) {
         if(saved?.ok==false) throw new Error(saved.error||'ثبت هزینه ناموفق بود');
       }
       window.ModirBale.send(`${isNew?'📝 تراکنش جدید':'✏️ ویرایش تراکنش'}:\n\n🔹 نوع: ${txType}\n🏢 ${txType==='هزینه'?'پرداخت‌کننده':'واحد'}: ${unitNo?'واحد '+unitNo:'ساختمان'}\n💰 مبلغ: ${fmt(amount)} تومان\n📄 بابت: ${categoryLabel(txType, category)}`);
-      closeModal(m);
+      window.ModirModal.close(m);
       toast(isNew?'ثبت شد':'ویرایش شد');
       go('tx');
     }catch(e){showErr(e);}
