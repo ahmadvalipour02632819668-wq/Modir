@@ -293,7 +293,7 @@ async function renderShell() {
     window.__modirResizeHandler = window.ModirTiming.debounce(() => renderShellHeaderState(false), 100);
     window.addEventListener('resize', window.__modirResizeHandler);
   }
-  if ('serviceWorker' in navigator && window.isSecureContext) getPushServiceWorker().catch(err => console.warn('Service worker registration failed:', err));
+  if ('serviceWorker' in navigator && window.isSecureContext) window.ModirPush.getServiceWorker().catch(err => console.warn('Service worker registration failed:', err));
   go(S.view);
   const avatarToken = S.token;
   T('app_profile_avatar_get').then(data => {
