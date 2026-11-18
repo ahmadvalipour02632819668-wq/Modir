@@ -22,15 +22,15 @@ SELECT is((SELECT count(*)::bigint FROM public.payment_corrections WHERE origina
 SELECT is((SELECT count(*)::bigint FROM public.transactions WHERE source='payment_correction' AND amount=500000),1::bigint,'one reversal transaction is created');
 SELECT is((SELECT note FROM public.transactions WHERE source='payment_correction' AND amount=500000),'ثبت اشتباه','reason is copied to reversal ledger');
 SELECT throws_ok(
-  $$$SELECT public.app_admin_correct_approved_payment('11111111-1111-4111-8111-111111111111',1,'اصلاح دوباره')$$,
+  $SELECT public.app_admin_correct_approved_payment('11111111-1111-4111-8111-111111111111',1,'اصلاح دوباره')$$,
   'P0001','این پرداخت قبلاً اصلاح شده است','duplicate correction is rejected'
 );
 SELECT throws_ok(
-  $$$SELECT public.app_admin_correct_approved_payment('11111111-1111-4111-8111-111111111111',2,'پرداخت ساختمان دیگر')$$,
+  $SELECT public.app_admin_correct_approved_payment('11111111-1111-4111-8111-111111111111',2,'پرداخت ساختمان دیگر')$$,
   'P0001','پرداخت پیدا نشد یا متعلق به این ساختمان نیست','cross-building payment correction is rejected'
 );
 SELECT throws_ok(
-  $$$SELECT public.app_admin_correct_approved_payment('11111111-1111-4111-8111-111111111111',3,'درخواست در انتظار')$$,
+  $SELECT public.app_admin_correct_approved_payment('11111111-1111-4111-8111-111111111111',3,'درخواست در انتظار')$$,
   'P0001','اطلاعات درخواست و تراکنش پرداخت با هم مطابقت ندارد؛ اصلاح متوقف شد','pending request cannot be corrected'
 );
 SELECT throws_ok(
