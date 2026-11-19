@@ -81,7 +81,7 @@ async function renderLogin() {
       const key='modir_device_id';
       const readCookie=()=>{
         try{
-          const match=document.cookie.match(/(?:^|;\\s*)modir_device_id=([^;]+)/);
+          const match=document.cookie.match(/(?:^|;\s*)modir_device_id=([^;]+)/);
           return match?decodeURIComponent(match[1]):null;
         }catch(_){return null;}
       };
