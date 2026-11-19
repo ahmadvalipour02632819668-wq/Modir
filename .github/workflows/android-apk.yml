@@ -80,12 +80,12 @@ jobs:
 
           manifest = Path("android/app/src/main/AndroidManifest.xml")
           data = manifest.read_text(encoding="utf-8")
-          match = re.search(r"<application\\b[^>]*>", data, flags=re.S)
+          match = re.search(r"<application\b[^>]*>", data, flags=re.S)
           if not match:
               raise SystemExit("Android application tag not found in manifest")
           tag = match.group(0)
           for attr in ("icon", "roundIcon"):
-              tag = re.sub(rf'\\s+android:{attr}="[^"]*"', "", tag)
+              tag = re.sub(rf'\s+android:{attr}="[^"]*"', "", tag)
           tag = tag[:-1] + ' android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher_round">'
           data = data[:match.start()] + tag + data[match.end():]
           manifest.write_text(data, encoding="utf-8")
