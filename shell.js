@@ -344,7 +344,7 @@ async function renderShell() {
 function go(v, isBackNavigation = false) {
   const views = {
     dash: ModirDashboard.viewDash, announcements: ModirCommunity.viewAnnouncements, 'neighbor-alerts': ModirCommunity.viewNeighborAlerts, requests: ModirCommunity.viewRequests, tx: ModirFinance.viewTx, pay: ModirCommunity.viewPay,
-    report: ModirFinance.viewReport, units: ModirManagement.viewUnits, rates: ModirManagement.viewRates, charge: ModirManagement.viewRates, settings: ModirManagement.viewSettings, activity: ModirManagement.viewActivity, profile: ModirManagement.viewProfile, services: viewServices,
+    report: ModirFinance.viewReport, units: ModirManagement.viewUnits, rates: ModirManagement.viewRates, charge: ModirManagement.viewRates, settings: ModirManagement.viewSettings, sessions: ModirManagement.viewSessions, activity: ModirManagement.viewActivity, profile: ModirManagement.viewProfile, services: viewServices,
   };
   if (!views[v]) v = 'dash';
   S.view = v;
@@ -369,7 +369,7 @@ function go(v, isBackNavigation = false) {
 }
 
 function renderShellHeaderState(resetScroll = true) {
-  const all = [...ModirMenuUi.getMenuItems(), ['services', 'خدمات']];
+  const all = [...ModirMenuUi.getMenuItems(), ['sessions', 'مدیریت نشست‌ها'], ['services', 'خدمات']];
   const current = all.find(t => t[0] === S.view);
   const t = $('#appbar-title');
   if (t) t.innerHTML = S.view === 'dash'
