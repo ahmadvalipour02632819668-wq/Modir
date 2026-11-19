@@ -51,6 +51,43 @@ jobs:
       - name: Sync Capacitor
         run: npx cap sync android
 
+      - name: Enable immersive navigation bar mode
+        run: |
+          MAIN_ACTIVITY="android/app/src/main/java/ir/ahmadvalipour/residentmanager/MainActivity.java"
+          mkdir -p "$(dirname "$MAIN_ACTIVITY")"
+          cat > "$MAIN_ACTIVITY" <<'JAVA'
+          package ir.ahmadvalipour.residentmanager;
+
+          import android.os.Bundle;
+          import android.view.View;
+          import com.getcapacitor.BridgeActivity;
+
+          public class MainActivity extends BridgeActivity {
+              private void hideNavigationBar() {
+                  getWindow().getDecorView().setSystemUiVisibility(
+                      View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                      | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                      | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                      | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                  );
+              }
+
+              @Override
+              public void onCreate(Bundle savedInstanceState) {
+                  super.onCreate(savedInstanceState);
+                  hideNavigationBar();
+              }
+
+              @Override
+              public void onWindowFocusChanged(boolean hasFocus) {
+                  super.onWindowFocusChanged(hasFocus);
+                  if (hasFocus) {
+                      hideNavigationBar();
+                  }
+              }
+          }
+          JAVA
+
       - name: Apply official Resident Manager launcher icon
         run: |
           python -m pip install pillow cairosvg
