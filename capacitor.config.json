@@ -1,0 +1,16 @@
+{
+  "appId": "ir.ahmadvalipour.residentmanager",
+  "appName": "Resident Manager",
+  "webDir": "www",
+  "server": {
+    "url": "https://ahmadvalipour.ir",
+    "cleartext": false,
+    "allowNavigation": [
+      "ahmadvalipour.ir",
+      "www.ahmadvalipour.ir"
+    ]
+  },
+  "android": {
+    "allowMixedContent": false
+  }
+}
