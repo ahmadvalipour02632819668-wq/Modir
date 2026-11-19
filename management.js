@@ -212,19 +212,37 @@ async function viewRates(el) {
 
 async function viewSettings(el) {
   const theme = localStorage.getItem('bm_theme') || 'default';
-  const themePanel = `<section class="card" style="margin:14px 0"><h2 style="margin:0 0 12px">انتخاب تم برنامه</h2><div class="theme-picker" style="display:flex;gap:14px;flex-wrap:wrap"><button type="button" class="theme-dot default ${theme==='default'?'active':''}" data-settings-theme="default" title="سرمه‌ای" aria-label="تم سرمه‌ای"></button><button type="button" class="theme-dot emerald ${theme==='emerald'?'active':''}" data-settings-theme="emerald" title="زمردی" aria-label="تم زمردی"></button><button type="button" class="theme-dot dark ${theme==='dark'?'active':''}" data-settings-theme="dark" title="تیره" aria-label="تم تیره"></button><button type="button" class="theme-dot ocean ${theme==='ocean'?'active':''}" data-settings-theme="ocean" title="اقیانوسی" aria-label="تم اقیانوسی"></button></div></section>`;
-  const accountLinks = `<div class="grid g2" style="margin:14px 0"><button class="card" type="button" data-settings-go="profile" style="text-align:right;cursor:pointer"><h2>پروفایل</h2><p class="sub">اطلاعات حساب، عکس، رمز عبور و اعلان‌ها</p></button><button class="card" type="button" data-settings-go="sessions" style="text-align:right;cursor:pointer"><h2>مدیریت نشست‌ها</h2><p class="sub">مشاهده دستگاه‌های واردشده و خروج از نشست‌های دیگر</p></button>${S.me?.is_admin ? '<button class="card" type="button" data-settings-go="activity" style="text-align:right;cursor:pointer"><h2>گزارش فعالیت‌ها</h2><p class="sub">مشاهده رویدادها و فعالیت کاربران</p></button>' : ''}</div>`;
-  if (S.me?.is_admin) {
-    await viewRates(el);
-    const heading = $('h1', el); if (heading) heading.textContent = 'تنظیمات';
-    el.insertAdjacentHTML('afterbegin', accountLinks + themePanel);
-  } else {
-    el.innerHTML = '<h1>تنظیمات</h1>' + accountLinks + themePanel;
-  }
-  $$('[data-settings-go]', el).forEach(b => b.addEventListener('click', () => go(b.dataset.settingsGo)));
-  $$('[data-settings-theme]', el).forEach(b => b.addEventListener('click', () => {
-    window.ModirTheme.setTheme(b.dataset.settingsTheme);
-    $$('[data-settings-theme]', el).forEach(x => x.classList.toggle('active', x === b));
+  const items = [
+    { id: 'profile', title: 'پروفایل', desc: 'اطلاعات حساب، عکس، رمز عبور و اعلان‌ها', icon: '👤' },
+    { id: 'sessions', title: 'مدیریت نشست‌ها', desc: 'دستگاه‌های واردشده و خروج از نشست‌های دیگر', icon: '📱' },
+    S.me?.is_admin ? { id: 'activity', title: 'گزارش فعالیت‌ها', desc: 'رویدادها و فعالیت کاربران', icon: '📋' } : null,
+    S.me?.is_admin ? { id: 'rates', title: 'نرخ‌ها و تنظیمات مالی', desc: 'شارژ، هزینه‌های دوره‌ای و نرخ‌های ساختمان', icon: '💳' } : null,
+    { id: 'theme', title: 'ظاهر و تم برنامه', desc: 'انتخاب رنگ و حالت نمایش برنامه', icon: '🎨' }
+  ].filter(Boolean);
+  el.innerHTML = `<h1>تنظیمات</h1><p class="sub">برای مشاهده هر بخش، مورد موردنظر را انتخاب کنید.</p>
+    <div class="grid" style="gap:10px;margin:16px 0" id="settings-options">
+      ${items.map(item => `<button type="button" class="card" data-settings-open="${item.id}" style="display:flex;align-items:center;gap:12px;text-align:right;cursor:pointer;width:100%"><span style="font-size:24px">${item.icon}</span><span style="flex:1;min-width:0"><b>${item.title}</b><small class="sub" style="display:block;margin-top:4px">${item.desc}</small></span><span aria-hidden="true">‹</span></button>`).join('')}
+    </div><div id="settings-detail" hidden></div>`;
+  const options = $('#settings-options', el);
+  const detail = $('#settings-detail', el);
+  options.querySelectorAll('[data-settings-open]').forEach(button => button.addEventListener('click', async () => {
+    const key = button.dataset.settingsOpen;
+    if (key === 'profile' || key === 'sessions' || key === 'activity') { go(key); return; }
+    options.hidden = true;
+    detail.hidden = false;
+    detail.innerHTML = '<p class="sub">در حال بارگذاری...</p><button type="button" class="btn lt sm" id="settings-back">بازگشت به فهرست تنظیمات</button><div id="settings-detail-content"></div>';
+    $('#settings-back', detail)?.addEventListener('click', () => { detail.hidden = true; options.hidden = false; });
+    const content = $('#settings-detail-content', detail);
+    if (key === 'rates') {
+      await viewRates(content);
+      const h = $('h1', content); if (h) h.textContent = 'نرخ‌ها و تنظیمات مالی';
+    } else if (key === 'theme') {
+      detail.querySelector('#settings-detail-content').innerHTML = `<section class="card" style="margin:14px 0"><h2 style="margin:0 0 12px">انتخاب تم برنامه</h2><div class="theme-picker" style="display:flex;gap:14px;flex-wrap:wrap"><button type="button" class="theme-dot default ${theme==='default'?'active':''}" data-settings-theme="default" title="سرمه‌ای" aria-label="تم سرمه‌ای"></button><button type="button" class="theme-dot emerald ${theme==='emerald'?'active':''}" data-settings-theme="emerald" title="زمردی" aria-label="تم زمردی"></button><button type="button" class="theme-dot dark ${theme==='dark'?'active':''}" data-settings-theme="dark" title="تیره" aria-label="تم تیره"></button><button type="button" class="theme-dot ocean ${theme==='ocean'?'active':''}" data-settings-theme="ocean" title="اقیانوسی" aria-label="تم اقیانوسی"></button></div></section>`;
+      detail.querySelectorAll('[data-settings-theme]').forEach(b => b.addEventListener('click', () => {
+        window.ModirTheme.setTheme(b.dataset.settingsTheme);
+        detail.querySelectorAll('[data-settings-theme]').forEach(x => x.classList.toggle('active', x === b));
+      }));
+    }
   }));
 }
 
@@ -249,7 +267,7 @@ async function viewSessions(el) {
         await render();
       } catch (err) { showErr(err); e.currentTarget.disabled = false; }
     });
-    $('[data-session-revoke]', el).forEach(button => button.addEventListener('click', async () => {
+    Array.from(el.querySelectorAll('[data-session-revoke]')).forEach(button => button.addEventListener('click', async () => {
       if (!window.confirm('از این دستگاه خارج شوید؟')) return;
       button.disabled = true;
       try {
