@@ -122,9 +122,28 @@ async function renderLogin() {
           if(preferred){browser=/Edge/i.test(preferred.brand)?'Edge':'Chrome';browserVersion=preferred.version||'';}
         }
       }catch(_){}
-      if(/^Android(?:\s|$)/.test(device)&&device==='Android'){
-        const model=ua.match(/;\s*([^;)]+?)\s+Build\//i);
-        if(model&&model[1]&&!/wv|\b(?:K|U)\d{3,}\b/i.test(model[1]))device+=' '+model[1].trim();
+      if(/^Android(?:\s|$)/.test(device)){
+        // Android browsers may expose the model through User-Agent Client Hints or the legacy UA string.
+        let modelName=device.match(/^Android\s+(.+)$/i)?.[1]?.trim()||'';
+        if(!modelName){
+          const model=ua.match(/;\s*((?:SM|SC|GT|Pixel|Mi|Redmi|POCO|CPH|V\d{3,})[-\w.]*)\s*(?:Build\/|[;)])/i);
+          if(model&&model[1])modelName=model[1].trim();
+        }
+        const samsungModels={
+          'SM-S918B':'Samsung Galaxy S23 Ultra','SM-S918U':'Samsung Galaxy S23 Ultra',
+          'SM-S916B':'Samsung Galaxy S23+','SM-S911B':'Samsung Galaxy S23',
+          'SM-S928B':'Samsung Galaxy S24 Ultra','SM-S926B':'Samsung Galaxy S24+',
+          'SM-S921B':'Samsung Galaxy S24','SM-S938B':'Samsung Galaxy S25 Ultra',
+          'SM-S936B':'Samsung Galaxy S25+','SM-S931B':'Samsung Galaxy S25'
+        };
+        if(modelName){
+          const normalized=modelName.toUpperCase();
+          device=samsungModels[normalized]||(/^SM-|^SC-|^GT-/i.test(modelName)?'Samsung '+modelName:modelName);
+        }else if(/Samsung/i.test(ua))device='Samsung Android';
+      }
+      if(!osVersion){
+        const os=ua.match(/Android\s+([\d.]+)/i);
+        if(os)osVersion=os[1];
       }
       if(!browserVersion){
         const match=ua.match(/(?:Edg|SamsungBrowser|Firefox|Chrome|Version)\/([\d.]+)/i);
