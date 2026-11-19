@@ -213,15 +213,15 @@ async function viewRates(el) {
 async function viewSettings(el) {
   const theme = localStorage.getItem('bm_theme') || 'default';
   const items = [
-    { id: 'profile', title: 'پروفایل', desc: 'اطلاعات حساب، عکس، رمز عبور و اعلان‌ها', icon: '👤' },
-    { id: 'sessions', title: 'مدیریت نشست‌ها', desc: 'دستگاه‌های واردشده و خروج از نشست‌های دیگر', icon: '📱' },
-    S.me?.is_admin ? { id: 'activity', title: 'گزارش فعالیت‌ها', desc: 'رویدادها و فعالیت کاربران', icon: '📋' } : null,
-    S.me?.is_admin ? { id: 'rates', title: 'نرخ‌ها و تنظیمات مالی', desc: 'شارژ، هزینه‌های دوره‌ای و نرخ‌های ساختمان', icon: '💳' } : null,
-    { id: 'theme', title: 'ظاهر و تم برنامه', desc: 'انتخاب رنگ و حالت نمایش برنامه', icon: '🎨' }
+    { id: 'profile', title: 'پروفایل' },
+    { id: 'sessions', title: 'مدیریت نشست‌ها' },
+    S.me?.is_admin ? { id: 'activity', title: 'گزارش فعالیت‌ها' } : null,
+    S.me?.is_admin ? { id: 'rates', title: 'نرخ‌ها و تنظیمات مالی' } : null,
+    { id: 'theme', title: 'ظاهر و تم برنامه' }
   ].filter(Boolean);
-  el.innerHTML = `<h1>تنظیمات</h1><p class="sub">برای مشاهده هر بخش، مورد موردنظر را انتخاب کنید.</p>
-    <div class="grid" style="gap:10px;margin:16px 0" id="settings-options">
-      ${items.map(item => `<button type="button" class="card" data-settings-open="${item.id}" style="display:flex;align-items:center;gap:12px;text-align:right;cursor:pointer;width:100%"><span style="font-size:24px">${item.icon}</span><span style="flex:1;min-width:0"><b>${item.title}</b><small class="sub" style="display:block;margin-top:4px">${item.desc}</small></span><span aria-hidden="true">‹</span></button>`).join('')}
+  el.innerHTML = `<h1>تنظیمات</h1>
+    <div id="settings-options" style="margin:12px 0;border-top:1px solid var(--line)">
+      ${items.map(item => `<button type="button" data-settings-open="${item.id}" style="display:flex;align-items:center;justify-content:space-between;gap:12px;text-align:right;width:100%;min-height:48px;padding:11px 4px;background:transparent;border:0;border-bottom:1px solid var(--line);color:var(--text);cursor:pointer;font:inherit"><span>${item.title}</span><span aria-hidden="true" style="font-size:20px;color:var(--muted)">‹</span></button>`).join('')}
     </div><div id="settings-detail" hidden></div>`;
   const options = $('#settings-options', el);
   const detail = $('#settings-detail', el);
@@ -230,17 +230,17 @@ async function viewSettings(el) {
     if (key === 'profile' || key === 'sessions' || key === 'activity') { go(key); return; }
     options.hidden = true;
     detail.hidden = false;
-    detail.innerHTML = '<p class="sub">در حال بارگذاری...</p><button type="button" class="btn lt sm" id="settings-back">بازگشت به فهرست تنظیمات</button><div id="settings-detail-content"></div>';
+    detail.innerHTML = '<button type="button" class="btn lt sm" id="settings-back">بازگشت به تنظیمات</button><div id="settings-detail-content" style="margin-top:14px"><p class="sub">در حال بارگذاری...</p></div>';
     $('#settings-back', detail)?.addEventListener('click', () => { detail.hidden = true; options.hidden = false; });
     const content = $('#settings-detail-content', detail);
     if (key === 'rates') {
       await viewRates(content);
       const h = $('h1', content); if (h) h.textContent = 'نرخ‌ها و تنظیمات مالی';
     } else if (key === 'theme') {
-      detail.querySelector('#settings-detail-content').innerHTML = `<section class="card" style="margin:14px 0"><h2 style="margin:0 0 12px">انتخاب تم برنامه</h2><div class="theme-picker" style="display:flex;gap:14px;flex-wrap:wrap"><button type="button" class="theme-dot default ${theme==='default'?'active':''}" data-settings-theme="default" title="سرمه‌ای" aria-label="تم سرمه‌ای"></button><button type="button" class="theme-dot emerald ${theme==='emerald'?'active':''}" data-settings-theme="emerald" title="زمردی" aria-label="تم زمردی"></button><button type="button" class="theme-dot dark ${theme==='dark'?'active':''}" data-settings-theme="dark" title="تیره" aria-label="تم تیره"></button><button type="button" class="theme-dot ocean ${theme==='ocean'?'active':''}" data-settings-theme="ocean" title="اقیانوسی" aria-label="تم اقیانوسی"></button></div></section>`;
-      detail.querySelectorAll('[data-settings-theme]').forEach(b => b.addEventListener('click', () => {
+      content.innerHTML = `<h2 style="margin:0 0 14px">ظاهر و تم برنامه</h2><section class="card" style="margin:0"><div class="theme-picker" style="display:flex;gap:14px;flex-wrap:wrap"><button type="button" class="theme-dot default ${theme==='default'?'active':''}" data-settings-theme="default" title="سرمه‌ای" aria-label="تم سرمه‌ای"></button><button type="button" class="theme-dot emerald ${theme==='emerald'?'active':''}" data-settings-theme="emerald" title="زمردی" aria-label="تم زمردی"></button><button type="button" class="theme-dot dark ${theme==='dark'?'active':''}" data-settings-theme="dark" title="تیره" aria-label="تم تیره"></button><button type="button" class="theme-dot ocean ${theme==='ocean'?'active':''}" data-settings-theme="ocean" title="اقیانوسی" aria-label="تم اقیانوسی"></button></div></section>`;
+      content.querySelectorAll('[data-settings-theme]').forEach(b => b.addEventListener('click', () => {
         window.ModirTheme.setTheme(b.dataset.settingsTheme);
-        detail.querySelectorAll('[data-settings-theme]').forEach(x => x.classList.toggle('active', x === b));
+        content.querySelectorAll('[data-settings-theme]').forEach(x => x.classList.toggle('active', x === b));
       }));
     }
   }));
