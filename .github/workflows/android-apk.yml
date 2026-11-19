@@ -1,0 +1,138 @@
+name: Build Resident Manager APK
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "package.json"
+      - "capacitor.config.json"
+      - ".github/workflows/android-apk.yml"
+      - "index.html"
+      - "shell.js"
+      - "app.css"
+      - "manifest.webmanifest"
+      - "icone.png"
+      - "icone-192.png"
+      - "icone-512.png"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Prepare bundled web fallback
+        run: |
+          mkdir -p www
+          cp index.html *.js *.css *.png manifest.webmanifest www/
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Generate Capacitor Android project
+        run: npx cap add android
+
+      - name: Sync Capacitor
+        run: npx cap sync android
+
+      - name: Apply official Resident Manager launcher icon
+        run: |
+          python -m pip install pillow
+          curl -fsSL "https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/${GITHUB_SHA}/icone-512.png" -o /tmp/resident-manager-icon.png
+          python - <<'PY'
+          from PIL import Image
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+
+          src = Image.open("/tmp/resident-manager-icon.png").convert("RGBA")
+          root = Path("android/app/src/main/res")
+          sizes = {"mdpi":48,"hdpi":72,"xhdpi":96,"xxhdpi":144,"xxxhdpi":192}
+          for density,size in sizes.items():
+              folder=root/f"mipmap-{density}"
+              folder.mkdir(parents=True,exist_ok=True)
+              icon=src.resize((size,size),Image.Resampling.LANCZOS)
+              icon.save(folder/"ic_launcher.png")
+              icon.save(folder/"ic_launcher_round.png")
+          drawable=root/"drawable"
+          drawable.mkdir(parents=True,exist_ok=True)
+          src.resize((432,432),Image.Resampling.LANCZOS).save(drawable/"ic_launcher_foreground.png")
+          adaptive=root/"mipmap-anydpi-v26"
+          adaptive.mkdir(parents=True,exist_ok=True)
+          (adaptive/"ic_launcher.xml").write_text(
+              '<?xml version="1.0" encoding="utf-8"?>\n'
+              '<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">'
+              '<background android:drawable="@color/ic_launcher_background"/>'
+              '<foreground android:drawable="@drawable/ic_launcher_foreground"/>'
+              '</adaptive-icon>',encoding="utf-8")
+          (adaptive/"ic_launcher_round.xml").write_text(
+              '<?xml version="1.0" encoding="utf-8"?>\n'
+              '<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">'
+              '<background android:drawable="@color/ic_launcher_background"/>'
+              '<foreground android:drawable="@drawable/ic_launcher_foreground"/>'
+              '</adaptive-icon>',encoding="utf-8")
+          colors=root/"values"
+          colors.mkdir(parents=True,exist_ok=True)
+          (colors/"ic_launcher_background.xml").write_text(
+              '<?xml version="1.0" encoding="utf-8"?>'
+              '<resources><color name="ic_launcher_background">#2D3463</color></resources>',
+              encoding="utf-8")
+          PY
+          # Explicitly bind the Android application to the generated launcher icons.
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          manifest = Path("android/app/src/main/AndroidManifest.xml")
+          data = manifest.read_text(encoding="utf-8")
+          match = re.search(r"<application\b[^>]*>", data, flags=re.S)
+          if not match:
+              raise SystemExit("Android application tag not found in manifest")
+          tag = match.group(0)
+          for attr in ("icon", "roundIcon"):
+              tag = re.sub(rf'\s+android:{attr}="[^"]*"', "", tag)
+          tag = tag[:-1] + ' android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher_round">'
+          data = data[:match.start()] + tag + data[match.end():]
+          manifest.write_text(data, encoding="utf-8")
+          print("Launcher icon references configured:", manifest)
+          PY
+
+      - name: Verify launcher icon resources
+        run: |
+          test -s android/app/src/main/res/mipmap-mdpi/ic_launcher.png
+          test -s android/app/src/main/res/mipmap-hdpi/ic_launcher.png
+          test -s android/app/src/main/res/mipmap-xhdpi/ic_launcher.png
+          test -s android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png
+          test -s android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
+          test -s android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
+          test -s android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
+          test -s android/app/src/main/AndroidManifest.xml
+          grep -q 'android:icon="@mipmap/ic_launcher"' android/app/src/main/AndroidManifest.xml
+
+      - name: Build debug APK
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon
+
+      - name: Upload installable APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: resident-manager-debug-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 30
