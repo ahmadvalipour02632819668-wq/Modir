@@ -213,7 +213,7 @@ async function viewRates(el) {
 async function viewSettings(el) {
   const theme = localStorage.getItem('bm_theme') || 'default';
   const themePanel = `<section class="card" style="margin:14px 0"><h2 style="margin:0 0 12px">انتخاب تم برنامه</h2><div class="theme-picker" style="display:flex;gap:14px;flex-wrap:wrap"><button type="button" class="theme-dot default ${theme==='default'?'active':''}" data-settings-theme="default" title="سرمه‌ای" aria-label="تم سرمه‌ای"></button><button type="button" class="theme-dot emerald ${theme==='emerald'?'active':''}" data-settings-theme="emerald" title="زمردی" aria-label="تم زمردی"></button><button type="button" class="theme-dot dark ${theme==='dark'?'active':''}" data-settings-theme="dark" title="تیره" aria-label="تم تیره"></button><button type="button" class="theme-dot ocean ${theme==='ocean'?'active':''}" data-settings-theme="ocean" title="اقیانوسی" aria-label="تم اقیانوسی"></button></div></section>`;
-  const accountLinks = `<div class="grid g2" style="margin:14px 0"><button class="card" type="button" data-settings-go="profile" style="text-align:right;cursor:pointer"><h2>پروفایل</h2><p class="sub">اطلاعات حساب، عکس، رمز عبور و اعلان‌ها</p></button>${S.me?.is_admin ? '<button class="card" type="button" data-settings-go="activity" style="text-align:right;cursor:pointer"><h2>گزارش فعالیت‌ها</h2><p class="sub">مشاهده رویدادها و فعالیت کاربران</p></button>' : ''}</div>`;
+  const accountLinks = `<div class="grid g2" style="margin:14px 0"><button class="card" type="button" data-settings-go="profile" style="text-align:right;cursor:pointer"><h2>پروفایل</h2><p class="sub">اطلاعات حساب، عکس، رمز عبور و اعلان‌ها</p></button><button class="card" type="button" data-settings-go="sessions" style="text-align:right;cursor:pointer"><h2>مدیریت نشست‌ها</h2><p class="sub">مشاهده دستگاه‌های واردشده و خروج از نشست‌های دیگر</p></button>${S.me?.is_admin ? '<button class="card" type="button" data-settings-go="activity" style="text-align:right;cursor:pointer"><h2>گزارش فعالیت‌ها</h2><p class="sub">مشاهده رویدادها و فعالیت کاربران</p></button>' : ''}</div>`;
   if (S.me?.is_admin) {
     await viewRates(el);
     const heading = $('h1', el); if (heading) heading.textContent = 'تنظیمات';
@@ -226,6 +226,41 @@ async function viewSettings(el) {
     window.ModirTheme.setTheme(b.dataset.settingsTheme);
     $$('[data-settings-theme]', el).forEach(x => x.classList.toggle('active', x === b));
   }));
+}
+
+async function viewSessions(el) {
+  const render = async () => {
+    el.innerHTML = '<h1>مدیریت نشست‌ها</h1><p class="sub">در حال دریافت نشست‌های فعال...</p>';
+    const sessions = await T('app_list_my_sessions');
+    if (!Array.isArray(sessions)) throw new Error('پاسخ سرور برای نشست‌ها معتبر نیست');
+    const others = sessions.filter(s => !s.is_current);
+    el.innerHTML = `<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap"><div><h1>مدیریت نشست‌ها</h1><p class="sub">دستگاه‌هایی که با حساب شما وارد سامانه شده‌اند</p></div><button type="button" class="btn lt sm" id="sessions-refresh">به‌روزرسانی</button></div>
+      <div class="card" style="margin:14px 0"><div style="font-weight:800">نشست‌های فعال: ${fa(sessions.length)} از ۲</div><p class="sub" style="margin:5px 0 0">برای امنیت حساب، می‌توانید نشست دستگاه‌های دیگر را جداگانه یا یکجا خارج کنید.</p></div>
+      ${others.length ? '<div style="display:flex;justify-content:flex-start;margin:12px 0"><button type="button" class="btn rd sm" id="sessions-revoke-all">خروج از همه دستگاه‌های دیگر</button></div>' : ''}
+      <div class="grid" style="gap:10px">${sessions.map(s => `<div class="card" style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap"><div style="min-width:0;flex:1"><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><b>${esc(s.device_label || 'دستگاه ناشناس')}</b>${s.is_current ? '<span class="chip ok">این دستگاه</span>' : ''}</div><div class="sub" style="margin:5px 0 0">شروع: ${esc(new Date(s.created_at).toLocaleString('fa-IR'))}</div><div class="sub" style="margin:3px 0 0">انقضا: ${esc(new Date(s.expires_at).toLocaleString('fa-IR'))}</div></div>${s.is_current ? '' : `<button type="button" class="btn rd sm" data-session-revoke="${esc(s.session_id)}">خروج از این دستگاه</button>`}</div>`).join('') || '<div class="card sub" style="text-align:center">نشست فعالی پیدا نشد.</div>'}</div>`;
+    $('#sessions-refresh', el)?.addEventListener('click', () => render().catch(showErr));
+    $('#sessions-revoke-all', el)?.addEventListener('click', async e => {
+      if (!window.confirm('از همه دستگاه‌های دیگر خارج شوید؟ نشست فعلی شما فعال می‌ماند.')) return;
+      e.currentTarget.disabled = true;
+      try {
+        const result = await T('app_revoke_my_session', { p_session_id: null });
+        if (!result?.ok) throw new Error(result?.error || 'خروج از نشست‌ها انجام نشد');
+        toast(`از ${fa(result.revoked_count || 0)} نشست خارج شدید`);
+        await render();
+      } catch (err) { showErr(err); e.currentTarget.disabled = false; }
+    });
+    $('[data-session-revoke]', el).forEach(button => button.addEventListener('click', async () => {
+      if (!window.confirm('از این دستگاه خارج شوید؟')) return;
+      button.disabled = true;
+      try {
+        const result = await T('app_revoke_my_session', { p_session_id: button.dataset.sessionRevoke });
+        if (!result?.ok) throw new Error(result?.error || 'خروج از نشست انجام نشد');
+        toast('نشست دستگاه انتخاب‌شده باطل شد');
+        await render();
+      } catch (err) { showErr(err); button.disabled = false; }
+    }));
+  };
+  await render();
 }
 
 async function viewActivity(el) {
@@ -432,6 +467,7 @@ window.addEventListener('offline', () => toast('اتصال اینترنت قطع
     viewUnits,
     viewRates,
     viewSettings,
+    viewSessions,
     viewActivity,
     viewProfile,
     normalizeJalaliDigits,
