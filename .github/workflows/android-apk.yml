@@ -163,12 +163,19 @@ jobs:
           cd android
           ./gradlew -I "$RUNNER_TEMP/release-signing.init.gradle" assembleRelease --no-daemon
 
+      - name: Locate signed release APK
+        if: steps.release_signing.outputs.configured == 'true'
+        run: |
+          echo "Release APK files:"
+          find android/app/build/outputs/apk -type f -name '*.apk' -print
+          test -n "$(find android/app/build/outputs/apk/release -type f -name '*.apk' -print -quit)"
+
       - name: Upload signed release APK for Myket
         if: steps.release_signing.outputs.configured == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: resident-manager-release-apk
-          path: android/app/build/outputs/apk/release/app-release.apk
+          path: android/app/build/outputs/apk/release/*.apk
           if-no-files-found: error
           retention-days: 30
 
