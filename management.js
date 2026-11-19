@@ -247,15 +247,25 @@ async function viewSettings(el) {
 }
 
 async function viewSessions(el) {
+  const formatSessionTimestamp = value => {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '—';
+    return new Intl.DateTimeFormat('fa-IR-u-ca-persian', {
+      timeZone: 'Asia/Tehran', year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
+    }).format(date);
+  };
   const render = async () => {
     el.innerHTML = '<h1>مدیریت نشست‌ها</h1><p class="sub">در حال دریافت نشست‌های فعال...</p>';
     const sessions = await T('app_list_my_sessions');
     if (!Array.isArray(sessions)) throw new Error('پاسخ سرور برای نشست‌ها معتبر نیست');
     const others = sessions.filter(s => !s.is_current);
+    const ambiguousSameLabel = sessions.some(s => !s.is_current && !s.same_device && sessions.some(c => c.is_current && c.device_label === s.device_label));
     el.innerHTML = `<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap"><div><h1>مدیریت نشست‌ها</h1><p class="sub">دستگاه‌هایی که با حساب شما وارد سامانه شده‌اند</p></div><button type="button" class="btn lt sm" id="sessions-refresh">به‌روزرسانی</button></div>
       <div class="card" style="margin:14px 0"><div style="font-weight:800">نشست‌های فعال: ${fa(sessions.length)} از ۲</div><p class="sub" style="margin:5px 0 0">برای امنیت حساب، می‌توانید نشست دستگاه‌های دیگر را جداگانه یا یکجا خارج کنید.</p></div>
+      ${ambiguousSameLabel ? '<div class="card" style="margin:12px 0;border-color:var(--accent)"><b>احتمال نشست تکراری روی همین گوشی</b><p class="sub" style="margin:6px 0 0">مشخصات ظاهری این نشست با دستگاه فعلی یکسان است، اما شناسه فنی ذخیره‌شده متفاوت است. ممکن است برنامه و مرورگر یا دو فضای ذخیره‌سازی جداگانه باعث آن شده باشند؛ سامانه برای جلوگیری از خروج اشتباه، آن‌ها را خودکار یکی نمی‌کند.</p></div>' : ''}
       ${others.length ? '<div style="display:flex;justify-content:flex-start;margin:12px 0"><button type="button" class="btn rd sm" id="sessions-revoke-all">خروج از همه دستگاه‌های دیگر</button></div>' : ''}
-      <div class="grid" style="gap:10px">${sessions.map(s => `<div class="card" style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap"><div style="min-width:0;flex:1"><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><b>${esc(s.device_label || 'دستگاه ناشناس')}</b>${s.is_current ? '<span class="chip ok">این دستگاه</span>' : ''}</div><div class="sub" style="margin:5px 0 0">شروع: ${esc(new Date(s.created_at).toLocaleString('fa-IR'))}</div><div class="sub" style="margin:3px 0 0">انقضا: ${esc(new Date(s.expires_at).toLocaleString('fa-IR'))}</div></div>${s.is_current ? '' : `<button type="button" class="btn rd sm" data-session-revoke="${esc(s.session_id)}">خروج از این دستگاه</button>`}</div>`).join('') || '<div class="card sub" style="text-align:center">نشست فعالی پیدا نشد.</div>'}</div>`;
+      <div class="grid" style="gap:10px">${sessions.map(s => `<div class="card" style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap"><div style="min-width:0;flex:1"><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><b>${esc(s.device_label || 'دستگاه ناشناس')}</b>${s.is_current ? '<span class="chip ok">این نشست فعلی</span>' : s.same_device ? '<span class="chip ex">همین دستگاه · نشست قبلی</span>' : ''}</div><div class="sub" style="margin:5px 0 0">شروع: ${esc(formatSessionTimestamp(s.created_at))}</div><div class="sub" style="margin:3px 0 0">انقضا: ${esc(formatSessionTimestamp(s.expires_at))}</div></div>${s.is_current ? '' : `<button type="button" class="btn rd sm" data-session-revoke="${esc(s.session_id)}">خروج از این نشست</button>`}</div>`).join('') || '<div class="card sub" style="text-align:center">نشست فعالی پیدا نشد.</div>'}</div>`;
     $('#sessions-refresh', el)?.addEventListener('click', () => render().catch(showErr));
     $('#sessions-revoke-all', el)?.addEventListener('click', async e => {
       if (!window.confirm('از همه دستگاه‌های دیگر خارج شوید؟ نشست فعلی شما فعال می‌ماند.')) return;
