@@ -138,21 +138,15 @@ jobs:
           cat > "$RUNNER_TEMP/release-signing.init.gradle" <<'GRADLE'
           gradle.projectsEvaluated {
             allprojects { p ->
-              if (p.plugins.hasPlugin('com.android.application')) {
-                p.android {
-                  signingConfigs {
-                    release {
-                      storeFile new File(System.getenv('RUNNER_TEMP'), 'modir-release.jks')
-                      storePassword System.getenv('ANDROID_KEYSTORE_PASSWORD')
-                      keyAlias System.getenv('ANDROID_KEY_ALIAS')
-                      keyPassword System.getenv('ANDROID_KEY_PASSWORD')
-                    }
-                  }
-                  buildTypes {
-                    release {
-                      signingConfig signingConfigs.release
-                    }
-                  }
+              p.plugins.withId('com.android.application') {
+                def androidComponents = p.extensions.getByName('androidComponents')
+                androidComponents.finalizeDsl { androidDsl ->
+                  def releaseSigning = androidDsl.signingConfigs.maybeCreate('release')
+                  releaseSigning.storeFile = new File(System.getenv('RUNNER_TEMP'), 'modir-release.jks')
+                  releaseSigning.storePassword = System.getenv('ANDROID_KEYSTORE_PASSWORD')
+                  releaseSigning.keyAlias = System.getenv('ANDROID_KEY_ALIAS')
+                  releaseSigning.keyPassword = System.getenv('ANDROID_KEY_PASSWORD')
+                  androidDsl.buildTypes.getByName('release').signingConfig = releaseSigning
                 }
               }
             }
