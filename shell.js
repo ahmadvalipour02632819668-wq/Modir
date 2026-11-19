@@ -79,21 +79,27 @@ async function renderLogin() {
     $('#lg-err').textContent='';
     const deviceId=(()=>{
       const key='modir_device_id';
-      try{
-        let id=localStorage.getItem(key);
-        if(!id){
-          id=typeof crypto!=='undefined'&&crypto.randomUUID?crypto.randomUUID():('dev-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2));
-          localStorage.setItem(key,id);
-        }
-        return id;
-      }catch(_){
-        let id=sessionStorage.getItem(key);
-        if(!id){
-          id=typeof crypto!=='undefined'&&crypto.randomUUID?crypto.randomUUID():('dev-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2));
-          sessionStorage.setItem(key,id);
-        }
-        return id;
-      }
+      const readCookie=()=>{
+        try{
+          const match=document.cookie.match(/(?:^|;\\s*)modir_device_id=([^;]+)/);
+          return match?decodeURIComponent(match[1]):null;
+        }catch(_){return null;}
+      };
+      const writeCookie=id=>{
+        try{
+          document.cookie=key+'='+encodeURIComponent(id)+'; Max-Age=31536000; Path=/; SameSite=Lax'+(location.protocol==='https:'?'; Secure':'');
+        }catch(_){}
+      };
+      const createId=()=>typeof crypto!=='undefined'&&crypto.randomUUID?crypto.randomUUID():('dev-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2));
+      let id=null;
+      try{id=localStorage.getItem(key);}catch(_){}
+      if(!id)id=readCookie();
+      if(!id){try{id=sessionStorage.getItem(key);}catch(_){}}
+      if(!id)id=createId();
+      try{localStorage.setItem(key,id);}catch(_){}
+      try{sessionStorage.setItem(key,id);}catch(_){}
+      writeCookie(id);
+      return id;
     })();
     const getDeviceLabel=async()=>{
       const ua=navigator.userAgent||'';
