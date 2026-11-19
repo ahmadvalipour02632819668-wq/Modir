@@ -136,17 +136,21 @@ jobs:
           test -s "$RUNNER_TEMP/modir-release.jks"
           echo "configured=true" >> "$GITHUB_OUTPUT"
           cat > "$RUNNER_TEMP/release-signing.init.gradle" <<'GRADLE'
-          gradle.projectsEvaluated {
-            allprojects { p ->
-              p.plugins.withId('com.android.application') {
-                def androidComponents = p.extensions.getByName('androidComponents')
-                androidComponents.finalizeDsl { androidDsl ->
-                  def releaseSigning = androidDsl.signingConfigs.maybeCreate('release')
-                  releaseSigning.storeFile = new File(System.getenv('RUNNER_TEMP'), 'modir-release.jks')
-                  releaseSigning.storePassword = System.getenv('ANDROID_KEYSTORE_PASSWORD')
-                  releaseSigning.keyAlias = System.getenv('ANDROID_KEY_ALIAS')
-                  releaseSigning.keyPassword = System.getenv('ANDROID_KEY_PASSWORD')
-                  androidDsl.buildTypes.getByName('release').signingConfig = releaseSigning
+          allprojects { p ->
+            p.plugins.withId('com.android.application') {
+              p.android {
+                signingConfigs {
+                  release {
+                    storeFile new File(System.getenv('RUNNER_TEMP'), 'modir-release.jks')
+                    storePassword System.getenv('ANDROID_KEYSTORE_PASSWORD')
+                    keyAlias System.getenv('ANDROID_KEY_ALIAS')
+                    keyPassword System.getenv('ANDROID_KEY_PASSWORD')
+                  }
+                }
+                buildTypes {
+                  release {
+                    signingConfig signingConfigs.release
+                  }
                 }
               }
             }
@@ -163,19 +167,26 @@ jobs:
           cd android
           ./gradlew -I "$RUNNER_TEMP/release-signing.init.gradle" assembleRelease --no-daemon
 
-      - name: Locate signed release APK
+      - name: Verify signed release APK
         if: steps.release_signing.outputs.configured == 'true'
         run: |
+          set -euo pipefail
           echo "Release APK files:"
-          find android/app/build/outputs/apk -type f -name '*.apk' -print
-          test -n "$(find android/app/build/outputs/apk/release -type f -name '*.apk' -print -quit)"
+          find android/app/build/outputs/apk/release -type f -name '*.apk' -print
+          APK="android/app/build/outputs/apk/release/app-release.apk"
+          test -s "$APK"
+          APKSIGNER="$(find "$ANDROID_HOME/build-tools" -type f -name apksigner | sort -V | tail -n 1)"
+          test -n "$APKSIGNER"
+          "$APKSIGNER" verify --verbose --print-certs "$APK"
+          mkdir -p dist
+          cp "$APK" dist/resident-manager-release.apk
 
       - name: Upload signed release APK for Myket
         if: steps.release_signing.outputs.configured == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: resident-manager-release-apk
-          path: android/app/build/outputs/apk/release/*.apk
+          path: dist/resident-manager-release.apk
           if-no-files-found: error
           retention-days: 30
 
