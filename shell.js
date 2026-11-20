@@ -313,7 +313,7 @@ async function renderShell(accountFromLogin = null) {
       <div class="top-in">
         <button class="ic-btn avatar" id="who-btn" aria-label="رفتن به تنظیمات" title="تنظیمات">${S.avatarData ? `<img src="${esc(S.avatarData)}" alt="عکس پروفایل" style="width:100%;height:100%;object-fit:cover;border-radius:50%">` : ModirIcons.ICONS.profile.replace('<svg','<svg width="26" height="26"')}</button>
         <div class="appbar-title" id="appbar-title"></div>
-        <button class="ic-btn" id="go-req" aria-label="${S.me.is_admin ? 'اعلان‌های مدیر' : 'پیام‌ها'}" title="${S.me.is_admin ? 'موارد نیازمند رسیدگی' : 'پیام‌ها'}" style="position:relative">${S.me.is_admin ? '<svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg>' : '<svg width="26" height="26" viewBox="0 0 48 48" fill="none" stroke="#fff" stroke-width="3" stroke-linejoin="round"><path d="M8 12a4 4 0 0 1 4-4h24a4 4 0 0 1 4 4v16a4 4 0 0 1-4 4H20l-8 7v-7a4 4 0 0 1-4-4z"/><g fill="#fff" stroke="none"><circle cx="17" cy="20" r="2.4"/><circle cx="24" cy="20" r="2.4"/><circle cx="31" cy="20" r="2.4"/></g></svg>'}<span id="manager-alert-count" style="display:none;position:absolute;top:-3px;right:-3px;min-width:19px;height:19px;padding:0 5px;border-radius:99px;background:#ef4444;color:#fff;font-size:11px;font-weight:900;line-height:19px;text-align:center;border:2px solid var(--navy)"></span></button>
+        <button class="ic-btn" id="go-req" aria-label="اعلان‌ها" title="اعلان‌های جدید" style="position:relative"><svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg><span id="manager-alert-count" style="display:none;position:absolute;top:-3px;right:-3px;min-width:19px;height:19px;padding:0 5px;border-radius:99px;background:#ef4444;color:#fff;font-size:11px;font-weight:900;line-height:19px;text-align:center;border:2px solid var(--navy)"></span></button>
         <button class="ic-btn logout-top" id="direct-logout" title="خروج از حساب">${ModirIcons.ICONS.logout.replace('<svg','<svg width="22" height="22"')}</button>
         <div id="alert-center" style="display:none"></div>
       </div>
@@ -346,7 +346,7 @@ async function renderShell(accountFromLogin = null) {
   }, 60000);
   if (!window.__modirVisibilityHandler) {
     window.__modirVisibilityHandler = () => {
-      if (document.visibilityState === 'visible' && S.me?.is_admin) ModirAlertCenter.refreshManagerAlertBadge();
+      if (document.visibilityState === 'visible' && S.me) ModirAlertCenter.refreshManagerAlertBadge();
     };
     document.addEventListener('visibilitychange', window.__modirVisibilityHandler);
   }
@@ -377,7 +377,7 @@ function go(v, isBackNavigation = false) {
   const el = $('#view'); if (!el) return;
   el.innerHTML = `<p class="sub">در حال بارگذاری...</p>`;
   renderShellHeaderState();
-  if (S.me?.is_admin) ModirAlertCenter.refreshManagerAlertBadge();
+  if (S.me) ModirAlertCenter.refreshManagerAlertBadge();
   const currentRenderId = ++S.renderId;
   Promise.resolve(views[v](el)).then(() => { if (v === 'dash') ModirPwa.renderInstallBanner(); }).catch(e => {
     if (currentRenderId !== S.renderId) return;
