@@ -60,11 +60,11 @@ function maybeAskForPushPermission() {
   if (!S.token || !('Notification' in window) || pushPromptShown) return;
   // Refresh a previously granted subscription after VAPID key rotation.
   if (Notification.permission === 'granted') {
+    // Refresh silently in the background. A real cross-device conflict is
+    // reported only when the user explicitly enables notifications.
+    pushPromptShown = true;
     enableMobilePush().catch(error => {
       console.warn('Push subscription refresh failed:', error);
-      if (String(error?.message || '').includes('این اشتراک اعلان قبلاً به حساب دیگری متصل شده است')) {
-        toast('اعلان‌های این گوشی برای حساب دیگری فعال است. برای جابه‌جایی، ابتدا از حساب قبلی خارج شوید و دوباره وارد شوید.', true);
-      }
     });
     return;
   }
