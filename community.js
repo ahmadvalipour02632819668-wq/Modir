@@ -519,7 +519,7 @@ function replyModal(r) {
   const updateTotalDebts = () => {
     if (currentTab !== 'debts') return;
     let total = 0, gross = 0, credit = 0;
-    $('.debt-row', m).forEach(row => {
+    $$('.debt-row', m).forEach(row => {
       const cb = $('.debt-check', row);
       const amtInp = $('.debt-amount', row);
       if (cb.checked) {
@@ -590,7 +590,7 @@ function replyModal(r) {
 
       if (currentTab === 'debts') {
         const selectedDebts = [];
-        $$('.debt-row', m).forEach(row => {
+        $$$('.debt-row', m).forEach(row => {
           const cb = $('.debt-check', row);
           const amtInp = $('.debt-amount', row);
           const amount = toNum(amtInp.value);
