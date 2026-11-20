@@ -142,17 +142,90 @@ function renderScenarioForm(scenario, m, u, activeAccounts) {
 }
 
 async function viewRates(el) {
-  const [rates, rateGuardUnits, st, baleCfg] = await Promise.all([
+  const [rates, rateGuardUnits, st, baleCfg, fixedObligations] = await Promise.all([
     T('app_get_rates'),
     T('app_get_units'),
     S.view === 'charge' ? Promise.resolve({}) : T('app_get_settings'),
-    S.view === 'charge' ? Promise.resolve(null) : T('app_admin_get_bale_config')
+    S.view === 'charge' ? Promise.resolve(null) : T('app_admin_get_bale_config'),
+    T('app_get_fixed_obligations')
   ]);
   const rateGuardIssues = rateGuardUnits.length ? rateGuardUnits.filter(u=>u.residency_issue) : [{unit_no:null,residency_issue:'هنوز واحدی برای ساختمان ثبت نشده است'}];
   const rateGuardWarning = rateGuardIssues.length ? `<div class="card" style="margin-bottom:16px;border-color:var(--danger)"><b style="color:var(--danger)">ثبت، ویرایش و حذف نرخ شارژ و پس‌انداز تا تعیین تکلیف تمام واحدها مسدود است.</b><p class="sub" style="margin:8px 0 0">${rateGuardIssues.map(u=>(u.unit_no?'واحد '+fa(u.unit_no)+': ':'')+esc(u.residency_issue)).join(' · ')}</p><button class="btn sf sm" style="margin-top:10px" type="button" data-go="units">تعیین وضعیت واحدها</button></div>` : '';
   const getPayers = arr => !arr ? 'همه' : arr.length === 0 ? 'هیچ‌کس' : arr.map(o => esc(String(o).replace('مالک ساکن', 'ساکن'))).join('، ');
   let retainedParking = 0, retainedPayerParking = [...OCC], retainedPayerWater = ['مالک ساکن','مستأجر'], retainedPayerGas = ['مالک ساکن','مستأجر'];
   el.innerHTML = `<h1>${S.view === 'charge' ? 'ثبت شارژ' : 'تنظیمات ساختمان'}</h1>${rateGuardWarning}<div class="grid g2"><div><h2 style="margin-bottom:16px">لیست نرخ‌های ثبت شده</h2><div id="rates-accordion">${rates.map(r => `<div class="accordion-item"><div class="accordion-header"><span>📅 ${MONTHS[r.month - 1]} ${fa(r.year)}</span><span class="chip ex" style="font-size:11px">مشاهده ▼</span></div><div class="accordion-body"><table style="margin-bottom:16px"><tbody><tr><td style="border:0"><b>شارژ:</b> ${money(r.charge)}<br><small style="color:var(--muted)">${getPayers(r.payer_charge)}</small></td><td style="border:0"><b>پس‌انداز:</b> ${money(r.repair)}<br><small style="color:var(--muted)">${getPayers(r.payer_repair)}</small></td></tr></tbody></table><div style="display:flex;gap:8px"><button class="btn lt sm" data-er="${r.year}-${r.month}" ${rateGuardIssues.length?'disabled title="ابتدا وضعیت تمام واحدها را تأیید کنید"':''}>ویرایش</button><button class="btn rd sm" data-dr="${r.year}-${r.month}" ${rateGuardIssues.length?'disabled title="ابتدا وضعیت تمام واحدها را تأیید کنید"':''}>حذف</button></div></div></div>`).join('') || '<p class="sub">هیچ نرخی ثبت نشده است.</p>'}</div></div><div class="grid" style="align-content:start"><form id="rf" class="card grid g3"><h2 style="grid-column:1/-1;margin:0">ثبت / ویرایش نرخ</h2><label class="f">سال<select id="r-y">${ModirPeriodUi.yearOptions(TODAY.y)}</select></label><label class="f">ماه<select id="r-m">${ModirPeriodUi.monthOptions(TODAY.m)}</select></label><label class="f">شارژ<input id="r-c" inputmode="numeric"></label><div style="grid-column:1/-1;font-size:12px;color:var(--muted);display:flex;align-items:center;gap:8px;flex-wrap:wrap">پرداخت‌کننده شارژ: ${OCC.map(o => `<label style="display:flex;align-items:center;gap:3px;cursor:pointer"><input type="checkbox" value="${o}" class="r-pch" checked> ${o.replace('مالک ساکن','ساکن')}</label>`).join('')}</div><label class="f">پس‌انداز<input id="r-r" inputmode="numeric"></label><div style="grid-column:1/-1;font-size:12px;color:var(--muted);display:flex;align-items:center;gap:8px;flex-wrap:wrap">پرداخت‌کننده پس‌انداز: ${OCC.map(o => `<label style="display:flex;align-items:center;gap:3px;cursor:pointer"><input type="checkbox" value="${o}" class="r-prp" checked> ${o.replace('مالک ساکن','ساکن')}</label>`).join('')}</div><div style="grid-column:1/-1"><button class="btn sf" type="submit" ${rateGuardIssues.length?'disabled title="ابتدا وضعیت تمام واحدها را تأیید کنید"':''}>ذخیره نرخ</button></div></form><form id="sf" class="card grid g3"><h2 style="grid-column:1/-1;margin:0">تنظیمات کلی</h2><label class="f" style="grid-column:1/-1">نام ساختمان<input id="s-n" value="${esc(st.building_name || '')}"></label><label class="f">موجودی اولیه صندوق<input id="s-o" inputmode="numeric" value="${fmt(st.opening_balance)}"></label><label class="f">سال شروع محاسبه<select id="s-s-y">${ModirPeriodUi.yearOptions(Number(String(st.start_ym || '').slice(0,4)) || TODAY.y)}</select></label><label class="f">ماه شروع محاسبه<select id="s-s-m">${ModirPeriodUi.monthOptions(Number(String(st.start_ym || '').slice(4)) || TODAY.m)}</select></label><div style="align-self:end"><button class="btn" type="submit">ذخیره تنظیمات</button></div></form><form id="bale-settings-form" class="card grid" style="gap:12px"><h2 style="margin:0">اتصال به پیام‌رسان بله</h2><p class="sub" style="margin:0">با ذخیره این اطلاعات، تمام اعلان‌های همین ساختمان به گروه یا چت انتخاب‌شده ارسال می‌شود. توکن ربات به‌صورت محرمانه در سرور نگهداری می‌شود.</p><label class="f">توکن ربات بله<input id="bale-bot-token" dir="ltr" autocomplete="off" type="password" placeholder="${baleCfg?.configured ? 'توکن ثبت شده؛ برای تغییر، توکن جدید را وارد کنید' : 'توکن ربات را وارد کنید'}" autocorrect="off" autocapitalize="off" spellcheck="false"></label><label class="f">شناسه گروه / چت مقصد<input id="bale-chat-id" dir="ltr" value="${esc(baleCfg?.chat_id || '')}" placeholder="شناسه گروه یا چت مقصد"></label><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button class="btn" type="submit">ذخیره اتصال بله</button><button class="btn lt" type="button" id="bale-discover">پیدا کردن خودکار گروه</button>${baleCfg?.configured ? '<button class="btn rd" type="button" id="bale-disconnect">قطع اتصال بله</button>' : ''}<span class="chip ${baleCfg?.configured ? 'ok' : 'pd'}">${baleCfg?.configured ? 'اتصال تنظیم شده' : 'هنوز متصل نشده'}</span></div><div id="bale-discovery-result" class="sub" style="margin:0"></div><p class="sub" style="margin:0">برای ویرایش، توکن یا شناسه مقصد را تغییر دهید و ذخیره کنید. خالی گذاشتن توکن، توکن قبلی را حفظ می‌کند. برای پیدا کردن خودکار گروه، اگر اتصال قبلی ندارید توکن ربات را وارد کنید؛ سپس گروهی را که ربات در آن پیام دریافت کرده انتخاب کنید.</p></form></div></div>`;
+
+  // Recurring fixed obligations are separate from receipts/expenses and never alter the cash balance.
+  const fixedCard = document.createElement('section');
+  fixedCard.className = 'card';
+  fixedCard.id = 'fixed-obligations-card';
+  fixedCard.style.marginTop = '14px';
+  const activeFixed = (fixedObligations || []).filter(x => !x.end_ym);
+  const fixedUnitsHtml = rateGuardUnits.map(u => '<label style="display:inline-flex;align-items:center;gap:5px;margin:4px 10px 4px 0"><input type="checkbox" class="fo-unit" value="' + u.unit_no + '"> واحد ' + fa(u.unit_no) + '</label>').join('');
+  const fixedPayersHtml = ['مالک ساکن','مالک','مستأجر'].map(o => '<label style="display:inline-flex;align-items:center;gap:5px;margin:4px 10px 4px 0"><input type="checkbox" class="fo-payer" value="' + esc(o) + '" checked> ' + esc(o) + '</label>').join('');
+  fixedCard.innerHTML = '<h2 style="margin:0 0 6px">سایر هزینه‌های ثابت ماهانه</h2>' +
+    '<p class="sub" style="margin:0 0 12px">این مبالغ فقط بدهی واحدها را ایجاد می‌کنند و تا زمان دریافت وجه، موجودی صندوق را تغییر نمی‌دهند. تغییر هزینه از ماه مؤثر جدید اعمال می‌شود و ماه‌های قبلی حفظ می‌شوند.</p>' +
+    '<form id="fixed-obligation-form" class="grid g2">' +
+    '<input type="hidden" id="fo-id">' +
+    '<label class="f">عنوان هزینه<input id="fo-title" maxlength="100" required placeholder="مثلاً اجاره پارکینگ مهمان"></label>' +
+    '<label class="f">مبلغ کل (تومان)<input id="fo-amount" inputmode="numeric" required placeholder="مثلاً ۵۰۰۰۰۰"></label>' +
+    '<label class="f">سال شروع<select id="fo-year">' + ModirPeriodUi.yearOptions(TODAY.y) + '</select></label>' +
+    '<label class="f">ماه شروع<select id="fo-month">' + ModirPeriodUi.monthOptions(TODAY.m) + '</select></label>' +
+    '<div style="grid-column:1/-1"><b style="font-size:13px">واحدهای مشمول</b><div style="margin-top:6px">' + fixedUnitsHtml + '</div></div>' +
+    '<label class="f" style="grid-column:1/-1">روش محاسبه<select id="fo-method"><option value="equal">تقسیم مساوی مبلغ کل بین واحدها</option><option value="per_unit">مبلغ کامل از هر واحد انتخاب‌شده</option><option value="persons">تقسیم بر اساس تعداد نفرات</option><option value="area">تقسیم بر اساس متراژ</option></select></label>' +
+    '<div style="grid-column:1/-1"><b style="font-size:13px">مسئول پرداخت در هر واحد</b><div style="margin-top:6px">' + fixedPayersHtml + '</div><small class="sub">اگر چند حساب در یک واحد فعال باشند، هزینه فقط به حساب اصلیِ واجد شرایط همان واحد تعلق می‌گیرد.</small></div>' +
+    '<div style="grid-column:1/-1;display:flex;gap:8px;flex-wrap:wrap"><button class="btn sf" type="submit" ' + (rateGuardIssues.length?'disabled':'') + '>ذخیره هزینه ثابت</button><button class="btn lt" type="button" id="fo-cancel">پاک‌کردن فرم</button></div>' +
+    '</form><div style="margin-top:16px"><b>هزینه‌های فعال</b><div id="fo-list" style="margin-top:8px">' +
+    (activeFixed.map(x => '<div class="card" style="background:var(--bg);margin:7px 0;padding:10px"><div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap"><b>' + esc(x.title) + '</b><b>' + money(x.amount) + '</b></div><div class="sub">واحدها: ' + (x.unit_nos||[]).map(n=>'واحد '+fa(n)).join('، ') + ' · شروع: ' + fa(x.start_ym) + ' · روش: ' + ({equal:'مساوی',per_unit:'مبلغ کامل برای هر واحد',persons:'بر اساس نفرات',area:'بر اساس متراژ'}[x.allocation_method]||x.allocation_method) + '</div><div style="display:flex;gap:7px;margin-top:8px"><button type="button" class="btn lt sm" data-fo-edit="' + x.id + '">ویرایش</button><button type="button" class="btn rd sm" data-fo-delete="' + x.id + '">حذف از ماه بعد</button></div></div>').join('') || '<p class="sub">هزینه ثابت فعالی ثبت نشده است.</p>') +
+    '</div></div>';
+  $('#sf')?.insertAdjacentElement('beforebegin', fixedCard);
+  attachNumericInput('#fo-amount');
+  const clearFixedForm = () => {
+    $('#fo-id').value = ''; $('#fo-title').value = ''; $('#fo-amount').value = '';
+    $('#fo-year').value = TODAY.y; $('#fo-month').value = TODAY.m; $('#fo-method').value = 'equal';
+    $('.fo-unit', fixedCard).forEach(x => x.checked = false);
+    $('.fo-payer', fixedCard).forEach(x => x.checked = true);
+    const submit = $('#fixed-obligation-form button[type="submit"]'); if (submit) submit.textContent = 'ذخیره هزینه ثابت';
+  };
+  $('#fo-cancel')?.addEventListener('click', clearFixedForm);
+  $('#fixed-obligation-form')?.addEventListener('submit', async e => {
+    e.preventDefault();
+    const unitNos = $('.fo-unit', fixedCard).filter(x=>x.checked).map(x=>Number(x.value));
+    const payers = $('.fo-payer', fixedCard).filter(x=>x.checked).map(x=>x.value);
+    const amount = toNum($('#fo-amount').value);
+    const startYm = Number($('#fo-year').value)*100+Number($('#fo-month').value);
+    if (!unitNos.length || !payers.length || amount<=0) { toast('عنوان، مبلغ، حداقل یک واحد و مسئول پرداخت را مشخص کنید',true); return; }
+    const button = $('#fixed-obligation-form button[type="submit"]'); button.disabled = true;
+    try {
+      await T('app_admin_save_fixed_obligation', {
+        p_id: $('#fo-id').value ? Number($('#fo-id').value) : null,
+        p_title: $('#fo-title').value.trim(), p_amount: amount, p_unit_nos: unitNos,
+        p_allocation_method: $('#fo-method').value, p_payer_occupancies: payers, p_start_ym: startYm
+      });
+      toast('هزینه ثابت ماهانه ذخیره شد؛ موجودی صندوق تغییر نکرد');
+      go(S.view === 'charge' ? 'charge' : 'settings');
+    } catch(err) { showErr(err); button.disabled = false; }
+  });
+  $('[data-fo-edit]', fixedCard).forEach(button => button.addEventListener('click', () => {
+    const x = activeFixed.find(v=>Number(v.id)===Number(button.dataset.foEdit)); if (!x) return;
+    $('#fo-id').value=x.id; $('#fo-title').value=x.title; $('#fo-amount').value=fmt(x.amount);
+    const nextYear=Number(x.start_ym)/100|0, nextMonth=Number(x.start_ym)%100;
+    $('#fo-year').value=nextMonth===12?nextYear+1:nextYear;
+    $('#fo-month').value=nextMonth===12?1:nextMonth+1;
+    $('#fo-method').value=x.allocation_method;
+    $('.fo-unit',fixedCard).forEach(cb=>cb.checked=(x.unit_nos||[]).includes(Number(cb.value)));
+    $('.fo-payer',fixedCard).forEach(cb=>cb.checked=(x.payer_occupancies||[]).includes(cb.value));
+    const submit=$('#fixed-obligation-form button[type="submit"]'); if(submit)submit.textContent='ذخیره نسخه جدید از ماه انتخاب‌شده';
+    fixedCard.scrollIntoView({behavior:'smooth',block:'start'});
+  }));
+  $('[data-fo-delete]', fixedCard).forEach(button => button.addEventListener('click', async () => {
+    const x=activeFixed.find(v=>Number(v.id)===Number(button.dataset.foDelete)); if(!x)return;
+    if(!await window.ModirModal.confirm('این هزینه از پایان ماه جاری متوقف شود؟ بدهی ماه‌های قبلی حفظ می‌شود.'))return;
+    const currentYm=TODAY.y*100+TODAY.m, endYm=Math.max(Number(x.start_ym),currentYm);
+    try { await T('app_admin_delete_fixed_obligation',{p_id:Number(x.id),p_end_ym:endYm}); toast('هزینه از ماه بعد متوقف شد؛ بدهی‌های قبلی حفظ شدند'); go(S.view==='charge'?'charge':'settings'); }
+    catch(err){showErr(err);}
+  }));
+
   if (S.view === 'charge') {
     $('#sf')?.style.setProperty('display','none');
     $('#bale-settings-form')?.style.setProperty('display','none');
