@@ -191,7 +191,7 @@ async function renderLogin() {
         }
         S.token=r.token;S.me=r.account;S.unitCount=Number(r.account.units_count||10);S.building=r.account.building_name||'';
         sessionStorage.setItem('bm_token',S.token);sessionStorage.setItem('bm_me',JSON.stringify(S.me));
-        renderShell();
+        renderShell(r.account);
         if(!S.me?.is_admin) await window.ModirPush.send('resident_login','ورود ساکن',`${S.me?.full_name||'ساکن'} از ${S.me?.unit_no?'واحد '+fa(S.me.unit_no):'حساب کاربری'} وارد برنامه شد.`);
       }finally{btn.disabled=false;btn.textContent=old;}
     };
@@ -289,11 +289,12 @@ async function viewServices(el) {
   $$('.tile', el).forEach(b => b.addEventListener('click', () => go(b.dataset.v)));
 }
 
-async function renderShell() {
+async function renderShell(accountFromLogin = null) {
   const renderId = ++S.renderId;
   $('#app').innerHTML = `<div class="loading-screen"><div class="spinner"></div><p class="sub">در حال اتصال به سرور...</p></div>`;
   try {
-    const account = await T('app_me');
+    // The login RPC already returned the authenticated account; reuse it and skip a redundant network round trip.
+    const account = accountFromLogin || await T('app_me');
     if (renderId !== S.renderId) return;
     S.me = account; S.unitCount = Number(account.units_count || S.unitCount || 10); S.building = account.building_name || S.building; sessionStorage.setItem('bm_me', JSON.stringify(S.me));
     ModirAssistant.mount();
