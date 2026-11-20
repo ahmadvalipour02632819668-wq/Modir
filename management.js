@@ -190,8 +190,8 @@ async function viewRates(el) {
   $('#fo-cancel')?.addEventListener('click', clearFixedForm);
   $('#fixed-obligation-form')?.addEventListener('submit', async e => {
     e.preventDefault();
-    const unitNos = $('.fo-unit', fixedCard).filter(x=>x.checked).map(x=>Number(x.value));
-    const payers = $('.fo-payer', fixedCard).filter(x=>x.checked).map(x=>x.value);
+    const unitNos = Array.from(fixedCard.querySelectorAll('.fo-unit:checked')).map(x=>Number(x.value));
+    const payers = Array.from(fixedCard.querySelectorAll('.fo-payer:checked')).map(x=>x.value);
     const amount = toNum($('#fo-amount').value);
     const startYm = Number($('#fo-year').value)*100+Number($('#fo-month').value);
     if ($('#fo-id').value && startYm <= TODAY.y*100+TODAY.m) { toast('تغییر هزینه فقط از ماه آینده یا ماه‌های بعد قابل اعمال است',true); return; }
