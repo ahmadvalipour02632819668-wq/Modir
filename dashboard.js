@@ -256,7 +256,7 @@ async function viewDash(el) {
       <div class="bank-card"><i class="shine"></i>
         <div style="display:flex;justify-content:space-between;align-items:center"><b style="font-size:15px">صندوق ساختمان</b><span style="color:#ffd27a;font-size:20px">★</span></div>
         <div class="bc-row"><span>موجودی کل صندوق (تومان)</span></div>
-        <div class="bc-row" style="margin-top:4px;justify-content:flex-start"><button class="eye" type="button">${ModirDashboardUi.EYE}</button><span class="bc-amt" data-count="${Number(fund.balance||0)+unitCredits}">${fmt(Number(fund.balance||0)+unitCredits)}</span></div>
+        <div class="bc-row" style="margin-top:4px;justify-content:flex-start"><button class="eye" type="button">${ModirDashboardUi.EYE}</button><span class="bc-amt" data-count="${Number(fund.balance||0)}">${fmt(Number(fund.balance||0))}</span></div>
         <div style="margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,255,255,.2);font-size:12px;line-height:2">
           <div class="bc-row"><span>بستانکاری واحدها</span><b>${fmt(unitCredits)}</b></div>
           <div class="bc-row"><span>موجودی آزاد و قابل استفاده</span><b>${fmt(Number(fund.balance||0))}</b></div></div>
