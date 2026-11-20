@@ -58,49 +58,46 @@ async function settleAccountModal(acc){
  }catch(e){showErr(e);}finally{b.disabled=false;b.textContent='محاسبه پیش‌نمایش';}});
 }
 
-function openingBalanceModal(acc) {
-  const td=jalaliToday();
-  const today=td.y+'/'+String(td.m).padStart(2,'0')+'/'+String(td.d).padStart(2,'0');
-  const m=window.ModirModal.open(`<h2>ثبت مانده اولیه</h2>
+async function openingBalanceModal(acc, edit=false) {
+  const td=jalaliToday(), today=td.y+'/'+String(td.m).padStart(2,'0')+'/'+String(td.d).padStart(2,'0');
+  let current=null;
+  if(edit){
+    try{current=await T('app_admin_get_opening_balance',{p_account_id:acc.id});if(!current?.ok)throw new Error(current?.error||'دریافت مانده ناموفق بود');if(!current.exists){toast('برای این حساب هنوز مانده اولیه ثبت نشده است',true);return;}}
+    catch(err){showErr(err);return;}
+  }
+  const date=current?String(current.year)+'/'+String(current.month).padStart(2,'0')+'/'+String(current.day).padStart(2,'0'):today;
+  const m=window.ModirModal.open(`<h2>${edit?'ویرایش مانده اولیه':'ثبت مانده اولیه'}</h2>
     <p class="sub">${esc(acc.full_name||'—')} · واحد ${fa(acc.unit_no)} · ${esc(acc.occupancy)}</p>
-    <div class="card" style="background:var(--bg);margin-bottom:14px;font-size:12px">این سند مربوط به بدهی یا بستانکاری قبل از ثبت حساب در سامانه است و در موجودی صندوق ساختمان اثر ندارد. برای هر حساب فقط یک بار قابل ثبت است.</div>
+    <div class="card" style="background:var(--bg);margin-bottom:14px;font-size:12px">این سند مربوط به بدهی یا بستانکاری قبل از ثبت حساب در سامانه است و در موجودی صندوق ساختمان اثر ندارد.</div>
     <form id="opening-balance-form" class="grid g2">
-      <label class="f">نوع مانده
-        <select name="balance_type" required><option value="debit">بدهکار (مبلغ به بدهی اضافه می‌شود)</option><option value="credit">بستانکار (از بدهی کسر می‌شود)</option></select>
-      </label>
-      <label class="f">مبلغ (تومان)<input name="amount" inputmode="numeric" required placeholder="مثلاً ۵۰۰۰۰۰"></label>
-      <div style="grid-column:1/-1">${jalaliDatePicker('تاریخ مربوط به مانده (شمسی)','date',today)}</div>
-      <label class="f" style="grid-column:1/-1">بابت / توضیحات<input name="note" maxlength="250" placeholder="مثلاً بدهی شارژ ماه‌های قبل"></label>
-      <div style="grid-column:1/-1;display:flex;gap:8px;justify-content:flex-end"><button type="button" class="btn lt" data-opening-close>انصراف</button><button type="submit" class="btn sf">ثبت مانده</button></div>
+      <label class="f">نوع مانده<select name="balance_type" required><option value="debit" ${current?.balance_type==='debit'?'selected':''}>بدهکار (مبلغ به بدهی اضافه می‌شود)</option><option value="credit" ${current?.balance_type==='credit'?'selected':''}>بستانکار (از بدهی کسر می‌شود)</option></select></label>
+      <label class="f">مبلغ (تومان)<input name="amount" inputmode="numeric" required placeholder="مثلاً ۵۰۰۰۰۰" value="${current?fmt(current.amount):''}"></label>
+      <div style="grid-column:1/-1">${jalaliDatePicker('تاریخ مربوط به مانده (شمسی)','date',date)}</div>
+      <label class="f" style="grid-column:1/-1">بابت / توضیحات<input name="note" maxlength="250" placeholder="مثلاً بدهی شارژ ماه‌های قبل" value="${current?esc(current.note||''):''}"></label>
+      <div style="grid-column:1/-1;display:flex;gap:8px;justify-content:flex-end"><button type="button" class="btn lt" data-opening-close>انصراف</button><button type="submit" class="btn sf">${edit?'ذخیره ویرایش':'ثبت مانده'}</button></div>
       <p id="opening-balance-error" class="sub" style="grid-column:1/-1;color:var(--danger)"></p>
     </form>`);
-  const form=$('#opening-balance-form',m);
-  attachNumericInputIn(m,'[name="amount"]');
+  const form=$('#opening-balance-form',m);attachNumericInputIn(m,'[name="amount"]');
   $('[data-opening-close]',m).addEventListener('click',()=>window.ModirModal.close(m));
   form.addEventListener('submit',async e=>{
-    e.preventDefault();
-    const date=normalizeJalaliDigits(form.elements.date.value);
-    if(!/^[0-9]{4}\/(0[1-9]|1[0-2])\/(0[1-9]|[12][0-9]|3[01])$/.test(date)){
-      $('#opening-balance-error',m).textContent='تاریخ را به صورت سال/ماه/روز شمسی وارد کنید.';return;
-    }
+    e.preventDefault();const date=normalizeJalaliDigits(form.elements.date.value);
+    if(!/^[0-9]{4}\\/(0[1-9]|1[0-2])\\/(0[1-9]|[12][0-9]|3[01])$/.test(date)){$('#opening-balance-error',m).textContent='تاریخ را به صورت سال/ماه/روز شمسی وارد کنید.';return;}
     const parts=date.split('/').map(Number),amount=toNum(form.elements.amount.value);
     if(amount<=0){$('#opening-balance-error',m).textContent='مبلغ باید بیشتر از صفر باشد.';return;}
-    const btn=form.querySelector('button[type="submit"]');btn.disabled=true;btn.textContent='در حال ثبت...';
+    const btn=form.querySelector('button[type="submit"]');btn.disabled=true;btn.textContent='در حال ذخیره...';
     try{
-      const r=await T('app_admin_register_opening_balance',{
-        p_account_id:acc.id,p_balance_type:form.elements.balance_type.value,p_amount:amount,
-        p_year:parts[0],p_month:parts[1],p_day:parts[2],p_note:form.elements.note.value.trim()||null
-      });
-      if(!r?.ok)throw new Error(r?.error||'ثبت مانده اولیه ناموفق بود');
-      window.ModirModal.close(m);toast('مانده اولیه ثبت شد؛ صندوق ساختمان تغییری نکرد');go('units');
-    }catch(err){$('#opening-balance-error',m).textContent=err.message||'خطا در ثبت مانده اولیه';}
-    finally{btn.disabled=false;btn.textContent='ثبت مانده';}
+      const args={p_account_id:acc.id,p_balance_type:form.elements.balance_type.value,p_amount:amount,p_year:parts[0],p_month:parts[1],p_day:parts[2],p_note:form.elements.note.value.trim()||null};
+      const r=await T(edit?'app_admin_update_opening_balance':'app_admin_register_opening_balance',args);
+      if(!r?.ok)throw new Error(r?.error||(edit?'ویرایش مانده اولیه ناموفق بود':'ثبت مانده اولیه ناموفق بود'));
+      window.ModirModal.close(m);toast(edit?'مانده اولیه اصلاح شد':'مانده اولیه ثبت شد؛ صندوق ساختمان تغییری نکرد');go('units');
+    }catch(err){$('#opening-balance-error',m).textContent=err.message||'خطا در ذخیره مانده اولیه';}
+    finally{btn.disabled=false;btn.textContent=edit?'ذخیره ویرایش':'ثبت مانده';}
   });
 }
 
 function unitModal(u) {
   const activeAccounts = u.accounts.filter(a => a.is_active !== false); const archivedAccounts = u.accounts.filter(a => a.is_active === false);
-  const m = window.ModirModal.open(`<h2>واحد ${fa(u.unit_no)}</h2>${u.residency_issue ? `<div class="card" style="margin:12px 0 18px;background:var(--bg)"><label class="f">وضعیت سکونت واحد<select id="unit-residency-status"><option value="" disabled ${u.residency_status==='pending'?'selected':''}>انتخاب وضعیت...</option><option value="owner_occupied" ${u.residency_status==='owner_occupied'?'selected':''}>مالک ساکن</option><option value="tenant_occupied" ${u.residency_status==='tenant_occupied'?'selected':''}>مالک + مستأجر</option><option value="vacant_confirmed" ${u.residency_status==='vacant_confirmed'?'selected':''}>واحد خالی (مالک غیرساکن)</option></select></label><p class="sub" style="margin:8px 0">${esc(u.residency_issue || 'وضعیت فعلی این واحد تأیید شده است.')}</p><button type="button" class="btn sf" id="unit-residency-save">ثبت و تأیید وضعیت</button></div>` : ''}<div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap"><button class="btn sf" id="quick-change">🔄 تغییر وضعیت واحد</button></div><h3 style="margin:24px 0 12px;font-size:16px">حساب‌های فعال (${fa(activeAccounts.length)})</h3><div id="active-acc">${activeAccounts.map(a => `<form class="acc grid g3" data-id="${a.id}" data-name="${esc(a.full_name)}" data-occ="${esc(a.occupancy)}" style="background:var(--bg);padding:16px;border-radius:12px;margin-bottom:12px"><label class="f">نام<input name="full_name" value="${esc(a.full_name || '')}" required></label><label class="f">موبایل<input name="phone" dir="ltr" value="${esc(a.phone || '')}"></label>${jalaliDatePicker('تاریخ شروع محاسبات','start_date_jalali',esc(a.start_date_jalali || ''))}<label class="f">سکونت<select name="occupancy">${OCC.map(o => `<option ${a.occupancy === o ? 'selected' : ''}>${o}</option>`).join('')}</select></label><label class="f">نام کاربری<input name="username" dir="ltr" value="${esc(a.username || '')}"></label><label class="f">رمز جدید<input name="pass" type="password" placeholder="بدون تغییر" autocomplete="new-password" autocorrect="off" autocapitalize="off" spellcheck="false" inputmode="numeric"></label><div style="align-self:end;display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm" type="submit">ذخیره</button><button type="button" class="btn lt sm" data-reset="${a.id}">ریست رمز</button><button type="button" class="btn lt sm" data-opening="${a.id}">ثبت مانده اولیه</button><button type="button" class="btn rd sm" data-archive="${a.id}">آرشیو</button></div></form>`).join('') || '<p class="sub">حسابی برای این واحد ثبت نشده.</p>'}</div>${archivedAccounts.length ? `<details style="margin-top:20px"><summary style="cursor:pointer;color:var(--muted);font-size:13px;padding:8px 0">📦 سابقه (${fa(archivedAccounts.length)} حساب آرشیو شده — دائمی)</summary><div style="margin-top:12px;opacity:.7"><p style="font-size:11px;color:var(--muted);margin:0 0 8px;background:#fef3c7;padding:6px 10px;border-radius:6px">⚠️ این حساب‌ها غیرفعال دائمی هستند. تراکنش‌هایشان حفظ شده، ولی دسترسی ورود ندارند.</p>${archivedAccounts.map(a => `<div style="background:var(--bg);padding:12px;border-radius:8px;margin-bottom:8px;font-size:13px"><b>${esc(a.full_name || '—')}</b> · ${esc(a.occupancy)} · ${esc(a.phone || '—')}<div style="font-size:12px;color:var(--muted);margin-top:4px">شروع محاسبات: ${esc(a.start_date_jalali || 'ثبت نشده')} · تاریخ خروج: ${esc(a.exit_date_jalali || '—')}</div><div style="margin-top:8px"><span class="chip ex">آرشیو</span></div></div>`).join('')}</div></details>` : ''}`);
+  const m = window.ModirModal.open(`<h2>واحد ${fa(u.unit_no)}</h2>${u.residency_issue ? `<div class="card" style="margin:12px 0 18px;background:var(--bg)"><label class="f">وضعیت سکونت واحد<select id="unit-residency-status"><option value="" disabled ${u.residency_status==='pending'?'selected':''}>انتخاب وضعیت...</option><option value="owner_occupied" ${u.residency_status==='owner_occupied'?'selected':''}>مالک ساکن</option><option value="tenant_occupied" ${u.residency_status==='tenant_occupied'?'selected':''}>مالک + مستأجر</option><option value="vacant_confirmed" ${u.residency_status==='vacant_confirmed'?'selected':''}>واحد خالی (مالک غیرساکن)</option></select></label><p class="sub" style="margin:8px 0">${esc(u.residency_issue || 'وضعیت فعلی این واحد تأیید شده است.')}</p><button type="button" class="btn sf" id="unit-residency-save">ثبت و تأیید وضعیت</button></div>` : ''}<div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap"><button class="btn sf" id="quick-change">🔄 تغییر وضعیت واحد</button></div><h3 style="margin:24px 0 12px;font-size:16px">حساب‌های فعال (${fa(activeAccounts.length)})</h3><div id="active-acc">${activeAccounts.map(a => `<form class="acc grid g3" data-id="${a.id}" data-name="${esc(a.full_name)}" data-occ="${esc(a.occupancy)}" style="background:var(--bg);padding:16px;border-radius:12px;margin-bottom:12px"><label class="f">نام<input name="full_name" value="${esc(a.full_name || '')}" required></label><label class="f">موبایل<input name="phone" dir="ltr" value="${esc(a.phone || '')}"></label>${jalaliDatePicker('تاریخ شروع محاسبات','start_date_jalali',esc(a.start_date_jalali || ''))}<label class="f">سکونت<select name="occupancy">${OCC.map(o => `<option ${a.occupancy === o ? 'selected' : ''}>${o}</option>`).join('')}</select></label><label class="f">نام کاربری<input name="username" dir="ltr" value="${esc(a.username || '')}"></label><label class="f">رمز جدید<input name="pass" type="password" placeholder="بدون تغییر" autocomplete="new-password" autocorrect="off" autocapitalize="off" spellcheck="false" inputmode="numeric"></label><div style="align-self:end;display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm" type="submit">ذخیره</button><button type="button" class="btn lt sm" data-reset="${a.id}">ریست رمز</button><button type="button" class="btn lt sm" data-opening="${a.id}">ثبت مانده اولیه</button><button type="button" class="btn lt sm" data-opening-edit="${a.id}">ویرایش</button><button type="button" class="btn rd sm" data-archive="${a.id}">آرشیو</button></div></form>`).join('') || '<p class="sub">حسابی برای این واحد ثبت نشده.</p>'}</div>${archivedAccounts.length ? `<details style="margin-top:20px"><summary style="cursor:pointer;color:var(--muted);font-size:13px;padding:8px 0">📦 سابقه (${fa(archivedAccounts.length)} حساب آرشیو شده — دائمی)</summary><div style="margin-top:12px;opacity:.7"><p style="font-size:11px;color:var(--muted);margin:0 0 8px;background:#fef3c7;padding:6px 10px;border-radius:6px">⚠️ این حساب‌ها غیرفعال دائمی هستند. تراکنش‌هایشان حفظ شده، ولی دسترسی ورود ندارند.</p>${archivedAccounts.map(a => `<div style="background:var(--bg);padding:12px;border-radius:8px;margin-bottom:8px;font-size:13px"><b>${esc(a.full_name || '—')}</b> · ${esc(a.occupancy)} · ${esc(a.phone || '—')}<div style="font-size:12px;color:var(--muted);margin-top:4px">شروع محاسبات: ${esc(a.start_date_jalali || 'ثبت نشده')} · تاریخ خروج: ${esc(a.exit_date_jalali || '—')}</div><div style="margin-top:8px"><span class="chip ex">آرشیو</span></div></div>`).join('')}</div></details>` : ''}`);
 
   $('#unit-residency-save',m)?.addEventListener('click',async()=>{const b=$('#unit-residency-save',m),status=$('#unit-residency-status',m)?.value;if(!status||status==='pending'){toast('یکی از سه وضعیت سکونت را انتخاب کنید',true);return;}b.disabled=true;b.textContent='در حال بررسی و ثبت...';try{await T('app_admin_set_unit_residency',{p_unit_no:u.unit_no,p_residency_status:status});toast('وضعیت سکونت واحد تأیید شد');window.ModirModal.close(m);go('units');}catch(err){showErr(err);}finally{b.disabled=false;b.textContent='ثبت و تأیید وضعیت';}});
   $$('form.acc', m).forEach(f => {
@@ -109,6 +106,7 @@ function unitModal(u) {
     $('[data-archive]', f)?.addEventListener('click', async () => { const acc = activeAccounts.find(a => a.id == f.dataset.id); if (acc) await settleAccountModal(acc); });
   });
   Array.from(m.querySelectorAll('[data-opening]')).forEach(b => b.addEventListener('click', () => { const acc=u.accounts.find(a=>a.id===b.dataset.opening); if(acc) openingBalanceModal(acc); }));
+  Array.from(m.querySelectorAll('[data-opening-edit]')).forEach(b => b.addEventListener('click', () => { const acc=u.accounts.find(a=>a.id===b.dataset.openingEdit); if(acc) openingBalanceModal(acc,true); }));
   $('#quick-change', m)?.addEventListener('click', () => quickChangeModal(u, activeAccounts));
 }
 
