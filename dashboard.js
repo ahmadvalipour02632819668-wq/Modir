@@ -20,18 +20,16 @@ function billCard(r, rep) {
   const waterExpense = Math.max(Number(r.water_expense) || 0, sumExpense('water', ['آب']));
   const gasExpense = sumExpense('gas', ['گاز']);
   const repairExpense = sumExpense('repair', ['پس‌انداز', 'تعمیر']);
-  const parkingExpense = sumExpense('parking', ['پارکینگ']);
   const chg = (Number(r.charge) || 0) + chargeExpense;
   const w = (Number(r.water) || 0) + waterExpense;
   const g = (Number(r.gas) || 0) + gasExpense;
   const rep_amt = (Number(r.repair) || 0) + repairExpense;
-  const park = (Number(r.parking) || 0) + parkingExpense;
+  const park = Number(r.parking) || 0;
   const extraExpenses = expenseItems.filter(x =>
     !isExpenseFor(x, 'charge', ['شارژ']) &&
     !isExpenseFor(x, 'water', ['آب']) &&
     !isExpenseFor(x, 'gas', ['گاز']) &&
-    !isExpenseFor(x, 'repair', ['پس‌انداز', 'تعمیر']) &&
-    !isExpenseFor(x, 'parking', ['پارکینگ'])
+    !isExpenseFor(x, 'repair', ['پس‌انداز', 'تعمیر'])
   );
   const prev = Number(r.prev_debt) || 0;
   const paid = Number(r.paid_this_month) || 0;
