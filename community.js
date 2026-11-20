@@ -396,6 +396,7 @@ function replyModal(r) {
   let accountOptions = [];
   let selectedAccountId = targetAccountId || null;
   let selectedAccount = null;
+  let aggregateCreditApplied = 0;
 
   const fetchDebts = async (unitNo) => {
     if (isAdmin) {
@@ -404,9 +405,12 @@ function replyModal(r) {
         ? (accountOptions.find(a => a.account_id === selectedAccountId) || null)
         : (accountOptions[0] || null);
       selectedAccountId = selectedAccount?.account_id || null;
+      aggregateCreditApplied = Number(selectedAccount?.total_credit_applied) || 0;
       return selectedAccount?.debts || [];
     } else {
-      return await T('app_get_user_debts', { p_today_ym: S.y * 100 + S.m });
+      const userDebts = await T('app_get_user_debts', { p_today_ym: S.y * 100 + S.m });
+      aggregateCreditApplied = Number(userDebts?.[0]?.total_credit_applied) || 0;
+      return userDebts;
     }
   };
 
@@ -454,7 +458,7 @@ function replyModal(r) {
     const container = $('#sec-debts', m);
     if (debtList && debtList.length > 0) {
       const grossTotal = debtList.reduce((n,d)=>n+(Number(d.original_amount ?? d.amount)||0),0);
-      const creditTotal = debtList.reduce((n,d)=>n+(Number(d.credit_applied)||0),0);
+      const creditTotal = aggregateCreditApplied;
       const payableTotal = debtList.reduce((n,d)=>n+(Number(d.amount)||0),0);
       container.innerHTML = `
         <div class="card" style="margin-bottom:16px; padding:14px; background:var(--bg)">
