@@ -198,11 +198,12 @@ async function viewRates(el) {
     if (!unitNos.length || !payers.length || amount<=0) { toast('عنوان، مبلغ، حداقل یک واحد و مسئول پرداخت را مشخص کنید',true); return; }
     const button = $('#fixed-obligation-form button[type="submit"]'); button.disabled = true;
     try {
-      await T('app_admin_save_fixed_obligation', {
+      const result = await T('app_admin_save_fixed_obligation', {
         p_id: $('#fo-id').value ? Number($('#fo-id').value) : null,
         p_title: $('#fo-title').value.trim(), p_amount: amount, p_unit_nos: unitNos,
         p_allocation_method: $('#fo-method').value, p_payer_occupancies: payers, p_start_ym: startYm
       });
+      if (result?.ok === false) throw new Error(result.error || 'ذخیره هزینه ثابت ناموفق بود');
       toast('هزینه ثابت ماهانه ذخیره شد؛ موجودی صندوق تغییر نکرد');
       go(S.view === 'charge' ? 'charge' : 'settings');
     } catch(err) { showErr(err); button.disabled = false; }
