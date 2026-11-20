@@ -405,11 +405,12 @@ function replyModal(r) {
         ? (accountOptions.find(a => a.account_id === selectedAccountId) || null)
         : (accountOptions[0] || null);
       selectedAccountId = selectedAccount?.account_id || null;
-      aggregateCreditApplied = Number(selectedAccount?.total_credit_applied) || 0;
-      return selectedAccount?.debts || [];
+      const debts = selectedAccount?.debts || [];
+      aggregateCreditApplied = debts.reduce((sum, d) => sum + (Number(d.credit_applied) || 0), 0);
+      return debts;
     } else {
       const userDebts = await T('app_get_user_debts', { p_today_ym: S.y * 100 + S.m });
-      aggregateCreditApplied = Number(userDebts?.[0]?.total_credit_applied) || 0;
+      aggregateCreditApplied = userDebts.reduce((sum, d) => sum + (Number(d.credit_applied) || 0), 0);
       return userDebts;
     }
   };
@@ -517,19 +518,20 @@ function replyModal(r) {
 
   const updateTotalDebts = () => {
     if (currentTab !== 'debts') return;
-    let total = 0, gross = 0;
+    let total = 0, gross = 0, credit = 0;
     $('.debt-row', m).forEach(row => {
       const cb = $('.debt-check', row);
       const amtInp = $('.debt-amount', row);
       if (cb.checked) {
         total += toNum(amtInp.value);
         gross += Number(cb.dataset.gross || cb.dataset.original || 0);
+        credit += Number(cb.dataset.credit || 0);
       }
     });
     $('#pf-a', m).value = fmt(total);
     const g=$('#pf-gross-summary',m),c=$('#pf-credit-summary',m),p=$('#pf-payable-summary',m);
     if(g)g.textContent=fmt(gross)+' تومان';
-    if(c)c.textContent=fmt(aggregateCreditApplied)+' تومان';
+    if(c)c.textContent=fmt(credit)+' تومان';
     if(p)p.textContent=fmt(total)+' تومان';
   };
 
