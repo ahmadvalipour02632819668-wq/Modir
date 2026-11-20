@@ -165,7 +165,7 @@ async function viewRates(el) {
   const fixedPayersHtml = ['مالک ساکن','مالک','مستأجر'].map(o => '<label style="display:inline-flex;align-items:center;gap:5px;margin:4px 10px 4px 0"><input type="checkbox" class="fo-payer" value="' + esc(o) + '" checked> ' + esc(o) + '</label>').join('');
   fixedCard.innerHTML = '<h2 style="margin:0 0 6px">سایر هزینه‌های ثابت ماهانه</h2>' +
     '<p class="sub" style="margin:0 0 12px">این مبالغ فقط بدهی واحدها را ایجاد می‌کنند و تا زمان دریافت وجه، موجودی صندوق را تغییر نمی‌دهند. تغییر هزینه از ماه مؤثر جدید اعمال می‌شود و ماه‌های قبلی حفظ می‌شوند.</p>' +
-    '<form id="fixed-obligation-form" class="grid g2">' +
+    '<form id="fixed-obligation-form" class="grid g2" novalidate>' +
     '<input type="hidden" id="fo-id">' +
     '<label class="f">عنوان هزینه<input id="fo-title" maxlength="100" required placeholder="مثلاً اجاره پارکینگ مهمان"></label>' +
     '<label class="f">مبلغ کل (تومان)<input id="fo-amount" inputmode="numeric" required placeholder="مثلاً ۵۰۰۰۰۰"></label>' +
@@ -174,6 +174,7 @@ async function viewRates(el) {
     '<div style="grid-column:1/-1"><b style="font-size:13px">واحدهای مشمول</b><div style="margin-top:6px">' + fixedUnitsHtml + '</div></div>' +
     '<label class="f" style="grid-column:1/-1">روش محاسبه<select id="fo-method"><option value="equal">تقسیم مساوی مبلغ کل بین واحدها</option><option value="per_unit">مبلغ کامل از هر واحد انتخاب‌شده</option><option value="persons">تقسیم بر اساس تعداد نفرات</option><option value="area">تقسیم بر اساس متراژ</option></select></label>' +
     '<div style="grid-column:1/-1"><b style="font-size:13px">مسئول پرداخت در هر واحد</b><div style="margin-top:6px">' + fixedPayersHtml + '</div><small class="sub">اگر چند حساب در یک واحد فعال باشند، هزینه فقط به حساب اصلیِ واجد شرایط همان واحد تعلق می‌گیرد.</small></div>' +
+    '<div id="fo-feedback" role="status" aria-live="polite" style="grid-column:1/-1;display:none;padding:10px;border-radius:8px;font-size:13px;white-space:pre-wrap"></div>' +
     '<div style="grid-column:1/-1;display:flex;gap:8px;flex-wrap:wrap"><button class="btn sf" type="submit" ' + (rateGuardIssues.length?'disabled':'') + '>ذخیره هزینه ثابت</button><button class="btn lt" type="button" id="fo-cancel">پاک‌کردن فرم</button></div>' +
     '</form><div style="margin-top:16px"><b>هزینه‌های فعال</b><div id="fo-list" style="margin-top:8px">' +
     (activeFixed.map(x => '<div class="card" style="background:var(--bg);margin:7px 0;padding:10px"><div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap"><b>' + esc(x.title) + '</b><b>' + money(x.amount) + '</b></div><div class="sub">واحدها: ' + (x.unit_nos||[]).map(n=>'واحد '+fa(n)).join('، ') + ' · شروع: ' + fa(x.start_ym) + ' · روش: ' + ({equal:'مساوی',per_unit:'مبلغ کامل برای هر واحد',persons:'بر اساس نفرات',area:'بر اساس متراژ'}[x.allocation_method]||x.allocation_method) + '</div><div style="display:flex;gap:7px;margin-top:8px"><button type="button" class="btn lt sm" data-fo-edit="' + x.id + '">ویرایش</button><button type="button" class="btn rd sm" data-fo-delete="' + x.id + '">حذف از ماه بعد</button></div></div>').join('') || '<p class="sub">هزینه ثابت فعالی ثبت نشده است.</p>') +
@@ -190,23 +191,30 @@ async function viewRates(el) {
   $('#fo-cancel')?.addEventListener('click', clearFixedForm);
   $('#fixed-obligation-form')?.addEventListener('submit', async e => {
     e.preventDefault();
+    const feedback=$('#fo-feedback');
+    const report=(message,isError=true)=>{if(feedback){feedback.style.display='block';feedback.style.color=isError?'var(--danger)':'var(--success)';feedback.style.background=isError?'rgba(220,38,38,.08)':'rgba(22,163,74,.08)';feedback.textContent=message;}};
     const unitNos = Array.from(fixedCard.querySelectorAll('.fo-unit:checked')).map(x=>Number(x.value));
     const payers = Array.from(fixedCard.querySelectorAll('.fo-payer:checked')).map(x=>x.value);
-    const amount = toNum($('#fo-amount').value);
+    const title=$('#fo-title').value.trim(), amount = toNum($('#fo-amount').value);
     const startYm = Number($('#fo-year').value)*100+Number($('#fo-month').value);
-    if ($('#fo-id').value && startYm <= TODAY.y*100+TODAY.m) { toast('تغییر هزینه فقط از ماه آینده یا ماه‌های بعد قابل اعمال است',true); return; }
-    if (!unitNos.length || !payers.length || amount<=0) { toast('عنوان، مبلغ، حداقل یک واحد و مسئول پرداخت را مشخص کنید',true); return; }
-    const button = $('#fixed-obligation-form button[type="submit"]'); button.disabled = true;
+    if(!title){report('عنوان هزینه را وارد کنید.');$('#fo-title').focus();return;}
+    if(amount<=0){report('مبلغ باید بیشتر از صفر باشد.');$('#fo-amount').focus();return;}
+    if(!unitNos.length){report('حداقل یک واحد را انتخاب کنید.');return;}
+    if(!payers.length){report('حداقل یک مسئول پرداخت را انتخاب کنید.');return;}
+    if ($('#fo-id').value && startYm <= TODAY.y*100+TODAY.m) { report('تغییر هزینه فقط از ماه آینده یا ماه‌های بعد قابل اعمال است.'); return; }
+    const button = $('#fixed-obligation-form button[type="submit"]'); button.disabled = true; button.textContent='در حال ذخیره...'; report('در حال ارسال اطلاعات...',false);
     try {
       const result = await T('app_admin_save_fixed_obligation', {
         p_id: $('#fo-id').value ? Number($('#fo-id').value) : null,
-        p_title: $('#fo-title').value.trim(), p_amount: amount, p_unit_nos: unitNos,
+        p_title: title, p_amount: amount, p_unit_nos: unitNos,
         p_allocation_method: $('#fo-method').value, p_payer_occupancies: payers, p_start_ym: startYm
       });
       if (result?.ok === false) throw new Error(result.error || 'ذخیره هزینه ثابت ناموفق بود');
+      report('هزینه ثابت ذخیره شد. موجودی صندوق تغییری نکرد.',false);
       toast('هزینه ثابت ماهانه ذخیره شد؛ موجودی صندوق تغییر نکرد');
       go(S.view === 'charge' ? 'charge' : 'settings');
-    } catch(err) { showErr(err); button.disabled = false; }
+    } catch(err) { report('ذخیره انجام نشد: '+(err?.message||String(err))); showErr(err); }
+    finally { button.disabled = false; button.textContent=$('#fo-id').value?'ذخیره نسخه جدید از ماه انتخاب‌شده':'ذخیره هزینه ثابت'; }
   });
   Array.from(fixedCard.querySelectorAll('[data-fo-edit]')).forEach(button => button.addEventListener('click', () => {
     const x = activeFixed.find(v=>Number(v.id)===Number(button.dataset.foEdit)); if (!x) return;
