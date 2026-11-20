@@ -183,8 +183,8 @@ async function viewRates(el) {
   const clearFixedForm = () => {
     $('#fo-id').value = ''; $('#fo-title').value = ''; $('#fo-amount').value = '';
     $('#fo-year').value = TODAY.y; $('#fo-month').value = TODAY.m; $('#fo-method').value = 'equal';
-    $('.fo-unit', fixedCard).forEach(x => x.checked = false);
-    $('.fo-payer', fixedCard).forEach(x => x.checked = true);
+    Array.from(fixedCard.querySelectorAll('.fo-unit')).forEach(x => x.checked = false);
+    Array.from(fixedCard.querySelectorAll('.fo-payer')).forEach(x => x.checked = true);
     const submit = $('#fixed-obligation-form button[type="submit"]'); if (submit) submit.textContent = 'ذخیره هزینه ثابت';
   };
   $('#fo-cancel')?.addEventListener('click', clearFixedForm);
@@ -207,7 +207,7 @@ async function viewRates(el) {
       go(S.view === 'charge' ? 'charge' : 'settings');
     } catch(err) { showErr(err); button.disabled = false; }
   });
-  $('[data-fo-edit]', fixedCard).forEach(button => button.addEventListener('click', () => {
+  Array.from(fixedCard.querySelectorAll('[data-fo-edit]')).forEach(button => button.addEventListener('click', () => {
     const x = activeFixed.find(v=>Number(v.id)===Number(button.dataset.foEdit)); if (!x) return;
     $('#fo-id').value=x.id; $('#fo-title').value=x.title; $('#fo-amount').value=fmt(x.amount);
     const nextYm = ym => ym%100===12 ? (Math.floor(ym/100)+1)*100+1 : Math.floor(ym/100)*100+(ym%100)+1;
@@ -215,12 +215,12 @@ async function viewRates(el) {
     $('#fo-year').value=Math.floor(effectiveYm/100);
     $('#fo-month').value=effectiveYm%100;
     $('#fo-method').value=x.allocation_method;
-    $('.fo-unit',fixedCard).forEach(cb=>cb.checked=(x.unit_nos||[]).includes(Number(cb.value)));
-    $('.fo-payer',fixedCard).forEach(cb=>cb.checked=(x.payer_occupancies||[]).includes(cb.value));
+    Array.from(fixedCard.querySelectorAll('.fo-unit')).forEach(cb=>cb.checked=(x.unit_nos||[]).includes(Number(cb.value)));
+    Array.from(fixedCard.querySelectorAll('.fo-payer')).forEach(cb=>cb.checked=(x.payer_occupancies||[]).includes(cb.value));
     const submit=$('#fixed-obligation-form button[type="submit"]'); if(submit)submit.textContent='ذخیره نسخه جدید از ماه انتخاب‌شده';
     fixedCard.scrollIntoView({behavior:'smooth',block:'start'});
   }));
-  $('[data-fo-delete]', fixedCard).forEach(button => button.addEventListener('click', async () => {
+  Array.from(fixedCard.querySelectorAll('[data-fo-delete]')).forEach(button => button.addEventListener('click', async () => {
     const x=activeFixed.find(v=>Number(v.id)===Number(button.dataset.foDelete)); if(!x)return;
     if(!await window.ModirModal.confirm('این هزینه از پایان ماه جاری متوقف شود؟ بدهی ماه‌های قبلی حفظ می‌شود.'))return;
     const currentYm=TODAY.y*100+TODAY.m, endYm=currentYm;
