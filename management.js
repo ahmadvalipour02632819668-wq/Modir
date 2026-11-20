@@ -194,6 +194,7 @@ async function viewRates(el) {
     const payers = $('.fo-payer', fixedCard).filter(x=>x.checked).map(x=>x.value);
     const amount = toNum($('#fo-amount').value);
     const startYm = Number($('#fo-year').value)*100+Number($('#fo-month').value);
+    if ($('#fo-id').value && startYm <= TODAY.y*100+TODAY.m) { toast('تغییر هزینه فقط از ماه آینده یا ماه‌های بعد قابل اعمال است',true); return; }
     if (!unitNos.length || !payers.length || amount<=0) { toast('عنوان، مبلغ، حداقل یک واحد و مسئول پرداخت را مشخص کنید',true); return; }
     const button = $('#fixed-obligation-form button[type="submit"]'); button.disabled = true;
     try {
@@ -209,9 +210,10 @@ async function viewRates(el) {
   $('[data-fo-edit]', fixedCard).forEach(button => button.addEventListener('click', () => {
     const x = activeFixed.find(v=>Number(v.id)===Number(button.dataset.foEdit)); if (!x) return;
     $('#fo-id').value=x.id; $('#fo-title').value=x.title; $('#fo-amount').value=fmt(x.amount);
-    const nextYear=Number(x.start_ym)/100|0, nextMonth=Number(x.start_ym)%100;
-    $('#fo-year').value=nextMonth===12?nextYear+1:nextYear;
-    $('#fo-month').value=nextMonth===12?1:nextMonth+1;
+    const nextYm = ym => ym%100===12 ? (Math.floor(ym/100)+1)*100+1 : Math.floor(ym/100)*100+(ym%100)+1;
+    const effectiveYm=Math.max(nextYm(Number(x.start_ym)),nextYm(TODAY.y*100+TODAY.m));
+    $('#fo-year').value=Math.floor(effectiveYm/100);
+    $('#fo-month').value=effectiveYm%100;
     $('#fo-method').value=x.allocation_method;
     $('.fo-unit',fixedCard).forEach(cb=>cb.checked=(x.unit_nos||[]).includes(Number(cb.value)));
     $('.fo-payer',fixedCard).forEach(cb=>cb.checked=(x.payer_occupancies||[]).includes(cb.value));
