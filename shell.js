@@ -412,7 +412,8 @@ function renderShellHeaderState(resetScroll = true) {
   if (dia && active && wrap) {
     const wr = wrap.getBoundingClientRect(), br = active.getBoundingClientRect();
     const center = (br.left + br.width / 2) - wr.left;
-    dia.style.right = (wr.width - center) + 'px';
+    dia.style.left = center + 'px';
+    dia.style.right = 'auto';
     $('.bnav-bg')?.style.setProperty('--notch-x', center + 'px');
     const key = active.dataset.v;
     const label = $('span', active)?.textContent?.trim() || '';
