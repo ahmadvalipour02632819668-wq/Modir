@@ -340,7 +340,7 @@ async function renderShell(accountFromLogin = null) {
   });
   if (window.__modirManagerAlertTimer) clearInterval(window.__modirManagerAlertTimer);
   window.__modirManagerAlertTimer = setInterval(() => {
-    if (document.visibilityState === 'visible' && S.me?.is_admin) {
+    if (document.visibilityState === 'visible' && S.me) {
       ModirAlertCenter.refreshManagerAlertBadge();
     }
   }, 60000);
