@@ -439,7 +439,7 @@ async function renderPollsInAnnouncements(el) {
           p_options: options,
           p_is_active: isActive
         });
-        const pollText = `📊 نظرسنجی جدید ساختمان\\n\\nعنوان: ${title}${description ? `\\n\\nتوضیحات: ${description}` : ''}\\n\\nگزینه‌ها:\\n${options.map((x, i) => `${i + 1}) ${x}`).join('\\n')}\\n\\nوضعیت: ${isActive ? 'فعال؛ امکان ثبت رأی وجود دارد' : 'فعلاً غیرفعال؛ رأی‌گیری پس از فعال‌سازی مدیر آغاز می‌شود'}\\n\\nبرای مشاهده نظرسنجی و ثبت رأی به بخش «اعلانات» برنامه Resident Manager مراجعه کنید.`;
+        const pollText = `📊 نظرسنجی جدید ساختمان\n\nعنوان: ${title}${description ? `\n\nتوضیحات: ${description}` : ''}\n\nگزینه‌ها:\n${options.map((x, i) => `${i + 1}) ${x}`).join('\n')}\n\nوضعیت: ${isActive ? 'فعال؛ امکان ثبت رأی وجود دارد' : 'فعلاً غیرفعال؛ رأی‌گیری پس از فعال‌سازی مدیر آغاز می‌شود'}\n\nبرای مشاهده نظرسنجی و ثبت رأی به بخش «اعلانات» برنامه Resident Manager مراجعه کنید.`;
         const sent = await window.ModirBale.send(pollText);
         try {
           await window.ModirPush.send('poll_created', 'نظرسنجی جدید: ' + title, description || options.join('، '));
@@ -467,7 +467,7 @@ async function renderPollsInAnnouncements(el) {
             const allPolls = await T('app_get_polls');
             const current = (allPolls || []).find(p => Number(p.id) === Number(b.dataset.pollToggle));
             if (current) {
-              const text = `🟢 رأی‌گیری نظرسنجی آغاز شد\\n\\n${current.title}${current.description ? `\\n\\n${current.description}` : ''}\\n\\nگزینه‌ها:\\n${(current.options || []).map((o, i) => `${i + 1}) ${o.text}`).join('\\n')}\\n\\nبرای ثبت رأی به بخش «اعلانات» برنامه Resident Manager مراجعه کنید.`;
+              const text = `🟢 رأی‌گیری نظرسنجی آغاز شد\n\n${current.title}${current.description ? `\n\n${current.description}` : ''}\n\nگزینه‌ها:\n${(current.options || []).map((o, i) => `${i + 1}) ${o.text}`).join('\n')}\n\nبرای ثبت رأی به بخش «اعلانات» برنامه Resident Manager مراجعه کنید.`;
               const sent = await window.ModirBale.send(text);
               if (!sent) console.warn('Poll activation notification failed:', S.lastBaleError);
             }
