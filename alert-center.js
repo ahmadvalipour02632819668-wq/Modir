@@ -93,7 +93,7 @@ function renderAlertCenter(items) {
   }));
 }
 async function refreshManagerAlertBadge() {
-  const badge = $('#manager-alert-count');
+  const badge = $('#alert-count');
   if (!badge || !S.me) return;
   try {
     const items = await collectAlertItems();
