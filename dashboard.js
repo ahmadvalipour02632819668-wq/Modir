@@ -344,15 +344,15 @@ async function renderPollsInAnnouncements(el) {
 
   const pollCards = (polls || []).map(p => {
     const options = (p.options || []).map(o => `
-      <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;padding:9px 0;border-bottom:1px solid var(--line)">
-        <span>${esc(o.text)}</span>
-        <strong style="white-space:nowrap">${fa(Number(o.votes || 0))} رأی · ${fa(Math.round(Number(o.percent || 0)))}٪</strong>
+      <div class="poll-option-row">
+        <span class="poll-option-label">${esc(o.text)}</span>
+        <strong class="poll-option-result">${fa(Number(o.votes || 0))} رأی · ${fa(Math.round(Number(o.percent || 0)))}٪</strong>
       </div>`).join('');
     const canVote = p.is_active && !p.my_vote;
     const voteForm = canVote ? `
       <form data-vote-form="${p.id}" style="margin-top:12px">
-        <div style="display:grid;gap:9px">
-          ${(p.options || []).map(o => `<label style="display:flex;align-items:center;gap:8px"><input type="radio" name="poll-option-${p.id}" value="${o.id}" required> ${esc(o.text)}</label>`).join('')}
+        <div class="poll-vote-list">
+          ${(p.options || []).map(o => `<label class="poll-vote-choice"><input type="radio" name="poll-option-${p.id}" value="${o.id}" required><span>${esc(o.text)}</span></label>`).join('')}
         </div>
         <button class="btn sm" style="margin-top:12px">ثبت رأی نهایی</button>
       </form>` : '';
@@ -367,13 +367,13 @@ async function renderPollsInAnnouncements(el) {
         <button class="btn rd sm" data-poll-delete="${p.id}">حذف کامل نظرسنجی</button>
       </div>` : '';
     return `
-      <div class="card">
-        <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start;flex-wrap:wrap">
+      <div class="card poll-card">
+        <div class="poll-card-head">
           <h2 style="margin:0">${esc(p.title)}</h2>
           <span class="chip ${p.is_active ? 'ok' : 'ex'}">${p.is_active ? 'فعال' : 'غیرفعال'}</span>
         </div>
         ${p.description ? `<p class="sub" style="white-space:pre-wrap">${esc(p.description)}</p>` : ''}
-        <div style="margin-top:10px">${options}</div>
+        <div class="poll-results-list">${options}</div>
         <p class="sub" style="font-size:12px;margin:10px 0 0">مجموع آرای ثبت‌شده: ${fa(Number(p.total_votes || 0))}</p>
         ${voteForm}${voteStatus}
         ${adminToggle ? `<div style="margin-top:14px">${adminToggle}</div>` : ''}
