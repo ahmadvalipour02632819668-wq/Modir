@@ -343,16 +343,24 @@ async function renderPollsInAnnouncements(el) {
     </form>` : '';
 
   const pollCards = (polls || []).map(p => {
-    const options = (p.options || []).map(o => `
+    const options = (p.options || []).map(o => {
+      const percent = Math.max(0, Math.min(100, Number(o.percent) || 0));
+      return `
       <div class="poll-option-row">
-        <span class="poll-option-label">${esc(o.text)}</span>
-        <strong class="poll-option-result">${fa(Number(o.votes || 0))} رأی · ${fa(Math.round(Number(o.percent || 0)))}٪</strong>
-      </div>`).join('');
+        <div class="poll-result-top">
+          <span class="poll-option-label">${esc(o.text)}</span>
+          <strong class="poll-option-result">${fa(Number(o.votes || 0))} رأی <b>${fa(percent.toFixed(1))}٪</b></strong>
+        </div>
+        <div class="poll-result-track" role="progressbar" aria-label="${esc(o.text)}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${percent}">
+          <span class="poll-result-fill" style="width:${percent}%"></span>
+        </div>
+      </div>`;
+    }).join('');
     const canVote = p.is_active && !p.my_vote;
     const voteForm = canVote ? `
       <form data-vote-form="${p.id}" style="margin-top:12px">
         <div class="poll-vote-list">
-          ${(p.options || []).map(o => `<label class="poll-vote-choice"><input type="radio" name="poll-option-${p.id}" value="${o.id}" required><span>${esc(o.text)}</span></label>`).join('')}
+          ${(p.options || []).map(o => `<label class="poll-vote-choice"><input type="radio" name="poll-option-${p.id}" value="${o.id}" required><span>${esc(o.text)}</span><i aria-hidden="true">✓</i></label>`).join('')}
         </div>
         <button class="btn sm" style="margin-top:12px">ثبت رأی نهایی</button>
       </form>` : '';
@@ -383,6 +391,30 @@ async function renderPollsInAnnouncements(el) {
 
   const section = document.createElement('section');
   section.style.marginTop = '24px';
+  if (!document.getElementById('poll-visual-style')) {
+    const style = document.createElement('style');
+    style.id = 'poll-visual-style';
+    style.textContent = `
+      .poll-card{overflow:hidden}
+      .poll-vote-list{gap:9px}
+      .poll-vote-choice{position:relative;display:flex;align-items:center;gap:12px;padding:13px 14px;border:1px solid var(--line);border-radius:13px;background:var(--bg);transition:border-color .2s,background .2s,transform .2s,box-shadow .2s;cursor:pointer}
+      .poll-vote-choice:hover{border-color:var(--accent);transform:translateY(-1px)}
+      .poll-vote-choice:has(input:checked){border-color:var(--accent);background:var(--card);box-shadow:0 0 0 2px var(--line);animation:pollPick .28s ease}
+      .poll-vote-choice input{accent-color:var(--accent);width:19px;height:19px;flex:0 0 19px;margin:0}
+      .poll-vote-choice span{flex:1;min-width:0;line-height:1.8}
+      .poll-vote-choice i{display:grid;place-items:center;width:23px;height:23px;border-radius:50%;background:var(--accent);color:#fff;font-style:normal;font-weight:900;font-size:13px;opacity:0;transform:scale(.5);transition:opacity .18s,transform .18s}
+      .poll-vote-choice:has(input:checked) i{opacity:1;transform:scale(1)}
+      .poll-option-row{display:block;padding:12px 0;border-bottom:1px solid var(--line)}
+      .poll-result-top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:9px}
+      .poll-option-result{display:flex;gap:7px;align-items:center;white-space:nowrap}
+      .poll-option-result b{font-size:14px;color:var(--accent)}
+      .poll-result-track{height:10px;border-radius:20px;background:var(--bg);overflow:hidden}
+      .poll-result-fill{display:block;height:100%;border-radius:20px;background:linear-gradient(90deg,var(--accent),var(--peach));transition:width .65s cubic-bezier(.2,.8,.2,1)}
+      @keyframes pollPick{0%{transform:scale(.985)}60%{transform:scale(1.012)}100%{transform:scale(1)}}
+      @media(prefers-reduced-motion:reduce){.poll-vote-choice,.poll-vote-choice i,.poll-result-fill{transition:none;animation:none}}
+    `;
+    document.head.appendChild(style);
+  }
   section.innerHTML = `
     <h2 style="margin:0 0 12px">📊 نظرسنجی‌های ساختمان</h2>
     ${pollCreateForm}
@@ -407,14 +439,19 @@ async function renderPollsInAnnouncements(el) {
           p_options: options,
           p_is_active: isActive
         });
-        if (isActive) {
-          const pollText = `📊 نظرسنجی جدید ساختمان\n\n${title}${description ? `\n${description}` : ''}\n\nگزینه‌ها:\n${options.map((x, i) => `${i + 1}) ${x}`).join('\n')}\n\nبرای ثبت رأی وارد برنامه مدیریت ساختمان شوید.`;
-          const sent = await window.ModirBale.send(pollText);
-        await window.ModirPush.send('poll_created', 'نظرسنجی جدید: ' + title, description || options.join('، '));
-          toast(sent ? 'نظرسنجی ایجاد و در گروه بله اعلام شد' : 'نظرسنجی ایجاد شد؛ ارسال اعلان به بله ناموفق بود', !sent);
-        } else {
-          toast('نظرسنجی به‌صورت غیرفعال ایجاد شد');
+        const pollText = `📊 نظرسنجی جدید ساختمان\\n\\nعنوان: ${title}${description ? `\\n\\nتوضیحات: ${description}` : ''}\\n\\nگزینه‌ها:\\n${options.map((x, i) => `${i + 1}) ${x}`).join('\\n')}\\n\\nوضعیت: ${isActive ? 'فعال؛ امکان ثبت رأی وجود دارد' : 'فعلاً غیرفعال؛ رأی‌گیری پس از فعال‌سازی مدیر آغاز می‌شود'}\\n\\nبرای مشاهده نظرسنجی و ثبت رأی به بخش «اعلانات» برنامه Resident Manager مراجعه کنید.`;
+        const sent = await window.ModirBale.send(pollText);
+        try {
+          await window.ModirPush.send('poll_created', 'نظرسنجی جدید: ' + title, description || options.join('، '));
+        } catch (pushErr) {
+          console.warn('Poll push notification failed:', pushErr);
         }
+        toast(
+          sent
+            ? (isActive ? 'نظرسنجی ایجاد و متن کامل آن در گروه بله ارسال شد' : 'نظرسنجی غیرفعال ایجاد و در گروه بله اعلام شد')
+            : 'نظرسنجی ایجاد شد؛ ارسال به بله ناموفق بود: ' + (S.lastBaleError || 'علت نامشخص'),
+          !sent
+        );
         go('announcements');
       } catch (err) { showErr(err); }
     });
@@ -425,6 +462,17 @@ async function renderPollsInAnnouncements(el) {
           p_poll_id: Number(b.dataset.pollToggle),
           p_active: b.dataset.next === 'true'
         });
+        if (b.dataset.next === 'true') {
+          try {
+            const allPolls = await T('app_get_polls');
+            const current = (allPolls || []).find(p => Number(p.id) === Number(b.dataset.pollToggle));
+            if (current) {
+              const text = `🟢 رأی‌گیری نظرسنجی آغاز شد\\n\\n${current.title}${current.description ? `\\n\\n${current.description}` : ''}\\n\\nگزینه‌ها:\\n${(current.options || []).map((o, i) => `${i + 1}) ${o.text}`).join('\\n')}\\n\\nبرای ثبت رأی به بخش «اعلانات» برنامه Resident Manager مراجعه کنید.`;
+              const sent = await window.ModirBale.send(text);
+              if (!sent) console.warn('Poll activation notification failed:', S.lastBaleError);
+            }
+          } catch (notifyErr) { console.warn('Poll activation notification failed:', notifyErr); }
+        }
         toast('وضعیت نظرسنجی تغییر کرد');
         go('announcements');
       } catch (err) { showErr(err); }
