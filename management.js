@@ -81,7 +81,7 @@ async function openingBalanceModal(acc, edit=false) {
   $('[data-opening-close]',m).addEventListener('click',()=>window.ModirModal.close(m));
   form.addEventListener('submit',async e=>{
     e.preventDefault();const date=normalizeJalaliDigits(form.elements.date.value);
-    if(!/^[0-9]{4}\\/(0[1-9]|1[0-2])\\/(0[1-9]|[12][0-9]|3[01])$/.test(date)){$('#opening-balance-error',m).textContent='تاریخ را به صورت سال/ماه/روز شمسی وارد کنید.';return;}
+    if(!/^[0-9]{4}\/(0[1-9]|1[0-2])\/(0[1-9]|[12][0-9]|3[01])$/.test(date)){$('#opening-balance-error',m).textContent='تاریخ را به صورت سال/ماه/روز شمسی وارد کنید.';return;}
     const parts=date.split('/').map(Number),amount=toNum(form.elements.amount.value);
     if(amount<=0){$('#opening-balance-error',m).textContent='مبلغ باید بیشتر از صفر باشد.';return;}
     const btn=form.querySelector('button[type="submit"]');btn.disabled=true;btn.textContent='در حال ذخیره...';
