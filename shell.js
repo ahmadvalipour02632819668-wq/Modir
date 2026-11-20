@@ -290,6 +290,10 @@ async function viewServices(el) {
 }
 
 async function renderShell(accountFromLogin = null) {
+  // Remove orphaned full-screen dialogs left behind by interrupted navigation; they can block every tap.
+  document.querySelectorAll('.modal-bg').forEach(node => node.remove());
+  const alertRoot = $('#alert-center');
+  if (alertRoot) { alertRoot.style.display = 'none'; alertRoot.innerHTML = ''; }
   const renderId = ++S.renderId;
   $('#app').innerHTML = `<div class="loading-screen"><div class="spinner"></div><p class="sub">در حال اتصال به سرور...</p></div>`;
   try {
