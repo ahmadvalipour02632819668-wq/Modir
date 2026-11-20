@@ -184,12 +184,13 @@ function setupPaymentScrollAnimation(root, unitMap) {
 
 async function viewDash(el) {
   const admin = !!S.me.is_admin;
-  let rep, managerResidencyUnits = [], fund = null, residentRequests = [];
+  let rep, managerResidencyUnits = [], fund = null, residentRequests = [], fundTransactions = [];
   if (admin) {
-    [rep, managerResidencyUnits, fund] = await Promise.all([
+    [rep, managerResidencyUnits, fund, fundTransactions] = await Promise.all([
       T('app_report', { p_year: S.y, p_month: S.m }),
       T('app_get_units'),
-      T('app_fund_summary', { p_year: S.y, p_month: S.m })
+      T('app_fund_summary', { p_year: S.y, p_month: S.m }),
+      T('app_get_transactions', { p_year: null, p_month: null, p_unit: null })
     ]);
   } else {
     [rep, residentRequests] = await Promise.all([
@@ -224,6 +225,12 @@ async function viewDash(el) {
 
   const rows = rep.rows || [];
   const unitCredits = rows.reduce((sum, row) => sum + Math.max(0, -(Number(row.remaining) || 0)), 0);
+  // Non-cash credit transfers are not part of the income ledger; approved payments already are.
+  const nonCashCreditTransfers = (fundTransactions || [])
+    .filter(tx => tx.tx_type === 'انتقال بستانکاری')
+    .reduce((sum, tx) => sum + (Number(tx.amount) || 0), 0);
+  const grossFundBalance = (Number(fund?.balance) || 0) + nonCashCreditTransfers;
+  const availableFundBalance = grossFundBalance - unitCredits;
   const unitMap = {};
   rows.forEach(r => {
     if (r.unit_no == null) return;
@@ -254,10 +261,10 @@ async function viewDash(el) {
       <div class="bank-card"><i class="shine"></i>
         <div style="display:flex;justify-content:space-between;align-items:center"><b style="font-size:15px">صندوق ساختمان</b><span style="color:#ffd27a;font-size:20px">★</span></div>
         <div class="bc-row"><span>موجودی کل صندوق (تومان)</span></div>
-        <div class="bc-row" style="margin-top:4px;justify-content:flex-start"><button class="eye" type="button">${ModirDashboardUi.EYE}</button><span class="bc-amt" data-count="${Number(fund.balance||0)}">${fmt(Number(fund.balance||0))}</span></div>
+        <div class="bc-row" style="margin-top:4px;justify-content:flex-start"><button class="eye" type="button">${ModirDashboardUi.EYE}</button><span class="bc-amt" data-count="${grossFundBalance}">${fmt(grossFundBalance)}</span></div>
         <div style="margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,255,255,.2);font-size:12px;line-height:2">
           <div class="bc-row"><span>بستانکاری واحدها</span><b>${fmt(unitCredits)}</b></div>
-          <div class="bc-row"><span>موجودی آزاد و قابل استفاده</span><b>${fmt(Number(fund.balance||0))}</b></div></div>
+          <div class="bc-row"><span>موجودی واقعی صندوق</span><b>${fmt(availableFundBalance)}</b></div></div>
         <div class="bc-row" style="margin-top:10px"><span></span><button class="pill" type="button" data-go="tx">گردش حساب</button></div>
       </div>
       <div class="bank-card soft" id="monthly-income-card"><i class="shine"></i>
