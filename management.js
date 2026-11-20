@@ -223,7 +223,7 @@ async function viewRates(el) {
   $('[data-fo-delete]', fixedCard).forEach(button => button.addEventListener('click', async () => {
     const x=activeFixed.find(v=>Number(v.id)===Number(button.dataset.foDelete)); if(!x)return;
     if(!await window.ModirModal.confirm('این هزینه از پایان ماه جاری متوقف شود؟ بدهی ماه‌های قبلی حفظ می‌شود.'))return;
-    const currentYm=TODAY.y*100+TODAY.m, endYm=Math.max(Number(x.start_ym),currentYm);
+    const currentYm=TODAY.y*100+TODAY.m, endYm=currentYm;
     try { await T('app_admin_delete_fixed_obligation',{p_id:Number(x.id),p_end_ym:endYm}); toast('هزینه از ماه بعد متوقف شد؛ بدهی‌های قبلی حفظ شدند'); go(S.view==='charge'?'charge':'settings'); }
     catch(err){showErr(err);}
   }));
