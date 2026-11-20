@@ -254,12 +254,11 @@ async function viewDash(el) {
     <div class="grid dashboard-money-grid" style="margin:14px 0 12px">
       <div class="bank-card"><i class="shine"></i>
         <div style="display:flex;justify-content:space-between;align-items:center"><b style="font-size:15px">صندوق ساختمان</b><span style="color:#ffd27a;font-size:20px">★</span></div>
-        <div class="bc-row"><span>موجودی واقعی صندوق (تومان)</span></div>
-        <div class="bc-row" style="margin-top:4px;justify-content:flex-start"><button class="eye" type="button">${ModirDashboardUi.EYE}</button><span class="bc-amt" data-count="${fund.balance}">${fmt(fund.balance)}</span></div>
+        <div class="bc-row"><span>موجودی کل صندوق (تومان)</span></div>
+        <div class="bc-row" style="margin-top:4px;justify-content:flex-start"><button class="eye" type="button">${ModirDashboardUi.EYE}</button><span class="bc-amt" data-count="${Number(fund.balance||0)+Number(fund.reserved_balance||0)}">${fmt(Number(fund.balance||0)+Number(fund.reserved_balance||0))}</span></div>
         <div style="margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,255,255,.2);font-size:12px;line-height:2">
-          <div class="bc-row"><span>بستانکاری رزروشده ساکنین</span><b>${fmt(fund.reserved_balance ?? 0)}</b></div>
-          <div class="bc-row"><span>موجودی آزاد و قابل استفاده</span><b>${fmt(fund.available_balance ?? fund.balance)}</b></div>
-        </div>
+          <div class="bc-row"><span>بستانکاری واحدها</span><b>${fmt(fund.reserved_balance ?? 0)}</b></div>
+          <div class="bc-row"><span>موجودی آزاد و قابل استفاده</span><b>${fmt((Number(fund.balance||0)+Number(fund.reserved_balance||0))-Number(fund.reserved_balance||0))}</b></div></div>
         <div class="bc-row" style="margin-top:10px"><span></span><button class="pill" type="button" data-go="tx">گردش حساب</button></div>
       </div>
       <div class="bank-card soft" id="monthly-income-card"><i class="shine"></i>
