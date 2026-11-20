@@ -239,6 +239,9 @@ async function viewDash(el) {
   const mapUnits = []; for (let i = 1; i <= (S.unitCount || 10); i++) { mapUnits.push(unitMap[i] || { unit_no: i, remaining: 0, current_due: 0, accounts: [], display_name: '-' }); }
   const floors = []; const orderedUnits = [...mapUnits].reverse(); for (let i = 0; i < orderedUnits.length; i += 4) floors.push(orderedUnits.slice(i, i + 4));
   const totalDebt = mapUnits.reduce((s, r) => s + Math.max(0, r.remaining), 0);
+  const creditBalance = Number(fund?.reserved_balance) || 0;
+  const realFundBalance = Number(fund?.balance) || 0;
+  const totalFundBalance = realFundBalance + creditBalance;
   const winBg = r => r.remaining <= 0 ? '#e9f8ef' : r.remaining > r.current_due ? '#fdeeee' : '#fff4e8';
 
   el.innerHTML = `
@@ -254,11 +257,11 @@ async function viewDash(el) {
     <div class="grid dashboard-money-grid" style="margin:14px 0 12px">
       <div class="bank-card"><i class="shine"></i>
         <div style="display:flex;justify-content:space-between;align-items:center"><b style="font-size:15px">صندوق ساختمان</b><span style="color:#ffd27a;font-size:20px">★</span></div>
-        <div class="bc-row"><span>موجودی واقعی صندوق (تومان)</span></div>
-        <div class="bc-row" style="margin-top:4px;justify-content:flex-start"><button class="eye" type="button">${ModirDashboardUi.EYE}</button><span class="bc-amt" data-count="${fund.balance}">${fmt(fund.balance)}</span></div>
+        <div class="bc-row"><span>موجودی کل صندوق (تومان)</span></div>
+        <div class="bc-row" style="margin-top:4px;justify-content:flex-start"><button class="eye" type="button">${ModirDashboardUi.EYE}</button><span class="bc-amt" data-count="${totalFundBalance}">${fmt(totalFundBalance)}</span></div>
         <div style="margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,255,255,.2);font-size:12px;line-height:2">
-          <div class="bc-row"><span>بستانکاری رزروشده ساکنین</span><b>${fmt(fund.reserved_balance ?? 0)}</b></div>
-          <div class="bc-row"><span>موجودی آزاد و قابل استفاده</span><b>${fmt(fund.available_balance ?? fund.balance)}</b></div>
+          <div class="bc-row"><span>مبلغ بستانکاری ساکنین</span><b>${fmt(creditBalance)}</b></div>
+          <div class="bc-row"><span>موجودی واقعی صندوق</span><b>${fmt(totalFundBalance - creditBalance)}</b></div>
         </div>
         <div class="bc-row" style="margin-top:10px"><span></span><button class="pill" type="button" data-go="tx">گردش حساب</button></div>
       </div>
