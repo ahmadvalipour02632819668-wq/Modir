@@ -615,7 +615,7 @@ function replyModal(r) {
             });
           }
         }
-        window.ModirBale.send(`💸 پرداخت جدید (بر اساس بدهی):\n\n👤 واحد ${selectedUnit} - ${isAdmin ? (selectedAccount?.full_name || selectedAccount?.occupancy || '') : S.me.full_name}\n💰 مبلغ: ${fmt(totalAmount)} تومان`);
+        window.ModirBale.send(`💸 پرداخت جدید (بر اساس بدهی):\n\n👤 واحد ${selectedUnit} - ${isAdmin ? (selectedAccount?.full_name || selectedAccount?.occupancy || '') : S.me.full_name}\n💰 مبلغ: ${fmt(totalAmount)} تومان`, base64Image);
       } else {
         const res = await T('app_process_payment_fifo', {
           p_total_amount: totalAmount, p_pay_date: $('#pf-d', m).value, p_ref_code: $('#pf-r', m).value,
@@ -623,7 +623,7 @@ function replyModal(r) {
           p_target_unit: isAdmin ? selectedUnit : null
         });
         if (!res.ok) throw new Error(res.error);
-        window.ModirBale.send(`💸 پرداخت جدید (مبلغ دلخواه):\n\n👤 واحد ${selectedUnit} - ${S.me.full_name}\n💰 مبلغ: ${fmt(totalAmount)} تومان`);
+        window.ModirBale.send(`💸 پرداخت جدید (مبلغ دلخواه):\n\n👤 واحد ${selectedUnit} - ${S.me.full_name}\n💰 مبلغ: ${fmt(totalAmount)} تومان`, base64Image);
       }
       if (!isAdmin) await window.ModirPush.send('payment_request_created', 'پرداخت جدید از واحد ' + selectedUnit, 'مبلغ ' + fmt(totalAmount) + ' تومان برای بررسی ثبت شد.');
       window.ModirModal.close(m);
