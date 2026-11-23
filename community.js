@@ -590,7 +590,7 @@ function replyModal(r) {
 
       if (currentTab === 'debts') {
         const selectedDebts = [];
-        $$$('.debt-row', m).forEach(row => {
+        $('.debt-row', m).forEach(row => {
           const cb = $('.debt-check', row);
           const amtInp = $('.debt-amount', row);
           const amount = toNum(amtInp.value);
