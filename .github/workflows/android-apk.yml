@@ -61,20 +61,20 @@ jobs:
           gradle = next((p for p in candidates if p.exists()), None)
           if gradle is None:
               raise SystemExit("Android app Gradle file not found")
-          data = gradle.read_text(encoding="utf-8")
-          if re.search(r"versionCode\\s+\\d+", data):
-              data = re.sub(r"versionCode\\s+\\d+", "versionCode 2", data, count=1)
-          elif re.search(r"versionCode\\s*=\\s*\\d+", data):
-              data = re.sub(r"versionCode\\s*=\\s*\\d+", "versionCode = 2", data, count=1)
-          else:
-              raise SystemExit("versionCode declaration not found")
-          if re.search(r"versionName\\s+['\\"][^'\\"]+['\\"]", data):
-              data = re.sub(r"versionName\\s+['\\"][^'\\"]+['\\"]", 'versionName "1.0.1"', data, count=1)
-          elif re.search(r"versionName\\s*=\\s*['\\"][^'\\"]+['\\"]", data):
-              data = re.sub(r"versionName\\s*=\\s*['\\"][^'\\"]+['\\"]", 'versionName = "1.0.1"', data, count=1)
-          else:
-              raise SystemExit("versionName declaration not found")
-          gradle.write_text(data, encoding="utf-8")
+          lines = gradle.read_text(encoding="utf-8").splitlines()
+          found_code = found_name = False
+          for i, line in enumerate(lines):
+              if re.match(r"\s*versionCode\s*(?:=\s*)?\d+", line):
+                  prefix = re.match(r"\s*", line).group(0)
+                  lines[i] = prefix + "versionCode 2" if "=" not in line else prefix + "versionCode = 2"
+                  found_code = True
+              elif re.match(r"\s*versionName\s*(?:=\s*)?['\"][^'\"]+['\"]", line):
+                  prefix = re.match(r"\s*", line).group(0)
+                  lines[i] = prefix + 'versionName "1.0.1"' if "=" not in line else prefix + 'versionName = "1.0.1"'
+                  found_name = True
+          if not found_code or not found_name:
+              raise SystemExit(f"Could not set Android version (versionCode={found_code}, versionName={found_name})")
+          gradle.write_text("\n".join(lines) + "\n", encoding="utf-8")
           print(f"Configured Android versionCode=2 versionName=1.0.1 in {gradle}")
           PY
 
