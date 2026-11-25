@@ -44,7 +44,7 @@ label{display:block;font-size:13px;font-weight:600;margin:15px 0 7px}input{width
 <button class="tab" data-tab="activity">گزارش فعالیت</button>
 <button class="tab" data-tab="system">سلامت سامانه</button>
 </nav>
-<section class="panel" id="requestsPanel"><div class="panel-head"><div><h3>درخواست‌های جدید</h3><div class="muted">تأیید یا رد درخواست ایجاد ساختمان</div></div><button class="refresh" id="refreshRequests">بروزرسانی</button></div><div id="requestsList" class="loading">در حال دریافت اطلاعات...</div></section>
+<section class="panel" id="requestsPanel"><div class="panel-head"><div><h3>درخواست‌های جدید</h3><div class="muted">تأیید یا رد درخواست ایجاد ساختمان</div></div><button class="refresh" id="enableSuperadminNotifications">فعال‌سازی اعلان</button><button class="refresh" id="refreshRequests">بروزرسانی</button></div><div id="requestsList" class="loading">در حال دریافت اطلاعات...</div></section>
 <section class="panel hidden" id="buildingsPanel"><div class="panel-head"><div><h3>فهرست ساختمان‌ها</h3><div class="muted" id="buildingMetricNote">مشاهده وضعیت، تعداد واحدها و تعداد حساب‌های هر ساختمان</div></div><div class="toolbar"><input id="buildingSearch" placeholder="جست‌وجوی نام یا نشانی"><select id="buildingFilter" style="width:auto;border:1px solid var(--line);border-radius:10px;padding:9px;background:#fff"><option value="all">همه وضعیت‌ها</option><option value="active">فعال</option><option value="suspended">تعلیق‌شده</option></select><button class="refresh" id="refreshBuildings">بروزرسانی</button></div></div><div id="buildingsList" class="loading">در حال دریافت اطلاعات...</div></section>
 <section class="panel hidden" id="managersPanel"><div class="panel-head"><div><h3>مدیریت مدیران</h3><div class="muted">وضعیت حساب مدیر هر ساختمان؛ بدون نمایش اطلاعات مالی ساکنان</div></div><div class="toolbar"><input id="managerSearch" placeholder="جست‌وجوی مدیر یا ساختمان"><button class="refresh" id="refreshManagers">بروزرسانی</button></div></div><div id="managersList" class="loading">در حال دریافت اطلاعات...</div></section>
 <section class="panel hidden" id="activityPanel"><div class="panel-head"><div><h3>گزارش فعالیت سوپرادمین</h3><div class="muted">سوابق تأیید، رد، تعلیق، فعال‌سازی و حذف ساختمان‌ها</div></div><button class="refresh" id="refreshActivity">بروزرسانی</button></div><div id="activityList" class="loading">در حال دریافت اطلاعات...</div></section>
@@ -63,7 +63,29 @@ function message(el,text,type){el.textContent=text;el.className='msg '+(type||''
 function showApp(){ $('loginView').classList.add('hidden');$('appView').classList.remove('hidden');$('adminName').textContent=account?.full_name||'مدیریت ساختمان‌ها و درخواست‌های جدید';}
 function showLogin(){ sessionStorage.removeItem('bm_superadmin_token');sessionStorage.removeItem('bm_superadmin_account');token=null;account=null;window.location.replace('index.html');}
 async function rpc(name,args){const {data,error}=await client.rpc(name,args);if(error)throw error;return data;}
-async function loadRequests(){ $('requestsList').className='loading';$('requestsList').textContent='در حال دریافت اطلاعات...';try{const data=await rpc('app_superadmin_list_requests',{p_token:token});requests=Array.isArray(data)?data:[];renderRequests();}catch(e){$('requestsList').className='msg error';$('requestsList').textContent=e.message||'دریافت درخواست‌ها ناموفق بود';}}
+let knownPendingRequestIds=null;
+async function loadRequests(){
+ $('requestsList').className='loading';$('requestsList').textContent='در حال دریافت اطلاعات...';
+ try{
+  const data=await rpc('app_superadmin_list_requests',{p_token:token});
+  requests=Array.isArray(data)?data:[];
+  const currentIds=new Set(requests.map(r=>String(r.id)));
+  if(knownPendingRequestIds){
+   const arrived=requests.filter(r=>!knownPendingRequestIds.has(String(r.id)));
+   if(arrived.length&&'Notification' in window&&Notification.permission==='granted'){
+    arrived.forEach(r=>{
+     const n=new Notification('درخواست جدید ایجاد ساختمان',{body:(r.building_name||'ساختمان جدید')+' · مدیر: '+(r.full_name||r.username||'نامشخص'),icon:'icone-192.png',tag:'building-registration-'+r.id});
+     n.onclick=()=>{window.focus();showSuperadminTab('requests');n.close();};
+    });
+    try{await document.getElementById('requestsPanel')?.scrollIntoView({behavior:'smooth',block:'nearest'});}catch(_){}
+   }
+  }
+  knownPendingRequestIds=currentIds;
+  renderRequests();
+  $('requestCount').textContent=fa(requests.length);
+  $('lastUpdate').textContent='آخرین بررسی درخواست‌ها: '+new Date().toLocaleTimeString('fa-IR',{hour:'2-digit',minute:'2-digit'});
+ }catch(e){$('requestsList').className='msg error';$('requestsList').textContent=e.message||'دریافت درخواست‌ها ناموفق بود';}
+}
 async function loadBuildings(){ $('buildingsList').className='loading';$('buildingsList').textContent='در حال دریافت اطلاعات...';try{const data=await rpc('app_superadmin_list_buildings',{p_token:token});buildings=Array.isArray(data)?data:[];renderBuildings();}catch(e){$('buildingsList').className='msg error';$('buildingsList').textContent=e.message||'دریافت ساختمان‌ها ناموفق بود';}}
 async function loadOverview(){try{overview=await rpc('app_superadmin_overview',{p_token:token})||{};renderOverview();}catch(e){$('healthGrid').innerHTML='<div class="msg error">دریافت وضعیت سامانه ناموفق بود: '+esc(e.message)+'</div>';}}
 async function loadManagers(){ $('managersList').className='loading';try{managers=await rpc('app_superadmin_list_managers',{p_token:token})||[];renderManagers();}catch(e){$('managersList').className='msg error';$('managersList').textContent=e.message||'دریافت مدیران ناموفق بود';}}
@@ -150,6 +172,17 @@ document.querySelectorAll('[data-stat]').forEach(tile=>tile.addEventListener('cl
   renderBuildings();
  }
 }));
+$('enableSuperadminNotifications')?.addEventListener('click',async()=>{
+ if(!('Notification' in window)){await appAlert('این مرورگر از اعلان‌های سیستمی پشتیبانی نمی‌کند.');return;}
+ try{
+  const permission=Notification.permission==='default'?await Notification.requestPermission():Notification.permission;
+  if(permission==='granted'){
+   await appAlert('اعلان‌های درخواست ساختمان فعال شد. تا زمانی که پنل سوپرادمین در مرورگر باز باشد، درخواست‌های جدید به‌صورت خودکار بررسی و اعلان می‌شوند.');
+  }else{
+   await appAlert('مجوز اعلان داده نشد. از تنظیمات مرورگر، اجازه اعلان این سایت را فعال کنید.');
+  }
+ }catch(error){await appAlert(error.message||'فعال‌سازی اعلان ناموفق بود');}
+});
 $('refreshRequests').addEventListener('click',loadAll);$('refreshBuildings').addEventListener('click',loadAll);$('refreshManagers').addEventListener('click',loadManagers);$('refreshActivity').addEventListener('click',loadAudit);$('refreshSystem').addEventListener('click',loadOverview);$('buildingSearch').addEventListener('input',renderBuildings);$('buildingFilter').addEventListener('change',renderBuildings);$('managerSearch').addEventListener('input',renderManagers);
 let backExitArmed=false,backExitTimer=null,logoutInProgress=false;
 async function performSuperadminLogout(){
@@ -186,6 +219,8 @@ token=sessionStorage.getItem('bm_superadmin_token');
 try{account=JSON.parse(sessionStorage.getItem('bm_superadmin_account')||'{}');}catch(e){account={};}
 if(!token){window.location.replace('index.html');return;}
 showApp();loadAll();
+// Keep pending building requests fresh while the superadmin panel remains open.
+setInterval(()=>{if(token&&!document.hidden)loadRequests();},30000);
 })();
 </script>
 </body></html>
