@@ -66,16 +66,16 @@ jobs:
           for i, line in enumerate(lines):
               if re.match(r"\s*versionCode\s*(?:=\s*)?\d+", line):
                   prefix = re.match(r"\s*", line).group(0)
-                  lines[i] = prefix + "versionCode 3" if "=" not in line else prefix + "versionCode = 3"
+                  lines[i] = prefix + "versionCode 4" if "=" not in line else prefix + "versionCode = 4"
                   found_code = True
               elif re.match(r"\s*versionName\s*(?:=\s*)?['\"][^'\"]+['\"]", line):
                   prefix = re.match(r"\s*", line).group(0)
-                  lines[i] = prefix + 'versionName "1.0.2"' if "=" not in line else prefix + 'versionName = "1.0.2"'
+                  lines[i] = prefix + 'versionName "1.0.3"' if "=" not in line else prefix + 'versionName = "1.0.3"'
                   found_name = True
           if not found_code or not found_name:
               raise SystemExit(f"Could not set Android version (versionCode={found_code}, versionName={found_name})")
           gradle.write_text("\n".join(lines) + "\n", encoding="utf-8")
-          print(f"Configured Android versionCode=3 versionName=1.0.2 in {gradle}")
+          print(f"Configured Android versionCode=4 versionName=1.0.3 in {gradle}")
           PY
 
       - name: Enable immersive navigation bar mode
