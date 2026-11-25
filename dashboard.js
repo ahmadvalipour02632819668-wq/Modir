@@ -346,29 +346,22 @@ async function viewDash(el) {
   setupPaymentScrollAnimation(el, unitMap);
   $('#go-pay')?.addEventListener('click', () => go('pay'));
   $('#go-profile')?.addEventListener('click', e => { e.preventDefault(); go('profile'); });
-  // Delegate unit clicks from the view root so taps on nested labels/finance chips
-  // are handled consistently after the dashboard is re-rendered.
-  el.addEventListener('click', event => {
-    const b = event.target instanceof Element ? event.target.closest('.win.animated-unit[data-u]') : null;
-    if (!b || !el.contains(b)) return;
-    event.preventDefault();
-    const uData = mapUnits.find(x => Number(x.unit_no) === Number(b.dataset.u));
-    if (!uData) return;
-    try {
-      const cardsHtml = uData.accounts.length ? uData.accounts.map(r => billCard(r, rep)).join('<hr style="border:0;border-top:1px dashed var(--line);margin:20px 0">') : '<p class="sub" style="text-align:center;padding:20px">حسابی برای این واحد ثبت نشده است.</p>';
-      const smsHtml = uData.accounts.map(r => r.phone ? ModirSms.smsBtn(r.phone, reminderText(r, rep), `پیامک به ${r.full_name || r.occupancy}`) : '').join('');
-      window.ModirModal.open(`
-        <div style="margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
-          <h2 style="margin:0">صورتحساب واحد ${fa(uData.unit_no)}</h2>
-          <div style="display:flex;gap:8px;flex-wrap:wrap">${smsHtml}</div>
-        </div>
-        ${cardsHtml}
-        <div style="margin-top:20px"><button class="btn lt sm" id="m-tx" type="button">تراکنش‌های این واحد</button></div>
-      `);
-    } catch (error) {
-      console.error('Could not open dashboard unit details:', error);
-      toast('باز کردن جزئیات واحد ناموفق بود: ' + (error?.message || 'خطای نامشخص'), true);
-    }
+  // Direct binding on map buttons keeps clicks independent of parent handlers.
+  $$('#building-map button.win[data-u]', el).forEach(button => {
+    button.onclick = event => {
+      event.preventDefault();
+      event.stopPropagation();
+      const uData = mapUnits.find(x => Number(x.unit_no) === Number(button.dataset.u));
+      if (!uData) { toast('اطلاعات این واحد پیدا نشد.', true); return; }
+      try {
+        const cardsHtml = uData.accounts.length ? uData.accounts.map(r => billCard(r, rep)).join('<hr style="border:0;border-top:1px dashed var(--line);margin:20px 0">') : '<p class="sub" style="text-align:center;padding:20px">حسابی برای این واحد ثبت نشده است.</p>';
+        const smsHtml = uData.accounts.map(r => r.phone ? ModirSms.smsBtn(r.phone, reminderText(r, rep), 'پیامک به ' + (r.full_name || r.occupancy)) : '').join('');
+        window.ModirModal.open('<div style="margin-bottom:20px"><h2>صورتحساب واحد ' + fa(uData.unit_no) + '</h2><div>' + smsHtml + '</div></div>' + cardsHtml + '<div style="margin-top:20px"><button class="btn lt sm" id="m-tx" type="button">تراکنش‌های این واحد</button></div>');
+      } catch (error) {
+        console.error('Could not open dashboard unit details:', error);
+        toast('خطا در نمایش جزئیات واحد: ' + (error?.message || 'خطای نامشخص'), true);
+      }
+    };
   });
 }
 
