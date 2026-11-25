@@ -114,7 +114,26 @@ function unitModal(u) {
   $('#unit-residency-save',m)?.addEventListener('click',async()=>{const b=$('#unit-residency-save',m),status=$('#unit-residency-status',m)?.value;if(!status||status==='pending'){toast('یکی از سه وضعیت سکونت را انتخاب کنید',true);return;}b.disabled=true;b.textContent='در حال بررسی و ثبت...';try{await T('app_admin_set_unit_residency',{p_unit_no:u.unit_no,p_residency_status:status});toast('وضعیت سکونت واحد تأیید شد');window.ModirModal.close(m);go('units');}catch(err){showErr(err);}finally{b.disabled=false;b.textContent='ثبت و تأیید وضعیت';}});
   $$('form.acc', m).forEach(f => {
     f.addEventListener('submit', async e => { e.preventDefault(); try { const startDate=normalizeJalaliDigits(f.elements.start_date_jalali.value); const dateParts=startDate.split('/'); if(dateParts.length!==3 || dateParts[0].length!==4 || dateParts[1].length!==2 || dateParts[2].length!==2 || dateParts.some(part=>!/^[0-9]+$/.test(part)) || Number(dateParts[1])<1 || Number(dateParts[1])>12 || Number(dateParts[2])<1 || Number(dateParts[2])>31) throw new Error('تاریخ شروع را به صورت سال/ماه/روز شمسی وارد کنید'); const startYm=Number(dateParts[0]+dateParts[1]); await T('app_admin_save_account', { p_id: f.dataset.id, p_unit_no: u.unit_no, p_username: f.elements.username.value, p_full_name: f.elements.full_name.value, p_phone: f.elements.phone.value, p_occupancy: f.elements.occupancy.value, p_is_primary: true, p_is_active: true, p_new_password: f.elements.pass.value || null, p_start_ym: startYm, p_start_date_jalali: startDate }); toast('اطلاعات و تاریخ شروع محاسبات ذخیره شد'); go('units'); } catch (err) { showErr(err); } });
-    $('[data-save-persons]', f)?.addEventListener('click', async () => { const input=f.elements.persons; const count=Number(input?.value); if(!Number.isInteger(count)||count<1||count>30){toast('تعداد نفرات باید عدد صحیح بین ۱ تا ۳۰ باشد',true);return;} const btn=$('[data-save-persons]',f); btn.disabled=true; try { const effective=jalaliToday(); const result=await T('app_admin_set_account_persons',{p_account_id:f.dataset.id,p_persons:count,p_effective_ym:effective.y*100+effective.m}); if(result?.ok===false) throw new Error(result.error||'ذخیره تعداد نفرات ناموفق بود'); toast('تعداد نفرات ذخیره شد'); go('units'); } catch(err){showErr(err);btn.disabled=false;} });
+    $('[data-save-persons]', f)?.addEventListener('click', async () => {
+       const input=f.elements.persons; const count=Number(input?.value);
+       if(!Number.isInteger(count)||count<1||count>30){toast('تعداد نفرات باید عدد صحیح بین ۱ تا ۳۰ باشد',true);return;}
+       const td=jalaliToday(), today=td.y+'/'+String(td.m).padStart(2,'0')+'/'+String(td.d).padStart(2,'0');
+       const dateModal=window.ModirModal.open('<h2>تاریخ شروع اعمال تغییر</h2><p class="sub">تعداد نفرات از ماهی که انتخاب می‌کنید در محاسبه سهم آب و گاز لحاظ می‌شود.</p>'+jalaliDatePicker('تاریخ شروع اعمال تغییر (شمسی)','persons_effective_date',today,'persons-effective-date')+'<div style="display:flex;gap:8px;margin-top:16px"><button type="button" class="btn sf" id="persons-effective-confirm">تأیید و ذخیره</button><button type="button" class="btn lt" id="persons-effective-cancel">انصراف</button></div>');
+       $('#persons-effective-cancel',dateModal)?.addEventListener('click',()=>window.ModirModal.close(dateModal));
+       $('#persons-effective-confirm',dateModal)?.addEventListener('click',async()=>{
+         const raw=normalizeJalaliDigits($('#persons-effective-date',dateModal)?.value||'');
+         const parts=raw.split('/');
+         if(parts.length!==3||parts[0].length!==4||parts[1].length!==2||parts[2].length!==2||parts.some(x=>!/^[0-9]+$/.test(x))){toast('تاریخ را به صورت سال/ماه/روز شمسی وارد کنید',true);return;}
+         const y=Number(parts[0]), mo=Number(parts[1]), day=Number(parts[2]);
+         if(mo<1||mo>12||day<1||day>jalaliMonthDays(y,mo)){toast('تاریخ شمسی معتبر نیست',true);return;}
+         const saveBtn=$('#persons-effective-confirm',dateModal); saveBtn.disabled=true;
+         try {
+           const result=await T('app_admin_set_account_persons',{p_account_id:f.dataset.id,p_persons:count,p_effective_ym:y*100+mo});
+           if(result?.ok===false)throw new Error(result.error||'ذخیره تعداد نفرات ناموفق بود');
+           window.ModirModal.close(dateModal); toast('تعداد نفرات از ماه انتخاب‌شده اعمال شد'); go('units');
+         } catch(err){showErr(err);saveBtn.disabled=false;}
+       });
+     });
     $('[data-reset]', f)?.addEvent('click', async () => { if (!await window.ModirModal.confirm('رمز عبور این کاربر بازنشانی شود؟')) return; try { const newPass = await T('app_admin_reset_password', { p_id: f.dataset.id }); await window.ModirModal.alert('رمز جدید: ' + newPass + '\n\nلطفاً به ساکن اطلاع دهید.'); toast('رمز بازنشانی شد'); } catch (err) { showErr(err); } });
     $('[data-archive]', f)?.addEventListener('click', async () => { const acc = activeAccounts.find(a => a.id == f.dataset.id); if (acc) await settleAccountModal(acc); });
   });
