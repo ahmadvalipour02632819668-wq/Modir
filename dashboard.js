@@ -57,6 +57,10 @@ function billCard(r, rep) {
   const hasExpenseOutstanding = id => !!debts && debts.some(d =>
     Number(d.amount) > 0 && d.category === 'expense:' + String(id)
   );
+  // Fixed monthly obligations use fixed:<obligation_id>, not expense:<transaction_id>.
+  const hasFixedOutstanding = id => !!debts && debts.some(d =>
+    Number(d.amount) > 0 && d.category === 'fixed:' + String(id)
+  );
   const categoryStatus = (amount, category, fallback) =>
     settlementStatus(amount, debts ? !hasOutstanding(category) : fallback);
   const chargeStatus = categoryStatus(chg, 'charge', r.ok_charge);
@@ -99,7 +103,7 @@ function billCard(r, rep) {
         <span>${repairStatus}</span>
       </div>
       ${park > 0 ? `<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px dashed var(--line)"><span>اجاره پارکینگ: <b>${money(park)}</b> تومان</span><span>${parkingStatus}</span></div>` : ''}
-      ${extraSettlements.map(({item:x}) => `<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 0;border-bottom:1px dashed var(--line)"><span>${esc(x.description || x.category_name || 'هزینه تسهیمی')}: <b>${money(x.amount)}</b> تومان</span><span>${settlementStatus(x.amount, debts ? !hasExpenseOutstanding(x.transaction_id) : Number(r.remaining) <= 0)}</span></div>`).join('')}
+      ${extraSettlements.map(({item:x}) => { const outstanding = x.obligation_id != null ? hasFixedOutstanding(x.obligation_id) : hasExpenseOutstanding(x.transaction_id); return `<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 0;border-bottom:1px dashed var(--line)"><span>${esc(x.description || x.category_name || 'هزینه تسهیمی')}: <b>${money(x.amount)}</b> تومان</span><span>${settlementStatus(x.amount, debts ? !outstanding : Number(r.remaining) <= 0)}</span></div>`; }).join('')}
     </div>
     <div style="background:var(--bg);padding:20px 24px;display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:16px;border-top:1px solid var(--line)";color:#000">
       <div><small style="color:var(--muted);display:block">بدهی قبلی</small><b style="color:#000">${money(prev)}</b> <span style="color:#000">تومان</span></div>
