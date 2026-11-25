@@ -2,6 +2,27 @@
 const PUSH_VAPID_PUBLIC_KEY = 'BMb3MKzCKqT82g57EkjMcb2b8pu3bH3UNmxZ5rtubHvXIM08iGJKOuFyYyaeH41UbbLQ5uXI2PGrgJa90u0mvzs';
 let pushServiceWorkerRegistration = null;
 let pushPromptShown = false;
+function getNativeLocalNotifications() {
+  const capacitor = window.Capacitor;
+  if (!capacitor?.isNativePlatform?.() || capacitor.getPlatform?.() !== 'android') return null;
+  return capacitor.Plugins?.LocalNotifications || null;
+}
+async function enableNativeNotifications(plugin) {
+  await plugin.createChannel({
+    id: 'building-updates',
+    name: 'اعلان‌های ساختمان',
+    description: 'اطلاعیه‌ها و پیام‌های مهم ساختمان',
+    importance: 5,
+    visibility: 1,
+    sound: 'default',
+    vibration: true
+  });
+  let permission = await plugin.checkPermissions();
+  if (permission.display !== 'granted') permission = await plugin.requestPermissions();
+  if (permission.display !== 'granted') {
+    throw new Error('اجازه اعلان در تنظیمات گوشی فعال نشده است.');
+  }
+}
 function pushBase64UrlToBytes(value) {
   const padding = '='.repeat((4 - value.length % 4) % 4);
   const raw = atob((value + padding).replace(/-/g, '+').replace(/_/g, '/'));
@@ -18,6 +39,11 @@ async function getPushServiceWorker() {
 }
 async function enableMobilePush() {
   if (!S.token) throw new Error('ابتدا وارد حساب شوید');
+  const nativeNotifications = getNativeLocalNotifications();
+  if (nativeNotifications) {
+    await enableNativeNotifications(nativeNotifications);
+    return true;
+  }
   if (!('Notification' in window)) throw new Error('مرورگر شما اعلان را پشتیبانی نمی‌کند');
   const permission = Notification.permission === 'default'
     ? await Notification.requestPermission()
@@ -56,23 +82,38 @@ async function detachPushSubscription(token) {
   });
   if (error) throw error;
 }
-function maybeAskForPushPermission() {
-  if (!S.token || !('Notification' in window) || pushPromptShown) return;
-  // Refresh a previously granted subscription after VAPID key rotation.
-  if (Notification.permission === 'granted') {
+async function maybeAskForPushPermission() {
+  const nativeNotifications = getNativeLocalNotifications();
+  if (!S.token || (!nativeNotifications && !('Notification' in window)) || pushPromptShown) return;
+  let currentPermission = 'default';
+  if (nativeNotifications) {
+    try {
+      currentPermission = (await nativeNotifications.checkPermissions()).display;
+    } catch (error) {
+      console.warn('Native notification permission check failed:', error);
+    }
+  } else {
+    currentPermission = Notification.permission;
+  }
+  // Refresh a previously granted web-push subscription after VAPID key rotation.
+  if (currentPermission === 'granted') {
     // Refresh silently in the background. A real cross-device conflict is
     // reported only when the user explicitly enables notifications.
     pushPromptShown = true;
-    enableMobilePush().catch(error => {
-      console.warn('Push subscription refresh failed:', error);
-    });
+    if (!nativeNotifications) {
+      enableMobilePush().catch(error => {
+        console.warn('Push subscription refresh failed:', error);
+      });
+    }
     return;
   }
   pushPromptShown = true;
-  const permissionBlocked = Notification.permission === 'denied';
-  const message = permissionBlocked
-    ? 'دسترسی اعلان‌ها در تنظیمات مرورگر مسدود شده است. برای فعال‌سازی، مجوز اعلان این سایت را از تنظیمات مرورگر روی اجازه قرار دهید.'
-    : 'برای دریافت اطلاعیه‌ها و پیام‌های مهم ساختمان، اجازه نمایش اعلان‌ها را صادر کنید.';
+  const permissionBlocked = currentPermission === 'denied' && !nativeNotifications;
+  const message = nativeNotifications
+    ? 'برای فعال‌سازی اعلان‌های Resident Manager، اجازه نمایش اعلان‌ها را در گوشی صادر کنید.'
+    : permissionBlocked
+      ? 'دسترسی اعلان‌ها در تنظیمات مرورگر مسدود شده است. برای فعال‌سازی، مجوز اعلان این سایت را از تنظیمات مرورگر روی اجازه قرار دهید.'
+      : 'برای دریافت اطلاعیه‌ها و پیام‌های مهم ساختمان، اجازه نمایش اعلان‌ها را صادر کنید.';
   const actionButton = permissionBlocked ? '' : '<button type="button" class="btn sf" id="allow-push-now" style="width:100%;margin-top:10px">اجازه می‌دهم</button>';
   const closeLabel = permissionBlocked ? 'متوجه شدم' : 'فعلاً نه';
   const prompt = window.ModirModal.open('<div style="text-align:center;padding:10px 4px"><div style="font-size:38px;margin-bottom:8px">🔔</div><h2 style="margin:0 0 8px">فعال‌سازی اعلان‌های ساختمان</h2><p class="sub" style="line-height:1.9">' + esc(message) + '</p>' + actionButton + '<button type="button" class="btn lt" id="skip-push-now" style="width:100%;margin-top:8px">' + closeLabel + '</button><p id="push-prompt-status" class="sub" style="margin:8px 0 0"></p></div>');
@@ -85,7 +126,9 @@ function maybeAskForPushPermission() {
     try {
       await enableMobilePush();
       prompt.remove();
-      toast('اعلان‌های موبایلی فعال شد');
+      toast(nativeNotifications
+        ? 'مجوز اعلان‌های گوشی فعال شد'
+        : 'اشتراک اعلان‌های موبایلی فعال شد');
     } catch (error) {
       if (status) status.textContent = error.message || 'فعال‌سازی اعلان‌ها ناموفق بود';
       button.disabled = false;
