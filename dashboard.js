@@ -1,4 +1,11 @@
 (function (window) {
+function settlementStatus(amount, settled) {
+  const value = Number(amount) || 0;
+  if (value <= 0) return '<span class="chip">—</span>';
+  return settled
+    ? '<span class="chip ok">پرداخت شده</span>'
+    : '<span class="chip no">پرداخت نشده</span>';
+}
 function billCard(r, rep) {
   // RPC JSON may arrive as an array or as a serialized JSON string; normalize before calculating shares.
   let rawExpenses = r.expenses;
