@@ -221,15 +221,21 @@ async function viewDash(el) {
     const debtByAccount = new Map();
     debtByUnit.flat().forEach(account => debtByAccount.set(String(account.account_id), account.debts || []));
     (rep.rows || []).forEach(row => {
-      row.debts = debtByAccount.get(String(row.account_id)) || [];
+      row.debts = debtByAccount.has(String(row.account_id))
+        ? debtByAccount.get(String(row.account_id))
+        : null;
     });
   } else {
-    [rep, residentRequests, residentDebts] = await Promise.all([
+    [rep, residentRequests] = await Promise.all([
       T('app_report', { p_year: S.y, p_month: S.m }),
-      T('app_get_payment_requests'),
-      T('app_get_user_debts', { p_today_ym: Number(S.y) * 100 + Number(S.m) })
+      T('app_get_payment_requests')
     ]);
-    if (rep.rows && rep.rows[0]) rep.rows[0].debts = Array.isArray(residentDebts) ? residentDebts : [];
+    try {
+      residentDebts = await T('app_get_user_debts', { p_today_ym: Number(S.y) * 100 + Number(S.m) });
+    } catch (error) {
+      console.warn('Could not load resident debt details:', error);
+    }
+    if (rep.rows && rep.rows[0] && Array.isArray(residentDebts)) rep.rows[0].debts = residentDebts;
   }
   const managerResidencyIssues = admin ? (managerResidencyUnits.length ? managerResidencyUnits.filter(u=>u.residency_issue) : [{unit_no:null,residency_issue:'هنوز واحدی برای ساختمان ثبت نشده است'}]) : [];
   const residencyWarning = managerResidencyIssues.length ? `<div class="card" style="margin-bottom:16px;border-color:var(--danger);background:var(--bg)"><b style="color:var(--danger)">ثبت هرگونه تراکنش مالی تا تعیین تکلیف و تأیید تمام واحدها مسدود است.</b><p class="sub" style="margin:8px 0 0">واحدهای نیازمند اقدام: ${managerResidencyIssues.map(u=>(u.unit_no?'واحد '+fa(u.unit_no)+': ':'')+esc(u.residency_issue)).join(' · ')}</p><button class="btn sf sm" style="margin-top:10px" data-go="units">تعیین وضعیت واحدها</button></div>` : '';
