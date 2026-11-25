@@ -134,7 +134,7 @@ function unitModal(u) {
          } catch(err){showErr(err);saveBtn.disabled=false;}
        });
      });
-    $('[data-reset]', f)?.addEvent('click', async () => { if (!await window.ModirModal.confirm('رمز عبور این کاربر بازنشانی شود؟')) return; try { const newPass = await T('app_admin_reset_password', { p_id: f.dataset.id }); await window.ModirModal.alert('رمز جدید: ' + newPass + '\n\nلطفاً به ساکن اطلاع دهید.'); toast('رمز بازنشانی شد'); } catch (err) { showErr(err); } });
+    $('[data-reset]', f)?.addEventListener('click', async () => { if (!await window.ModirModal.confirm('رمز عبور این کاربر بازنشانی شود؟')) return; try { const newPass = await T('app_admin_reset_password', { p_id: f.dataset.id }); await window.ModirModal.alert('رمز جدید: ' + newPass + '\n\nلطفاً به ساکن اطلاع دهید.'); toast('رمز بازنشانی شد'); } catch (err) { showErr(err); } });
     $('[data-archive]', f)?.addEventListener('click', async () => { const acc = activeAccounts.find(a => a.id == f.dataset.id); if (acc) await settleAccountModal(acc); });
   });
   Array.from(m.querySelectorAll('[data-opening]')).forEach(b => b.addEventListener('click', () => { const acc=u.accounts.find(a=>a.id===b.dataset.opening); if(acc) openingBalanceModal(acc); }));
