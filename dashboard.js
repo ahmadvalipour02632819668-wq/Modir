@@ -36,14 +36,27 @@ function billCard(r, rep) {
   const rem = Number(r.remaining) || 0;
 
   // Match Negin2: each bill category is settled only against payments recorded for that category.
-  const settlementStatus = (amount, isPaid) => amount <= 0 || isPaid
-    ? '<span class="chip ok">پرداخت شده</span>'
-    : '<span class="chip no">پرداخت نشده</span>';
-  const chargeStatus = settlementStatus(chg, r.ok_charge);
-  const waterStatus = settlementStatus(w, r.ok_water);
-  const gasStatus = settlementStatus(g, r.ok_gas);
-  const repairStatus = settlementStatus(rep_amt, r.ok_repair);
-  const parkingStatus = settlementStatus(park, r.ok_parking);
+  const debts = Array.isArray(r.debts) ? r.debts : null;
+  const hasOutstanding = category => !!debts && debts.some(d =>
+    Number(d.amount) > 0 && (
+      d.category === category ||
+      (String(d.category || '').startsWith('expense:') &&
+        expenseItems.some(x =>
+          String(x.transaction_id) === String(d.category).slice(8) &&
+          String(x.category_name || x.category || '').trim().toLowerCase() === category
+        ))
+    )
+  );
+  const hasExpenseOutstanding = id => !!debts && debts.some(d =>
+    Number(d.amount) > 0 && d.category === 'expense:' + String(id)
+  );
+  const categoryStatus = (amount, category, fallback) =>
+    settlementStatus(amount, debts ? !hasOutstanding(category) : fallback);
+  const chargeStatus = categoryStatus(chg, 'charge', r.ok_charge);
+  const waterStatus = categoryStatus(w, 'water', r.ok_water);
+  const gasStatus = categoryStatus(g, 'gas', r.ok_gas);
+  const repairStatus = categoryStatus(rep_amt, 'repair', r.ok_repair);
+  const parkingStatus = categoryStatus(park, 'parking', r.ok_parking);
   const extraSettlements = extraExpenses.map(item => ({ item }));
 
   return `
@@ -79,7 +92,7 @@ function billCard(r, rep) {
         <span>${repairStatus}</span>
       </div>
       ${park > 0 ? `<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px dashed var(--line)"><span>اجاره پارکینگ: <b>${money(park)}</b> تومان</span><span>${parkingStatus}</span></div>` : ''}
-      ${extraSettlements.map(({item:x}) => `<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 0;border-bottom:1px dashed var(--line)"><span>${esc(x.description || x.category_name || 'هزینه تسهیمی')}: <b>${money(x.amount)}</b> تومان</span><span>${settlementStatus(x.amount, Number(r.remaining) <= 0)}</span></div>`).join('')}
+      ${extraSettlements.map(({item:x}) => `<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 0;border-bottom:1px dashed var(--line)"><span>${esc(x.description || x.category_name || 'هزینه تسهیمی')}: <b>${money(x.amount)}</b> تومان</span><span>${settlementStatus(x.amount, debts ? !hasExpenseOutstanding(x.transaction_id) : Number(r.remaining) <= 0)}</span></div>`).join('')}
     </div>
     <div style="background:var(--bg);padding:20px 24px;display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:16px;border-top:1px solid var(--line)";color:#000">
       <div><small style="color:var(--muted);display:block">بدهی قبلی</small><b style="color:#000">${money(prev)}</b> <span style="color:#000">تومان</span></div>
@@ -185,6 +198,7 @@ function setupPaymentScrollAnimation(root, unitMap) {
 async function viewDash(el) {
   const admin = !!S.me.is_admin;
   let rep, managerResidencyUnits = [], fund = null, residentRequests = [], fundTransactions = [];
+  let residentDebts = null;
   if (admin) {
     [rep, managerResidencyUnits, fund, fundTransactions] = await Promise.all([
       T('app_report', { p_year: S.y, p_month: S.m }),
@@ -192,11 +206,30 @@ async function viewDash(el) {
       T('app_fund_summary', { p_year: S.y, p_month: S.m }),
       T('app_get_transactions', { p_year: null, p_month: null, p_unit: null })
     ]);
+    // Use the authoritative oldest-first debt allocation for each account.
+    const debtByUnit = await Promise.all((managerResidencyUnits || []).map(async u => {
+      try {
+        const result = await T('app_get_unit_account_debts_for_admin', {
+          p_unit_no: Number(u.unit_no), p_today_ym: Number(S.y) * 100 + Number(S.m)
+        });
+        return Array.isArray(result) ? result : [];
+      } catch (error) {
+        console.warn('Could not load unit debt details:', u.unit_no, error);
+        return [];
+      }
+    }));
+    const debtByAccount = new Map();
+    debtByUnit.flat().forEach(account => debtByAccount.set(String(account.account_id), account.debts || []));
+    (rep.rows || []).forEach(row => {
+      row.debts = debtByAccount.get(String(row.account_id)) || [];
+    });
   } else {
-    [rep, residentRequests] = await Promise.all([
+    [rep, residentRequests, residentDebts] = await Promise.all([
       T('app_report', { p_year: S.y, p_month: S.m }),
-      T('app_get_payment_requests')
+      T('app_get_payment_requests'),
+      T('app_get_user_debts', { p_today_ym: Number(S.y) * 100 + Number(S.m) })
     ]);
+    if (rep.rows && rep.rows[0]) rep.rows[0].debts = Array.isArray(residentDebts) ? residentDebts : [];
   }
   const managerResidencyIssues = admin ? (managerResidencyUnits.length ? managerResidencyUnits.filter(u=>u.residency_issue) : [{unit_no:null,residency_issue:'هنوز واحدی برای ساختمان ثبت نشده است'}]) : [];
   const residencyWarning = managerResidencyIssues.length ? `<div class="card" style="margin-bottom:16px;border-color:var(--danger);background:var(--bg)"><b style="color:var(--danger)">ثبت هرگونه تراکنش مالی تا تعیین تکلیف و تأیید تمام واحدها مسدود است.</b><p class="sub" style="margin:8px 0 0">واحدهای نیازمند اقدام: ${managerResidencyIssues.map(u=>(u.unit_no?'واحد '+fa(u.unit_no)+': ':'')+esc(u.residency_issue)).join(' · ')}</p><button class="btn sf sm" style="margin-top:10px" data-go="units">تعیین وضعیت واحدها</button></div>` : '';
