@@ -97,29 +97,49 @@ window.supabase = window.supabase || {
  <form id="modir-ai-compose"><input id="modir-ai-input" maxlength="1200" autocomplete="off" placeholder="سؤالتان را بنویسید..." aria-label="متن سؤال" required><button id="modir-ai-send" type="submit">ارسال</button></form>
 </section>
 
-<script src="./core.js?v=5" defer></script>
-<script src="./icons.js?v=1" defer></script>
-<script src="./theme-ui.js?v=1" defer></script>
-<script src="./timing.js?v=1" defer></script>
-<script src="./menu-ui.js?v=1" defer></script>
-<script src="./alert-ui.js?v=1" defer></script>
-<script src="./alert-center.js?v=2" defer></script>
-<script src="./sms.js?v=1" defer></script>
-<script src="./media.js?v=1" defer></script>
-<script src="./pwa.js?v=4" defer></script>
-<script src="./assistant.js?v=2" defer></script>
-<script src="./modal-ui.js?v=2" defer></script>
-<script src="./push.js?v=2" defer></script>
-<script src="./bale.js?v=1" defer></script>
-<script src="./shell.js?v=19" defer></script>
-<script src="./account-ui.js?v=1" defer></script>
-<script src="./period-ui.js?v=2" defer></script>
-<script src="./dashboard-ui.js?v=1" defer></script>
-<script src="./dashboard.js?v=19" defer></script>
-<script src="./community.js?v=9" defer></script>
-<script src="./finance.js?v=13" defer></script>
-<script src="./jalali-date.js?v=1" defer></script>
-<script src="./management.js?v=30" defer></script>
-<script src="./navigation.js?v=1" defer></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script>
+(function () {
+  var files = ['./core.js?v=5','./icons.js?v=1','./theme-ui.js?v=1','./timing.js?v=1','./menu-ui.js?v=1','./alert-ui.js?v=1','./alert-center.js?v=2','./sms.js?v=1','./media.js?v=1','./pwa.js?v=4','./assistant.js?v=2','./modal-ui.js?v=2','./push.js?v=2','./bale.js?v=1','./shell.js?v=19','./account-ui.js?v=1','./period-ui.js?v=2','./dashboard-ui.js?v=1','./dashboard.js?v=19','./community.js?v=9','./finance.js?v=13','./jalali-date.js?v=1','./management.js?v=30','./navigation.js?v=1'];
+  var index = 0;
+  function loadNext() {
+    if (index >= files.length) return;
+    var file = files[index++];
+    var script = document.createElement('script');
+    script.src = file;
+    script.async = false;
+    script.onload = loadNext;
+    script.onerror = function () {
+      var app = document.getElementById('app');
+      if (app) app.innerHTML = '<div style="direction:rtl;text-align:center;margin:12vh auto;padding:24px;max-width:560px;background:#fff;border-radius:18px;color:#23264a"><h2>بارگذاری برنامه متوقف شد</h2><p>فایل زیر دریافت نشد:</p><code style="direction:ltr;display:block;overflow-wrap:anywhere">' + file + '</code><button onclick="location.reload()" style="margin-top:18px;padding:10px 20px;border:0;border-radius:10px;background:#2d3463;color:white">بارگذاری مجدد</button></div>';
+    };
+    document.body.appendChild(script);
+  }
+  loadNext();
+})();
+</script>
 </body>
 </html>
