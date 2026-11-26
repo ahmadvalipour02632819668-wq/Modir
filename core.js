@@ -97,32 +97,53 @@ const S = {
 };
 localStorage.removeItem('bm_token');
 
-function isNetworkError(msg) { return !!msg && /failed to fetch|network|fetch|timeout|ECONN|ERR_NETWORK|ERR_INTERNET/i.test(String(msg)); }
+function isNetworkError(msg) { return !!msg && /failed to fetch|network|fetch|timeout|ECONN|ERR_NETWORK|ERR_INTERNET|ERR_CONNECTION|ERR_NAME_NOT_RESOLVED/i.test(String(msg)); }
+
+// Only retry read-only RPCs. Never retry login, payments, or financial writes automatically,
+// because a network failure can happen after the server has already processed a mutation.
+function isSafeReadRpc(fn) {
+  return /^(app_public_info|app_me|app_get_[a-z0-9_]+|app_admin_list_[a-z0-9_]+|app_superadmin_list_[a-z0-9_]+|app_manager_[a-z0-9_]*_summary|app_report|app_fund_summary|app_profile_avatar_get)$/.test(String(fn || ''));
+}
+const waitForNetworkRetry = ms => new Promise(resolve => setTimeout(resolve, ms));
+
 async function api(fn, args = {}) {
-  let timeoutId;
-  const controller = typeof AbortController === 'function' ? new AbortController() : null;
-  try {
-    const request = sb.rpc(fn, args, controller ? { signal: controller.signal } : undefined);
-    const timeout = new Promise((_, reject) => {
-      timeoutId = setTimeout(() => {
-        if (controller) controller.abort();
-        reject(new Error('NETWORK_ERROR'));
-      }, 20000);
-    });
-    const { data, error } = await Promise.race([request, timeout]);
-    if (error) {
-      const rawMsg = error.message || '';
-      if (rawMsg.includes('AUTH_REQUIRED')) { logout(true); throw new Error('AUTH_ERROR'); }
-      if (error.name === 'AbortError' || isNetworkError(rawMsg)) throw new Error('NETWORK_ERROR');
-      throw new Error(rawMsg.replace(/^AUTH_REQUIRED:\s*/, '') || 'خطا در ارتباط با سرور');
+  const maxAttempts = isSafeReadRpc(fn) ? 3 : 1;
+  let lastNetworkError = null;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    let timeoutId;
+    const controller = typeof AbortController === 'function' ? new AbortController() : null;
+    try {
+      const request = sb.rpc(fn, args, controller ? { signal: controller.signal } : undefined);
+      const timeout = new Promise((_, reject) => {
+        timeoutId = setTimeout(() => {
+          if (controller) controller.abort();
+          reject(new Error('NETWORK_ERROR'));
+        }, 15000);
+      });
+      const { data, error } = await Promise.race([request, timeout]);
+      if (error) {
+        const rawMsg = error.message || '';
+        if (rawMsg.includes('AUTH_REQUIRED')) { logout(true); throw new Error('AUTH_ERROR'); }
+        if (error.name === 'AbortError' || isNetworkError(rawMsg)) throw new Error('NETWORK_ERROR');
+        throw new Error(rawMsg.replace(/^AUTH_REQUIRED:\s*/, '') || 'خطا در ارتباط با سرور');
+      }
+      return data;
+    } catch (e) {
+      if (isNetworkError(e.message) || e.message === 'NETWORK_ERROR') {
+        lastNetworkError = e;
+        if (attempt < maxAttempts) {
+          await waitForNetworkRetry(attempt === 1 ? 700 : 1500);
+          continue;
+        }
+        throw new Error('NETWORK_ERROR');
+      }
+      throw e;
+    } finally {
+      if (timeoutId) clearTimeout(timeoutId);
     }
-    return data;
-  } catch (e) {
-    if (isNetworkError(e.message) || e.message === 'NETWORK_ERROR') throw new Error('NETWORK_ERROR');
-    throw e;
-  } finally {
-    if (timeoutId) clearTimeout(timeoutId);
   }
+  throw lastNetworkError || new Error('NETWORK_ERROR');
 }
 const T = (fn, args = {}) => api(fn, { p_token: S.token, ...args });
 
