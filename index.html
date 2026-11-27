@@ -186,7 +186,7 @@ window.supabase = window.supabase || {
         scope: new URL('./', document.baseURI).pathname
       });
       const worker = registration.installing || registration.waiting;
-      if (worker) {
+      if (worker && worker.state !== 'activated' && worker.state !== 'redundant') {
         await Promise.race([
           new Promise(resolve => {
             if (worker.state === 'activated' || worker.state === 'redundant') return resolve();
