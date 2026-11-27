@@ -43,9 +43,9 @@ if (!index.includes("./finance.js?v=13")) fail("finance.js cache version must ma
 if (index.includes("<style>")) fail("application CSS must stay in app.css");
 if (index.includes("html2canvas")) fail("html2canvas must not block initial page loading");
 
-const loader = index.match(/var files = \\[([\\s\\S]*?)\\];/);
+const loader = index.match(/var files = \[([\s\S]*?)\];/);
 const actual = loader
-  ? [...loader[1].matchAll(/['"]\\.\\/([^'"]+?)(?:\\?[^'"]*)?['"]/g)].map(match => match[1])
+  ? [...loader[1].matchAll(/['"]\.\/([^'"]+?)(?:\?[^'"]*)?['"]/g)].map(match => match[1])
   : [];
 if (JSON.stringify(actual) !== JSON.stringify(modules)) {
   fail(`JavaScript load order mismatch. Expected: ${modules.join(" -> ")}; found: ${actual.join(" -> ")}`);
