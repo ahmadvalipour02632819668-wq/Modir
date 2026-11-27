@@ -1,4 +1,4 @@
-const STATIC_CACHE = 'resident-manager-static-v2';
+const STATIC_CACHE = 'resident-manager-static-v1';
 const STATIC_PREFIX = 'resident-manager-static-';
 
 self.addEventListener('install', event => {
