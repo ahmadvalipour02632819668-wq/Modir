@@ -124,16 +124,56 @@ window.supabase = window.supabase || {
 <script>
 (function () {
   var files = ['./core.js?v=6','./icons.js?v=1','./theme-ui.js?v=1','./timing.js?v=1','./menu-ui.js?v=1','./alert-ui.js?v=1','./alert-center.js?v=2','./sms.js?v=1','./media.js?v=1','./pwa.js?v=4','./assistant.js?v=2','./modal-ui.js?v=2','./push.js?v=2','./bale.js?v=1','./shell.js?v=19','./account-ui.js?v=1','./period-ui.js?v=2','./dashboard-ui.js?v=1','./dashboard.js?v=19','./community.js?v=9','./finance.js?v=13','./jalali-date.js?v=1','./management.js?v=30','./navigation.js?v=2'];
-  files.forEach(function (file) {
+  function showBootFailure(file) {
+    var app = document.getElementById('app');
+    if (!app) return;
+    app.innerHTML = '<div style="direction:rtl;text-align:center;margin:12vh auto;padding:24px;max-width:560px;background:#fff;border-radius:18px;color:#23264a"><h2>بارگذاری برنامه متوقف شد</h2><p>دریافت فایل پس از چند تلاش ناموفق بود:</p><code style="direction:ltr;display:block;overflow-wrap:anywhere">' + file + '</code><p style="font-size:12px;color:#666">اتصال شبکه یا سرور فایل ممکن است موقتاً پاسخ نداده باشد.</p><button onclick="location.reload()" style="margin-top:18px;padding:10px 20px;border:0;border-radius:10px;background:#2d3463;color:white">بارگذاری مجدد</button></div>';
+  }
+
+  // Load scripts one at a time to avoid bursts of parallel requests on unstable networks.
+  // Retry transient CDN/network failures automatically before stopping application startup.
+  function loadScript(index, attempt) {
+    if (index >= files.length) return;
+    var file = files[index];
     var script = document.createElement('script');
-    script.src = file;
+    var settled = false;
+    var retryDelays = [700, 1600];
+    var timeoutId = window.setTimeout(function () {
+      fail();
+    }, 15000);
+
+    function cleanup() {
+      if (settled) return false;
+      settled = true;
+      window.clearTimeout(timeoutId);
+      script.onload = null;
+      script.onerror = null;
+      return true;
+    }
+
+    function fail() {
+      if (!cleanup()) return;
+      script.remove();
+      if (attempt < retryDelays.length) {
+        window.setTimeout(function () {
+          loadScript(index, attempt + 1);
+        }, retryDelays[attempt]);
+      } else {
+        showBootFailure(file);
+      }
+    }
+
     script.async = false;
-    script.onerror = function () {
-      var app = document.getElementById('app');
-      if (app) app.innerHTML = '<div style="direction:rtl;text-align:center;margin:12vh auto;padding:24px;max-width:560px;background:#fff;border-radius:18px;color:#23264a"><h2>بارگذاری برنامه متوقف شد</h2><p>فایل زیر دریافت نشد:</p><code style="direction:ltr;display:block;overflow-wrap:anywhere">' + file + '</code><button onclick="location.reload()" style="margin-top:18px;padding:10px 20px;border:0;border-radius:10px;background:#2d3463;color:white">بارگذاری مجدد</button></div>';
+    script.onload = function () {
+      if (!cleanup()) return;
+      loadScript(index + 1, 0);
     };
+    script.onerror = fail;
+    script.src = file + (file.indexOf('?') === -1 ? '?' : '&') + 'boot_attempt=' + attempt;
     document.body.appendChild(script);
-  });
+  }
+
+  loadScript(0, 0);
 })();
 </script>
 </body>
