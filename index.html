@@ -177,16 +177,6 @@ window.supabase = window.supabase || {
     document.body.appendChild(script);
   }
 
-  // Start downloading every local module together, but keep execution strictly ordered.
-  // The preload URL must exactly match the first dynamic script URL to reuse the response.
-  files.forEach(function (file) {
-    var preload = document.createElement('link');
-    preload.rel = 'preload';
-    preload.as = 'script';
-    preload.href = file + (file.indexOf('?') === -1 ? '?' : '&') + 'boot_attempt=0';
-    document.head.appendChild(preload);
-  });
-
   loadScript(0, 0);
 })();
 </script>
