@@ -72,7 +72,7 @@ self.addEventListener('fetch', event => {
 
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
-  if (!/\\.(?:js|css|webmanifest|png|svg|ico|woff2?)$/i.test(url.pathname)) return;
+  if (!/\.(?:js|css|webmanifest|png|svg|ico|woff2?)$/i.test(url.pathname)) return;
 
   // Loader retries add boot_attempt to the URL. Ignore that transient parameter
   // so each retry can use the same successfully cached static resource.
