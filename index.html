@@ -86,7 +86,7 @@ window.supabase = window.supabase || {
   window.setTimeout(function () {
     if (!app || app.childElementCount || app.textContent.trim()) return;
     app.innerHTML = '<div style="max-width:560px;margin:12vh auto;padding:24px;text-align:center;background:#fff;border-radius:18px;color:#23264a;font-family:Vazirmatn,sans-serif;direction:rtl"><h2>برنامه کامل بارگذاری نشد</h2><p>جزئیات تشخیصی برای شناسایی مشکل:</p><pre style="white-space:pre-wrap;direction:ltr;text-align:left;background:#f1f2f7;padding:12px;border-radius:10px;font-size:12px">' + String(bootError || 'فایل راه‌اندازی اجرا نشد یا بارگذاری آن کامل نشد.').replace(/[&<>"]/g, function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}) + '</pre><button type="button" onclick="location.reload()" style="padding:10px 20px;border:0;border-radius:10px;background:#2d3463;color:#fff">بارگذاری مجدد</button></div>';
-  }, 12000);
+  }, 180000);
 })();
 </script>
 
