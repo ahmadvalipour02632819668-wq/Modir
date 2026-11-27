@@ -43,6 +43,20 @@ jobs:
           mkdir -p www
           cp index.html *.js *.css *.png *.svg manifest.webmanifest www/
 
+      - name: Configure APK to use bundled local web assets
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          config_path = Path("capacitor.config.json")
+          config = json.loads(config_path.read_text(encoding="utf-8"))
+          # The website remains hosted remotely; the APK must load its bundled www files.
+          config.pop("server", None)
+          config_path.write_text(json.dumps(config, ensure_ascii=False, indent=2) + "\\n", encoding="utf-8")
+          print("APK configured to load local Capacitor assets (no remote server.url).")
+          PY
+
       - name: Install dependencies
         run: npm install
 
@@ -51,6 +65,27 @@ jobs:
 
       - name: Sync Capacitor
         run: npx cap sync android
+
+      - name: Verify bundled startup assets
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          public_dir = Path("android/app/src/main/assets/public")
+          required = ["index.html", "assistant.js", "core.js", "navigation.js", "app.css"]
+          missing = [name for name in required if not (public_dir / name).is_file()]
+          if missing:
+              raise SystemExit("Missing bundled APK assets: " + ", ".join(missing))
+
+          config_path = Path("android/app/src/main/assets/capacitor.config.json")
+          if not config_path.is_file():
+              raise SystemExit("Generated Capacitor config is missing")
+          config = json.loads(config_path.read_text(encoding="utf-8"))
+          if config.get("server", {}).get("url"):
+              raise SystemExit("APK still points to a remote server.url")
+          print("Verified local startup bundle:", ", ".join(required))
+          PY
 
       - name: Set Android release version
         run: |
