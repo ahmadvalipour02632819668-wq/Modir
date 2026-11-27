@@ -1,8 +1,41 @@
-const STATIC_CACHE = 'resident-manager-static-v1';
+const STATIC_CACHE = 'resident-manager-static-v2';
 const STATIC_PREFIX = 'resident-manager-static-';
 
+const PRECACHE_ASSETS = [
+  './core.js?v=6', './icons.js?v=1', './theme-ui.js?v=1', './timing.js?v=1',
+  './menu-ui.js?v=1', './alert-ui.js?v=1', './alert-center.js?v=2', './sms.js?v=1',
+  './media.js?v=1', './pwa.js?v=4', './assistant.js?v=2', './modal-ui.js?v=2',
+  './push.js?v=2', './bale.js?v=1', './shell.js?v=19', './account-ui.js?v=1',
+  './period-ui.js?v=2', './dashboard-ui.js?v=1', './dashboard.js?v=19',
+  './community.js?v=9', './finance.js?v=13', './jalali-date.js?v=1',
+  './management.js?v=30', './navigation.js?v=3', './app.css?v=3',
+  './manifest.webmanifest?v=5', './icone-192.png', './icone-512.png', './icone.png'
+];
+
 self.addEventListener('install', event => {
-  self.skipWaiting();
+  event.waitUntil((async () => {
+    const cache = await caches.open(STATIC_CACHE);
+    for (const asset of PRECACHE_ASSETS) {
+      const url = new URL(asset, self.registration.scope);
+      let lastError = null;
+      for (let attempt = 0; attempt < 3; attempt++) {
+        try {
+          const response = await fetch(new Request(url.href, {
+            method: 'GET', cache: 'reload', credentials: 'same-origin'
+          }));
+          if (!response.ok) throw new Error('Precache failed: ' + response.status + ' ' + url.pathname);
+          await cache.put(url.href, response.clone());
+          lastError = null;
+          break;
+        } catch (error) {
+          lastError = error;
+          if (attempt < 2) await new Promise(resolve => setTimeout(resolve, 700 * (attempt + 1)));
+        }
+      }
+      if (lastError) throw lastError;
+    }
+    await self.skipWaiting();
+  })());
 });
 
 self.addEventListener('activate', event => {
