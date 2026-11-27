@@ -1,5 +1,19 @@
-self.addEventListener('install', event => { self.skipWaiting(); });
-self.addEventListener('activate', event => { event.waitUntil(self.clients.claim()); });
+const STATIC_CACHE = 'resident-manager-static-v1';
+const STATIC_PREFIX = 'resident-manager-static-';
+
+self.addEventListener('install', event => {
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', event => {
+  event.waitUntil((async () => {
+    const names = await caches.keys();
+    await Promise.all(names
+      .filter(name => name.startsWith(STATIC_PREFIX) && name !== STATIC_CACHE)
+      .map(name => caches.delete(name)));
+    await self.clients.claim();
+  })());
+});
 
 function safeNotificationTarget(value) {
   try {
@@ -50,12 +64,43 @@ self.addEventListener('notificationclick', event => {
   })());
 });
 
-// Pass network requests through so the service worker also provides
-// the fetch capability expected by Chromium's PWA installation checks.
+// Cache only same-origin, versioned static resources. APIs, authentication,
+// navigation documents and cross-origin requests always remain network-only.
 self.addEventListener('fetch', event => {
-  if (event.request.method !== 'GET') return;
-  // Keep the PWA fetch handler for same-origin installability checks only.
-  // Let cross-origin assets and APIs bypass this worker entirely.
-  if (new URL(event.request.url).origin !== self.location.origin) return;
-  event.respondWith(fetch(event.request));
+  const request = event.request;
+  if (request.method !== 'GET') return;
+
+  const url = new URL(request.url);
+  if (url.origin !== self.location.origin) return;
+  if (!/\\.(?:js|css|webmanifest|png|svg|ico|woff2?)$/i.test(url.pathname)) return;
+
+  // Loader retries add boot_attempt to the URL. Ignore that transient parameter
+  // so each retry can use the same successfully cached static resource.
+  const cacheUrl = new URL(url.href);
+  cacheUrl.searchParams.delete('boot_attempt');
+  const cacheRequest = new Request(cacheUrl.href, {
+    method: 'GET',
+    credentials: 'same-origin',
+    headers: request.headers
+  });
+
+  event.respondWith((async () => {
+    const cache = await caches.open(STATIC_CACHE);
+    try {
+      const response = await fetch(request);
+      if (response && response.ok) {
+        event.waitUntil(cache.put(cacheRequest, response.clone()));
+        return response;
+      }
+      if (response && response.status >= 500) {
+        const cached = await cache.match(cacheRequest);
+        if (cached) return cached;
+      }
+      return response;
+    } catch (error) {
+      const cached = await cache.match(cacheRequest);
+      if (cached) return cached;
+      throw error;
+    }
+  })());
 });
