@@ -1,6 +1,26 @@
 
+// Read browser storage defensively: corrupted or unavailable WebView storage must not stop app startup.
+function safeStorageRead(storageName, key) {
+  try { return window[storageName].getItem(key); }
+  catch (error) { console.warn('Storage read unavailable:', storageName, key, error); return null; }
+}
+function safeStorageRemove(storageName, key) {
+  try { window[storageName].removeItem(key); }
+  catch (error) { console.warn('Storage cleanup unavailable:', storageName, key, error); }
+}
+function safeSessionJSON(key, fallback = null) {
+  const raw = safeStorageRead('sessionStorage', key);
+  if (raw == null || raw === '') return fallback;
+  try { return JSON.parse(raw); }
+  catch (error) {
+    console.warn('Invalid saved session data; clearing:', key, error);
+    safeStorageRemove('sessionStorage', key);
+    return fallback;
+  }
+}
+
 // Apply Theme from LocalStorage
-const savedTheme = localStorage.getItem('bm_theme') || 'default';
+const savedTheme = safeStorageRead('localStorage', 'bm_theme') || 'default';
 if (savedTheme !== 'default') document.documentElement.setAttribute('data-theme', savedTheme);
 
 const SUPABASE_URL = 'https://fvhzshtgtkqzrgmblczh.supabase.co';
@@ -91,11 +111,11 @@ const attachNumericInput = (...sels) => attachNumericInputIn(document, ...sels);
 
 const S = {
   unitCount: 10,
-  token: sessionStorage.getItem('bm_token'),
-  me: JSON.parse(sessionStorage.getItem('bm_me') || 'null'),
+  token: safeStorageRead('sessionStorage', 'bm_token'),
+  me: safeSessionJSON('bm_me', null),
   view: 'dash', y: TODAY.y, m: TODAY.m, building: 'مجتمع نگین ۲', txFilter: null, renderId: 0, lastBaleError: '',
 };
-localStorage.removeItem('bm_token');
+safeStorageRemove('localStorage', 'bm_token');
 
 function isNetworkError(msg) { return !!msg && /failed to fetch|network|fetch|timeout|ECONN|ERR_NETWORK|ERR_INTERNET|ERR_CONNECTION|ERR_NAME_NOT_RESOLVED/i.test(String(msg)); }
 
