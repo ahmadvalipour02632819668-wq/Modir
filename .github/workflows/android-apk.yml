@@ -53,7 +53,7 @@ jobs:
           config = json.loads(config_path.read_text(encoding="utf-8"))
           # The website remains hosted remotely; the APK must load its bundled www files.
           config.pop("server", None)
-          config_path.write_text(json.dumps(config, ensure_ascii=False, indent=2) + "\\n", encoding="utf-8")
+          config_path.write_text(json.dumps(config, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
           print("APK configured to load local Capacitor assets (no remote server.url).")
           PY
 
