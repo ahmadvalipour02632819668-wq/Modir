@@ -41,3 +41,5 @@ document.addEventListener('visibilitychange', () => { if (document.visibilitySta
 document.addEventListener('click', e => { if (!e.target.closest('.menu-dropdown')) { $('#main-menu')?.classList.remove('show'); } });
 if (S.token) renderShell(); else renderLogin();
 })();
+
+// Deployment refresh: force GitHub Pages and browser caches to fetch the current navigation bundle.
