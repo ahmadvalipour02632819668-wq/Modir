@@ -139,7 +139,11 @@ window.supabase = window.supabase || {
     var settled = false;
     var retryDelays = [700, 1600];
     var timeoutId = window.setTimeout(function () {
-      fail();
+      // A timed-out classic script may already have executed before its load event was lost.
+      // Do not inject it a second time: top-level lexical declarations would then collide.
+      if (!cleanup()) return;
+      script.remove();
+      showBootFailure(file);
     }, 15000);
 
     function cleanup() {
