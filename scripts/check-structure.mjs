@@ -36,22 +36,23 @@ const modules = [
   "navigation.js",
 ];
 
-if (!index.includes("./community.js?v=4")) fail("community.js cache version must be refreshed after modal API migration");
-if (!index.includes('href="./app.css?v=1"')) fail("index.html must load app.css");
+if (!index.includes("./community.js?v=9")) fail("community.js cache version must match the current modal API");
+if (!index.includes('href="./app.css?v=3"')) fail("index.html must load the current app.css asset");
 if (index.includes("./app.js")) fail("obsolete monolithic app.js reference remains");
-if (!index.includes("./finance.js?v=12")) fail("finance.js cache version must be refreshed after selector fixes");
+if (!index.includes("./finance.js?v=13")) fail("finance.js cache version must match the current finance code");
 if (index.includes("<style>")) fail("application CSS must stay in app.css");
 if (index.includes("html2canvas")) fail("html2canvas must not block initial page loading");
 
-const actual = [...index.matchAll(/<script\s+src=["']\.\/([^"'?]+)(?:\?[^"']*)?["']/g)]
-  .map((match) => match[1])
-  .filter((name) => modules.includes(name));
+const loader = index.match(/var files = \\[([\\s\\S]*?)\\];/);
+const actual = loader
+  ? [...loader[1].matchAll(/['"]\\.\\/([^'"]+?)(?:\\?[^'"]*)?['"]/g)].map(match => match[1])
+  : [];
 if (JSON.stringify(actual) !== JSON.stringify(modules)) {
   fail(`JavaScript load order mismatch. Expected: ${modules.join(" -> ")}; found: ${actual.join(" -> ")}`);
 }
-const localScriptTags = [...index.matchAll(/<script\s+src=["']\.\/[^"']+["'][^>]*>/g)].map((match) => match[0]);
-if (localScriptTags.length !== modules.length || localScriptTags.some((tag) => !/\bdefer\b/.test(tag) || /\basync\b/.test(tag))) {
-  fail("all ordered local JavaScript files must use defer and must not use async");
+if (!index.includes("script.async = false") || !index.includes("function loadScript(index, attempt)") ||
+    !index.includes("retryDelays = [1500, 4000, 8000]")) {
+  fail("application modules must use the sequential retrying boot loader");
 }
 
 for (const file of modules) {
@@ -96,7 +97,7 @@ if (modalConsumers.some(source => /\bmodal\s*\(|\bcloseModal\s*\(/.test(source))
     !managementSource.includes("window.ModirModal.open(") || !financeSource.includes("window.ModirModal.open(") ||
     !dashboardSourceForModals.includes("window.ModirModal.open(") ||
     !managementSource.includes("window.ModirModal.close(") ||
-    !index.includes("./modal-ui.js?v=2") || !index.includes("./push.js?v=1")) {
+    !index.includes("./modal-ui.js?v=2") || !index.includes("./push.js?v=2")) {
   fail("all modal consumers must use the explicitly loaded ModirModal API");
 }
 if (!managementSource.includes("S.view === 'charge' ? Promise.resolve({}) : T('app_get_settings')") ||
@@ -137,7 +138,7 @@ if (coreSource.includes("function debounce(") || !timingSource.includes("window.
 if (!coreSource.includes("controller.abort()") ||
     !coreSource.includes("sb.rpc(fn, args, controller ? { signal: controller.signal } : undefined)") ||
     !coreSource.includes("error.name === 'AbortError' || isNetworkError(rawMsg)") ||
-    !index.includes("./core.js?v=4") ||
+    !index.includes("./core.js?v=6") ||
     !index.includes("rpc: function (name, args, options)") ||
     !index.includes("signal: options && options.signal")) {
   fail("RPC timeout must abort the underlying fetch and core.js cache must be refreshed");
@@ -171,7 +172,7 @@ if (/(^|[^$])\$\([^)]*\)\s*\.forEach/.test(financeSource) || financeSource.inclu
 }
 
 const serviceWorkerSource = read("sw.js");
-if (!serviceWorkerSource.includes("new URL(event.request.url).origin !== self.location.origin")) {
+if (!serviceWorkerSource.includes("url.origin !== self.location.origin")) {
   fail("service worker must not intercept cross-origin GET requests");
 }
 
