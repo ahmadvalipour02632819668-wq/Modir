@@ -391,8 +391,8 @@ async function renderPollsInAnnouncements(el) {
       <label class="f">عنوان نظرسنجی
         <input id="poll-title" maxlength="180" required placeholder="مثلاً انتخاب زمان نظافت راه‌پله">
       </label>
-      <label class="f">توضیحات (اختیاری)
-        <textarea id="poll-description" rows="2" maxlength="1000"></textarea>
+      <label class="f">توضیحات <span style="color:var(--danger,#d33)">*</span>
+        <textarea id="poll-description" rows="2" maxlength="1000" required placeholder="توضیحات نظرسنجی را وارد کنید"></textarea>
       </label>
       <label class="f">گزینه‌ها (هر گزینه در یک خط؛ حداقل ۲ گزینه)
         <textarea id="poll-options" rows="4" required placeholder="شنبه&#10;یکشنبه&#10;دوشنبه"></textarea>
@@ -485,6 +485,7 @@ async function renderPollsInAnnouncements(el) {
       e.preventDefault();
       const title = $('#poll-title').value.trim();
       const description = $('#poll-description').value.trim();
+      if (!description) { toast('لطفاً توضیحات نظرسنجی را وارد کنید.', true); $('#poll-description').focus(); return; }
       const options = $('#poll-options').value.split(/\r?\n/).map(x => x.trim()).filter(Boolean);
       if (options.length < 2) { toast('حداقل دو گزینه وارد کنید', true); return; }
       if (options.length > 20) { toast('حداکثر ۲۰ گزینه می‌توانید ثبت کنید', true); return; }
