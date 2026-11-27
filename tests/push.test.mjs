@@ -23,7 +23,7 @@ test("does not send or detach push subscriptions without an authenticated sessio
   const push = loadPush();
   assert.equal(await push.send("event", "title", "body"), null);
   assert.equal(await push.detachSubscription(null), undefined);
-  assert.equal(push.maybeAskForPermission(), undefined);
+  assert.equal(await push.maybeAskForPermission(), undefined);
 });
 
 test("requires a session before enabling mobile push", async () => {
