@@ -123,7 +123,7 @@ window.supabase = window.supabase || {
 
 <script>
 (function () {
-  var files = ['./core.js?v=6','./icons.js?v=1','./theme-ui.js?v=1','./timing.js?v=1','./menu-ui.js?v=1','./alert-ui.js?v=1','./alert-center.js?v=2','./sms.js?v=1','./media.js?v=1','./pwa.js?v=4','./assistant.js?v=2','./modal-ui.js?v=2','./push.js?v=2','./bale.js?v=1','./shell.js?v=19','./account-ui.js?v=1','./period-ui.js?v=2','./dashboard-ui.js?v=1','./dashboard.js?v=19','./community.js?v=9','./finance.js?v=13','./jalali-date.js?v=1','./management.js?v=30','./navigation.js?v=2'];
+  var files = ['./core.js?v=6','./icons.js?v=1','./theme-ui.js?v=1','./timing.js?v=1','./menu-ui.js?v=1','./alert-ui.js?v=1','./alert-center.js?v=2','./sms.js?v=1','./media.js?v=1','./pwa.js?v=4','./assistant.js?v=2','./modal-ui.js?v=2','./push.js?v=2','./bale.js?v=1','./shell.js?v=19','./account-ui.js?v=1','./period-ui.js?v=2','./dashboard-ui.js?v=1','./dashboard.js?v=19','./community.js?v=9','./finance.js?v=13','./jalali-date.js?v=1','./management.js?v=30','./navigation.js?v=3'];
   function showBootFailure(file) {
     var app = document.getElementById('app');
     if (!app) return;
@@ -137,7 +137,7 @@ window.supabase = window.supabase || {
     var file = files[index];
     var script = document.createElement('script');
     var settled = false;
-    var retryDelays = [700, 1600];
+    var retryDelays = [1500, 4000, 8000];
     var timeoutId = window.setTimeout(function () {
       // A timed-out classic script may already have executed before its load event was lost.
       // Do not inject it a second time: top-level lexical declarations would then collide.
