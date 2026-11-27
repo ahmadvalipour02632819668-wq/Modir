@@ -177,36 +177,7 @@ window.supabase = window.supabase || {
     document.body.appendChild(script);
   }
 
-  // Register and warm the service-worker cache before requesting application scripts.
-  // The first successful download is stored so later startup does not depend on a fresh route.
-  async function prepareServiceWorker() {
-    if (!('serviceWorker' in navigator) || !window.isSecureContext) return;
-    try {
-      const registration = await navigator.serviceWorker.register(new URL('./sw.js', document.baseURI), {
-        scope: new URL('./', document.baseURI).pathname
-      });
-      const worker = registration.installing || registration.waiting;
-      if (worker && worker.state !== 'activated' && worker.state !== 'redundant') {
-        await Promise.race([
-          new Promise(resolve => {
-            if (worker.state === 'activated' || worker.state === 'redundant') return resolve();
-            worker.addEventListener('statechange', () => {
-              if (worker.state === 'activated' || worker.state === 'redundant') resolve();
-            });
-          }),
-          new Promise(resolve => window.setTimeout(resolve, 15000))
-        ]);
-      } else {
-        await Promise.race([
-          navigator.serviceWorker.ready,
-          new Promise(resolve => window.setTimeout(resolve, 8000))
-        ]);
-      }
-    } catch (error) {
-      console.warn('Early service-worker preparation failed; using network loader:', error);
-    }
-  }
-  prepareServiceWorker().finally(function () { loadScript(0, 0); });
+  loadScript(0, 0);
 })();
 </script>
 </body>
