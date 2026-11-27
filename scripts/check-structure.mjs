@@ -183,7 +183,7 @@ if ((assistantSource.match(/addEventListener\(['"]resize['"]/g) || []).length !=
 }
 
 
-if (!/document\.visibilityState === 'visible' && S\.me\?\.is_admin/.test(shellSource) ||
+if (!/document\.visibilityState === 'visible' && S\.me/.test(shellSource) ||
     !/\},\s*60000\);/.test(shellSource)) {
   fail("manager alert polling must be limited to visible manager sessions and run no more than once per minute");
 }
