@@ -143,7 +143,7 @@ window.supabase = window.supabase || {
       : file + (file.indexOf('?') === -1 ? '?' : '&') + 'boot_attempt=' + attempt;
     var script = document.createElement('script');
     var settled = false;
-    var retryDelays = [1200, 2500, 5000];
+    var retryDelays = [1500, 4000, 8000];
     var timeoutId = window.setTimeout(function () {
       if (!cleanup()) return;
       script.remove();
