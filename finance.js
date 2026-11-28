@@ -245,7 +245,7 @@ function txModal(t, units) {
 function reportPaymentStatus(baseAmount, category, sharedItems, transactions, row, ym) {
   const accountMatches = t =>
     Number(t.ym) === Number(ym) &&
-    (String(t.account_id || '') === String(row.account_id || '') ||
+    ((row.account_id && t.account_id && String(t.account_id) === String(row.account_id)) ||
       (!t.account_id && Number(t.unit_no) === Number(row.unit_no) &&
        String(t.occupancy || '') === String(row.occupancy || ''))) &&
     ['درآمد','انتقال بستانکاری','انتقال مانده مالک'].includes(t.tx_type);
