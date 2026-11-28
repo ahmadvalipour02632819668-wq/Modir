@@ -242,6 +242,27 @@ function txModal(t, units) {
     }catch(e){showErr(e);}
   });
 }
+function reportPaymentStatus(baseAmount, category, sharedItems, transactions, row, ym) {
+  const accountMatches = t =>
+    Number(t.ym) === Number(ym) &&
+    (String(t.account_id || '') === String(row.account_id || '') ||
+      (!t.account_id && Number(t.unit_no) === Number(row.unit_no) &&
+       String(t.occupancy || '') === String(row.occupancy || ''))) &&
+    ['درآمد','انتقال بستانکاری','انتقال مانده مالک'].includes(t.tx_type);
+  const sumPaid = predicate => (transactions || [])
+    .filter(t => accountMatches(t) && predicate(t))
+    .reduce((total, t) => total + (Number(t.amount) || 0), 0);
+  const base = Math.max(0, Number(baseAmount) || 0);
+  const basePaid = Math.max(0, sumPaid(t => String(t.category || '') === category));
+  const shared = sharedItems || [];
+  const sharedDue = shared.reduce((total, item) => total + Math.max(0, Number(item.amount) || 0), 0);
+  const sharedPaid = shared.reduce((total, item) =>
+    total + Math.max(0, sumPaid(t => String(t.category || '') === 'expense:' + item.id)), 0);
+  const amount = base + sharedDue;
+  const paid = Math.min(amount, basePaid + sharedPaid);
+  return { amount, paid, complete: amount <= 0 || paid >= amount, partial: paid > 0 && paid < amount };
+}
+
 function exportCsv(rows) {
   const sep = ';'; const q = v => `"${String(v ?? '').replace(/"/g, '""')}"`;
   const head = ['تاریخ', 'سال', 'ماه', 'واحد', 'نوع', 'محل', 'شرح', 'مبلغ', 'نوع سکونت'];
@@ -280,12 +301,10 @@ async function viewReport(el) {
             });
             const items=c=>shared.filter(x=>x.cat===c),sum=a=>a.reduce((n,x)=>n+x.amount,0);
             const status=(base,paid,cat)=>({amount:(Number(base)||0)+sum(items(cat)),paid:(Number(base)<=0||!!paid)&&items(cat).every(x=>(tx||[]).filter(t=>Number(t.ym)===y*100+m&&String(t.account_id||'')===String(r.account_id||'')&&t.tx_type==='درآمد'&&String(t.category||'')==='expense:'+x.id).reduce((n,t)=>n+(Number(t.amount)||0),0)>=x.amount)});
-            const c=status(r.charge,r.ok_charge,'charge'),w=status(r.water,r.ok_water,'water'),g=status(r.gas,r.ok_gas,'gas'),p=status(r.repair,r.ok_repair,'repair');
-            const paid=(tx||[]).filter(t=>t.tx_type==='درآمد'&&t.source==='payment'&&Number(t.ym)===y*100+m&&(String(t.account_id||'')===String(r.account_id||'')||(!t.account_id&&Number(t.unit_no)===Number(r.unit_no)))).reduce((n,t)=>n+(Number(t.amount)||0),0);
-            const fullyPaid=paid>=Math.max(0,c.amount+w.amount+g.amount+p.amount+Number(r.prev_debt||0));
+            const c=reportPaymentStatus(r.charge,'charge',items('charge'),tx,r,y*100+m),w=reportPaymentStatus(r.water,'water',items('water'),tx,r,y*100+m),g=reportPaymentStatus(r.gas,'gas',items('gas'),tx,r,y*100+m),p=reportPaymentStatus(r.repair,'repair',items('repair'),tx,r,y*100+m);
             const cell=(color,val)=>`<td style="background:`+color+`;border-bottom:1px solid #e8ebf2;padding:11px 13px;white-space:nowrap;color:#25304a;font-weight:700">`+fmt(val)+`</td>`;
-            const bg=(a,ok)=>Number(a)<=0?'#f1f3f6':(ok?'#e1f3e8':'#fde8e7'),db=Number(r.prev_debt)>0?'#fff1d6':'#f1f3f6',tb=Number(r.remaining)<=0?'#e1f3e8':(Number(r.prev_debt)>0?'#fff1d6':'#f1f3f6');
-            return `<tr><td style="border-bottom:1px solid #e8ebf2;padding:10px 12px;background:#fafbfe;color:#303b70;font-weight:900;white-space:nowrap">واحد `+fa(r.unit_no)+`<div style="font-size:11px;font-weight:500;color:#7b849b">`+esc(r.occupancy||'')+`</div></td>`+cell(bg(c.amount,c.paid||fullyPaid),c.amount)+cell(bg(w.amount,w.paid||fullyPaid),w.amount)+cell(bg(g.amount,g.paid||fullyPaid),g.amount)+cell(bg(p.amount,p.paid||fullyPaid),p.amount)+cell(db,r.prev_debt)+cell(tb,r.remaining)+`</tr>`;
+            const bg=(a,status)=>Number(a)<=0?'#f1f3f6':(status.complete?'#e1f3e8':(status.partial?'#fff1cc':'#fde8e7')),db=Number(r.prev_debt)>0?'#fff1d6':'#f1f3f6',tb=Number(r.remaining)<=0?'#e1f3e8':(Number(r.prev_debt)>0?'#fff1d6':'#f1f3f6');
+            return `<tr><td style="border-bottom:1px solid #e8ebf2;padding:10px 12px;background:#fafbfe;color:#303b70;font-weight:900;white-space:nowrap">واحد `+fa(r.unit_no)+`<div style="font-size:11px;font-weight:500;color:#7b849b">`+esc(r.occupancy||'')+`</div></td>`+cell(bg(c.amount,c),c.amount)+cell(bg(w.amount,w),w.amount)+cell(bg(g.amount,g),g.amount)+cell(bg(p.amount,p),p.amount)+cell(db,r.prev_debt)+cell(tb,r.remaining)+`</tr>`;
           }).join('');
           pieces.push(`<section style="margin-bottom:24px;break-inside:avoid"><h2 style="font-size:18px;margin:12px 0">گزارش `+rep.month_name+` `+fa(rep.year)+`</h2><div style="overflow-x:auto"><table style="width:100%;border-collapse:separate;border-spacing:0;text-align:center;direction:rtl;font-size:14px;background:#fff;border:1px solid #e5e9f0;border-radius:12px;overflow:hidden"><thead><tr><th colspan="7" style="background:#303b70;color:white;padding:12px;border:0;font-size:15px">گزارش `+rep.month_name+` ماه - `+fa(rep.year)+`</th></tr><tr>`+['واحد','شارژ','قبض آب','قبض گاز','پس‌انداز','بدهی قبلی','جمع مبلغ قابل پرداخت'].map(x=>`<th style="background:#eef1f8;color:#394366;border:0;border-bottom:1px solid #dfe4ee;padding:10px 8px;font-size:12px">`+x+`</th>`).join('')+`</tr></thead><tbody>`+(rows||'<tr><td colspan="7" style="padding:15px">اطلاعاتی برای این ماه وجود ندارد.</td></tr>')+`</tbody></table></div></section>`);
           m++;if(m>12){m=1;y++;}
@@ -305,8 +324,8 @@ async function viewReport(el) {
   <div class="tbl-wrap report-table-wrap" style="border-radius:16px;overflow-x:auto;border:1px solid #e5e9f0;background:#fff;width:100%;box-shadow:0 5px 18px rgba(35,45,80,.06)"><table style="width:max-content;min-width:100%;border-collapse:separate;border-spacing:0;font-size:14px;font-weight:600;text-align:center;direction:rtl;background:#fff"><thead><tr><th colspan="7" style="background:#303b70;color:white;padding:13px;border:0;font-size:15px">گزارش `+rep.month_name+` ماه - `+fa(rep.year)+`/`+String(rep.month).padStart(2,'0')+`</th></tr><tr>`+['واحد','شارژ','قبض آب','قبض گاز','پس‌انداز','بدهی قبلی','جمع مبلغ قابل پرداخت'].map(x=>`<th style="background:#eef1f8;color:#394366;border:1px solid #cbd3df;padding:8px 6px;font-size:12px">`+x+`</th>`).join('')+`</tr></thead><tbody>`+(rep.rows||[]).map(r=>{
     const shared=(reportTransactions||[]).flatMap(t=>{if(t.tx_type!=='هزینه'||Number(t.ym)!==Number(S.y)*100+Number(S.m))return[];let a=t.expense_shares;if(typeof a==='string'){try{a=JSON.parse(a)}catch(_){a=[]}}if(!Array.isArray(a))return[];const sh=a.find(x=>String(x.account_id||'')===String(r.account_id||''));return sh?[{id:t.id,cat:String(t.category||'').toLowerCase(),amount:Number(sh.amount)||0}]:[]});
     const items=c=>shared.filter(x=>x.cat===c),sum=a=>a.reduce((n,x)=>n+x.amount,0),status=(base,paid,cat)=>({amount:(Number(base)||0)+sum(items(cat)),paid:(Number(base)<=0||!!paid)&&items(cat).every(x=>(reportTransactions||[]).filter(t=>Number(t.ym)===Number(S.y)*100+Number(S.m)&&String(t.account_id||'')===String(r.account_id||'')&&t.tx_type==='درآمد'&&String(t.category||'')==='expense:'+x.id).reduce((n,t)=>n+(Number(t.amount)||0),0)>=x.amount)});
-    const c=status(r.charge,r.ok_charge,'charge'),w=status(r.water,r.ok_water,'water'),g=status(r.gas,r.ok_gas,'gas'),p=status(r.repair,r.ok_repair,'repair'),paid=(reportTransactions||[]).filter(t=>t.tx_type==='درآمد'&&t.source==='payment'&&Number(t.ym)===Number(S.y)*100+Number(S.m)&&(String(t.account_id||'')===String(r.account_id||'')||(!t.account_id&&Number(t.unit_no)===Number(r.unit_no)))).reduce((n,t)=>n+(Number(t.amount)||0),0),fullyPaid=paid>=Math.max(0,c.amount+w.amount+g.amount+p.amount+Number(r.prev_debt||0)),bg=(a,ok)=>Number(a)<=0?'#f1f3f6':(ok?'#e2f3e8':'#fde8e7'),cell=(color,val)=>`<td style="background:`+color+`;border:1px solid #aeb9c8;padding:7px 6px;color:#25304a;font-weight:700;white-space:nowrap">`+fmt(val)+`</td>`;
-    return `<tr><td style="background:#f5f6fa;border:1px solid #cbd3df;padding:6px 5px;font-weight:800">واحد `+fa(r.unit_no)+`<div style="font-size:11px;font-weight:normal">`+esc(r.occupancy||'')+`</div></td>`+cell(bg(c.amount,c.paid||fullyPaid),c.amount)+cell(bg(w.amount,w.paid||fullyPaid),w.amount)+cell(bg(g.amount,g.paid||fullyPaid),g.amount)+cell(bg(p.amount,p.paid||fullyPaid),p.amount)+cell(Number(r.prev_debt)>0?'#fff0d6':'#f1f3f6',r.prev_debt)+cell(Number(r.remaining)<=0?'#dff3e6':'#fde5e5',r.remaining)+`</tr>`;
+    const ym=Number(S.y)*100+Number(S.m),c=reportPaymentStatus(r.charge,'charge',items('charge'),reportTransactions,r,ym),w=reportPaymentStatus(r.water,'water',items('water'),reportTransactions,r,ym),g=reportPaymentStatus(r.gas,'gas',items('gas'),reportTransactions,r,ym),p=reportPaymentStatus(r.repair,'repair',items('repair'),reportTransactions,r,ym),bg=(a,status)=>Number(a)<=0?'#f1f3f6':(status.complete?'#e2f3e8':(status.partial?'#fff1cc':'#fde8e7')),cell=(color,val)=>`<td style="background:`+color+`;border:1px solid #aeb9c8;padding:7px 6px;color:#25304a;font-weight:700;white-space:nowrap">`+fmt(val)+`</td>`;
+    return `<tr><td style="background:#f5f6fa;border:1px solid #cbd3df;padding:6px 5px;font-weight:800">واحد `+fa(r.unit_no)+`<div style="font-size:11px;font-weight:normal">`+esc(r.occupancy||'')+`</div></td>`+cell(bg(c.amount,c),c.amount)+cell(bg(w.amount,w),w.amount)+cell(bg(g.amount,g),g.amount)+cell(bg(p.amount,p),p.amount)+cell(Number(r.prev_debt)>0?'#fff0d6':'#f1f3f6',r.prev_debt)+cell(Number(r.remaining)<=0?'#dff3e6':'#fde5e5',r.remaining)+`</tr>`;
   }).join('')||'<tr><td colspan="7">اطلاعاتی برای این دوره وجود ندارد.</td></tr>'`+</tbody></table></div>`;
   ModirPeriodUi.bindPeriod(()=>go('report'));
   $('#report-range-mode')?.addEventListener('click',()=>{S.reportMode='range';S.rangeFromYear=S.y;S.rangeFromMonth=S.m;S.rangeToYear=S.y;S.rangeToMonth=S.m;go('report')});
